@@ -3,7 +3,8 @@
 - React 19 will provide interactivity where it's needed.
 - TypeScript 5 for static code typing and better IDE support.
 - Tailwind 4 allows for convenient application styling.
-- daisyui provides a library of accessible React components on which we will base the UI.
+- Shadcn provides a library of accessible React components on which we will base the UI.
+- daisyui is a taiwlind plugin that provides wide range of ready classes
 
 ## Backend - Supabase as a comprehensive backend solution:
 - Provides a PostgreSQL database.
