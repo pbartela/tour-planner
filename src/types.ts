@@ -61,13 +61,27 @@ export type UpdateProfileCommand = Partial<
 export type TourSummaryDto = Pick<
   Tables<"tours">,
   "id" | "title" | "destination" | "start_date" | "end_date" | "status"
->;
+> & {
+  has_new_activity: boolean;
+};
 
 /**
  * DTO for a paginated list of tour summaries.
  * Corresponds to the full response of `GET /api/tours`.
  */
 export type PaginatedToursDto = PaginatedResponse<TourSummaryDto>;
+
+/**
+ * View model for the `TourCard.astro` component.
+ * Represents the transformed data tailored for presentation.
+ */
+export interface TourCardViewModel {
+  id: string;
+  url: string;
+  title: string;
+  dateRange: string;
+  hasNewActivity: boolean;
+}
 
 /**
  * Command model for creating a new tour.

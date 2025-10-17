@@ -14,9 +14,9 @@ The view will be built using a main Astro page that renders a React component as
 - /src/pages/index.astro (Astro Page)
   - /src/layouts/Layout.astro (Main Layout)
     - /src/components/tours/TourList.tsx (React Island)
-      - /src/components/shared/SkeletonLoader.astro (Conditional)
-      - /src/components/shared/EmptyState.astro (Conditional)
-      - /src/components/tours/TourCard.astro[] (Conditional)
+      - /src/components/shared/SkeletonLoader.tsx (Conditional)
+      - /src/components/shared/EmptyState.tsx (Conditional)
+      - /src/components/tours/TourCard.tsx[] (Conditional)
 ```
 
 ## 4. Component Details
@@ -35,7 +35,7 @@ The view will be built using a main Astro page that renders a React component as
 - **Types**: `PaginatedToursDto`, `TourSummaryDto`.
 - **Props**: None.
 
-### `TourCard.astro` (Astro)
+### `TourCard.tsx` (React)
 - **Component description**: A presentational component that displays a summary of a single tour. Each card is a clickable link that navigates to the tour's detail page.
 - **Main elements**:
     - An `<a>` tag wrapping the entire card, with `href` pointing to `/tours/[tour.id]`.
@@ -48,12 +48,12 @@ The view will be built using a main Astro page that renders a React component as
 - **Props**:
     - `tour: TourCardViewModel`
 
-### `SkeletonLoader.astro` (Astro)
+### `SkeletonLoader.tsx` (React)
 - **Component description**: A static, presentational component that provides a visual placeholder while tour data is being fetched, improving perceived performance.
 - **Main elements**: A container `div` with shimmering, greyed-out shapes that mimic the layout of a `TourCard`. It should use Tailwind CSS animation classes (`animate-pulse`).
 - **Props**: None.
 
-### `EmptyState.astro` (Astro)
+### `EmptyState.tsx` (React)
 - **Component description**: A static, presentational component shown when the user has no active tours. It guides them toward creating their first tour.
 - **Main elements**:
     - A container `div`.
@@ -79,7 +79,7 @@ export type TourSummaryDto = Pick<
 ```
 
 ### `TourCardViewModel` (New)
-This ViewModel represents the data transformed specifically for the `TourCard.astro` component's needs. The transformation logic will reside within the `TourList.tsx` component before passing props down.
+This ViewModel represents the data transformed specifically for the `TourCard.tsx` component's needs. The transformation logic will reside within the `TourList.tsx` component before passing props down.
 
 ```typescript
 export interface TourCardViewModel {
@@ -116,7 +116,7 @@ State will be managed primarily by **React Query** for server state, encapsulate
 ## 9. Conditions and Validation
 - **Authentication**: The `index.astro` page should perform a server-side check for an active user session. If no session exists, it must redirect to `/auth/signin`.
 - **Empty List**: The `TourList.tsx` component checks if `data.data.length === 0` after a successful API fetch. If true, it renders the `EmptyState` component.
-- **New Activity**: The `TourCard.astro` component checks the `hasNewActivity` boolean prop. If true, it renders a visual indicator element.
+- **New Activity**: The `TourCard.tsx` component checks the `hasNewActivity` boolean prop. If true, it renders a visual indicator element.
 
 ## 10. Error Handling
 - **API/Network Errors**: If the `useTourList` hook returns `isError: true`, the `TourList.tsx` component will render a user-friendly error state. This state should include a message like "Failed to load tours" and a "Retry" button that calls the `refetch` function provided by the `useQuery` result.
@@ -127,14 +127,14 @@ State will be managed primarily by **React Query** for server state, encapsulate
 2.  **Update Types**: Modify `TourSummaryDto` in `src/types.ts` to include the new `has_new_activity` field.
 3.  **Create Custom Hook**: Implement the `useTourList.ts` hook using `@tanstack/react-query` to fetch data from `GET /api/tours`.
 4.  **Develop UI Components**:
-    -   Create `src/components/tours/TourCard.astro`.
-    -   Create `src/components/shared/SkeletonLoader.astro`.
-    -   Create `src/components/shared/EmptyState.astro`.
+    -   Create `src/components/tours/TourCard.tsx`.
+    -   Create `src/components/shared/SkeletonLoader.tsx`.
+    -   Create `src/components/shared/EmptyState.tsx`.
 5.  **Develop `TourList` Component**:
     -   Create `src/components/tours/TourList.tsx`.
     -   Integrate the `useTourList` hook.
     -   Implement the conditional rendering logic for loading, empty, error, and success states.
-    -   Inside the success state, map the DTO to the `TourCardViewModel` and pass the transformed data as props to the `TourCard.astro` component.
+    -   Inside the success state, map the DTO to the `TourCardViewModel` and pass the transformed data as props to the `TourCard.tsx` component.
 6.  **Create Astro Page**:
     -   Create (or update) `src/pages/index.astro`.
     -   Add a server-side script to check for authentication and handle redirects.

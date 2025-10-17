@@ -1,8 +1,16 @@
 ---
-import Welcome from "../components/Welcome.astro";
-import Layout from "../layouts/Layout.astro";
+import Layout from "@/layouts/Layout.astro";
+import TourDashboard from "@/components/TourDashboard";
+
+// TODO: Uncomment this once the authentication flow is implemented
+// if (!Astro.locals.session) {
+// 	return Astro.redirect("/auth/signin");
+// }
 ---
 
-<Layout>
-  <Welcome />
+<Layout title="Dashboard">
+  <main class="container mx-auto py-8">
+    <h1 class="mb-6 text-3xl font-bold">Your Tours</h1>
+    <TourDashboard client:load />
+  </main>
 </Layout>
