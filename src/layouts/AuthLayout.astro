@@ -1,0 +1,27 @@
+---
+import { ViewTransitions } from "astro:transitions";
+
+interface Props {
+	title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="description" content="Tour Planner authentication" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/png" href="/favicon.png" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title} | Tour Planner</title>
+		<ViewTransitions />
+	</head>
+	<body class="bg-gray-50 dark:bg-gray-950">
+		<main class="flex min-h-screen flex-col items-center justify-center px-4 py-12">
+			<slot />
+		</main>
+	</body>
+</html>
