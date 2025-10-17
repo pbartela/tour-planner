@@ -34,27 +34,27 @@ This document outlines the technical architecture for the authentication module 
 
 -   **`LoginForm.tsx` (New, React Component)**
     -   **Location:** `src/components/auth/LoginForm.tsx`
-    -   **Description:** A form with an email input field and a "Send Magic Link" button.
+    -   **Description:** A form with an email input field and a button with text like `t('auth.login.sendMagicLink')`.
     -   **Responsibilities:**
         -   Manage form state (email value).
         -   Client-side validation for the email format.
         -   Display validation errors.
         -   On submit, call the `POST /api/auth/signin` endpoint.
-        -   Display success (e.g., "Check your email for the login link.") or error messages from the API.
+        -   Display success (e.g., using a translation key like `t('auth.login.successMessage')`) or error messages from the API.
 
 -   **`RegisterForm.tsx` (New, React Component)**
     -   **Location:** `src/components/auth/RegisterForm.tsx`
-    -   **Description:** A form with an email input field and a "Continue" button.
+    -   **Description:** A form with an email input field and a button with text like `t('auth.register.continue')`.
     -   **Responsibilities:**
         -   Manage form state (email value).
         -   Client-side validation for the email format.
         -   Display validation errors.
         -   On submit, call the `POST /api/auth/signup` endpoint.
-        -   Display a success message (e.g., "Check your email to continue registration.").
+        -   Display a success message (e.g., using a translation key like `t('auth.register.successMessage')`).
 
 -   **`CompleteRegistrationForm.tsx` (New, React Component)**
     -   **Location:** `src/components/auth/CompleteRegistrationForm.tsx`
-    -   **Description:** A form with a username input and a "Complete Registration" button. Displayed after a new user clicks their magic link.
+    -   **Description:** A form with a username input and a button with text like `t('auth.completeRegistration.submit')`. Displayed after a new user clicks their magic link.
     -   **Responsibilities:**
         -   Manage form state (username).
         -   Client-side validation for username format.
@@ -90,10 +90,10 @@ This document outlines the technical architecture for the authentication module 
 
 1.  User navigates to `/register`.
 2.  User enters their email into the `RegisterForm`.
-3.  User clicks "Continue".
+3.  User clicks the button to send the magic link.
 4.  The frontend sends a request to `POST /api/auth/signup`.
 5.  The backend validates the email and asks Supabase to send a confirmation magic link.
-6.  The UI displays a message: "Please check your email to complete registration."
+6.  The UI displays a message, referenced by a key like `t('auth.register.successMessage')`.
 7.  User receives an email and clicks the magic link.
 8.  Supabase authenticates the user and redirects them to a special callback URL that lands them on `/register/complete`.
 9.  A new user record is created in `auth.users`, and a corresponding profile with a `NULL` username is created in the `profiles` table.
@@ -107,9 +107,9 @@ This document outlines the technical architecture for the authentication module 
 
 1.  User navigates to `/login`.
 2.  User enters their registered email address.
-3.  User clicks "Send Magic Link".
+3.  User clicks the button to send the magic link.
 4.  The `LoginForm` component sends a request to `POST /api/auth/signin`.
-5.  The UI displays a message: "Check your email for the login link."
+5.  The UI displays a message, referenced by a key like `t('auth.login.successMessage')`.
 6.  User receives an email and clicks the magic link.
 7.  Supabase handles the authentication and redirects the user back to the application.
 8.  The application establishes a session.

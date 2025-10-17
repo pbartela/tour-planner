@@ -1,0 +1,13 @@
+{
+	"errors": {
+		"loadFailed": "Failed to load tours"
+	},
+	"emptyState": {
+		"title": "You have no active tours",
+		"description": "Get started by creating a new one.",
+		"cta": "Create a Tour"
+	},
+	"tourCard": {
+		"newActivity": "New activity"
+	}
+}

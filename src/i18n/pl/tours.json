@@ -1,0 +1,13 @@
+{
+	"errors": {
+		"loadFailed": "Nie udało się wczytać wycieczek"
+	},
+	"emptyState": {
+		"title": "Nie masz aktywnych wycieczek",
+		"description": "Zacznij od utworzenia nowej.",
+		"cta": "Utwórz wycieczkę"
+	},
+	"tourCard": {
+		"newActivity": "Nowa aktywność"
+	}
+}

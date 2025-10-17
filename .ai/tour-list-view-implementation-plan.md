@@ -57,8 +57,8 @@ The view will be built using a main Astro page that renders a React component as
 - **Component description**: A static, presentational component shown when the user has no active tours. It guides them toward creating their first tour.
 - **Main elements**:
     - A container `div`.
-    - A message, e.g., "You have no active tours."
-    - A call-to-action button/link styled prominently, e.g., "Create Your First Tour," which navigates to the tour creation page.
+    - A message, referenced by a key like `t('tours.emptyState.message')`.
+    - A call-to-action button/link styled prominently, with text from a key like `t('tours.emptyState.cta')`, which navigates to the tour creation page.
 - **Props**: None.
 
 ## 5. Types
@@ -119,7 +119,7 @@ State will be managed primarily by **React Query** for server state, encapsulate
 - **New Activity**: The `TourCard.tsx` component checks the `hasNewActivity` boolean prop. If true, it renders a visual indicator element.
 
 ## 10. Error Handling
-- **API/Network Errors**: If the `useTourList` hook returns `isError: true`, the `TourList.tsx` component will render a user-friendly error state. This state should include a message like "Failed to load tours" and a "Retry" button that calls the `refetch` function provided by the `useQuery` result.
+- **API/Network Errors**: If the `useTourList` hook returns `isError: true`, the `TourList.tsx` component will render a user-friendly error state. This state should include a message (e.g., using key `t('tours.errors.loadFailed')`) and a "Retry" button (e.g., key `t('common.retry')`) that calls the `refetch` function provided by the `useQuery` result.
 - **Unauthorized Access (401)**: While server-side redirects are preferred, if a `401` is received on the client, a global error handler or a side effect in the `useTourList` hook should redirect the user to the login page.
 
 ## 11. Implementation Steps
