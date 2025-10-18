@@ -1,0 +1,17 @@
+{
+  "tourList": {
+    "loadingError": "Nie udało się załadować wycieczek",
+    "retry": "Spróbuj ponownie",
+    "noTours": "Nie znaleziono wycieczek.",
+    "newActivity": "Nowa aktywność"
+  },
+  "emptyState": {
+    "title": "Nie masz aktywnych wycieczek",
+    "description": "Zacznij od utworzenia nowej.",
+    "createTour": "Utwórz wycieczkę"
+  },
+  "dashboard": {
+    "title": "Panel główny",
+    "heading": "Twoje wycieczki"
+  }
+}

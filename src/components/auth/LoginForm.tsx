@@ -5,8 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export const LoginForm = () => {
+  const { t } = useTranslation("auth");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -18,26 +20,26 @@ export const LoginForm = () => {
 
     // TODO: call API endpoint /api/auth/signin
     if (email === "test@test.com") {
-      setMessage("Check your email for the login link.");
+      setMessage(t("login.success"));
     } else {
-      setError("Something went wrong. Please try again.");
+      setError(t("login.error"));
     }
   };
 
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
-        <CardTitle className="text-2xl">Login</CardTitle>
-        <CardDescription>Enter your email below to login to your account.</CardDescription>
+        <CardTitle className="text-2xl">{t("login.title")}</CardTitle>
+        <CardDescription>{t("login.description")}</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
         <form onSubmit={handleSubmit} className="grid gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t("login.emailLabel")}</Label>
             <Input
               id="email"
               type="email"
-              placeholder="m@example.com"
+              placeholder={t("login.emailPlaceholder")}
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -46,7 +48,7 @@ export const LoginForm = () => {
           {message && <p className="text-sm text-green-600 dark:text-green-500">{message}</p>}
           {error && <p className="text-sm text-red-600 dark:text-red-500">{error}</p>}
           <Button type="submit" className="w-full">
-            Send Magic Link
+            {t("login.submit")}
           </Button>
         </form>
       </CardContent>

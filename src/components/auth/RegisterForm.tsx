@@ -5,8 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export const RegisterForm = () => {
+  const { t } = useTranslation("auth");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -18,22 +20,22 @@ export const RegisterForm = () => {
 
     // TODO: call API endpoint /api/auth/signup
     if (email === "test@test.com") {
-      setMessage("Check your email to continue registration.");
+      setMessage(t("register.success"));
     } else {
-      setError("Something went wrong. Please try again.");
+      setError(t("register.error"));
     }
   };
 
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
-        <CardTitle className="text-2xl">Register</CardTitle>
-        <CardDescription>Enter your email below to create an account.</CardDescription>
+        <CardTitle className="text-2xl">{t("register.title")}</CardTitle>
+        <CardDescription>{t("register.description")}</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
         <form onSubmit={handleSubmit} className="grid gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t("register.emailLabel")}</Label>
             <Input
               id="email"
               type="email"
@@ -46,7 +48,7 @@ export const RegisterForm = () => {
           {message && <p className="text-sm text-green-600 dark:text-green-500">{message}</p>}
           {error && <p className="text-sm text-red-600 dark:text-red-500">{error}</p>}
           <Button type="submit" className="w-full">
-            Continue
+            {t("register.submit")}
           </Button>
         </form>
       </CardContent>

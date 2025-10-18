@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { SkeletonLoader } from "@/components/shared/SkeletonLoader";
 import { TourCard } from "@/components/tours/TourCard";
+import { useTranslation } from "react-i18next";
 
-const formatDateRange = (startDate: string, endDate: string): string => {
+const formatDateRange = (startDate: string, endDate: string, locale: string): string => {
   const start = new Date(startDate);
   const end = new Date(endDate);
 
@@ -18,22 +19,23 @@ const formatDateRange = (startDate: string, endDate: string): string => {
     year: "numeric",
   };
 
-  const startStr = start.toLocaleDateString("en-US", options);
-  const endStr = end.toLocaleDateString("en-US", options);
-  const yearStr = end.toLocaleDateString("en-US", yearOption);
+  const startStr = start.toLocaleDateString(locale, options);
+  const endStr = end.toLocaleDateString(locale, options);
+  const yearStr = end.toLocaleDateString(locale, yearOption);
 
   return `${startStr} - ${endStr}, ${yearStr}`;
 };
 
-const transformToViewModel = (dto: TourSummaryDto): TourCardViewModel => ({
+const transformToViewModel = (dto: TourSummaryDto, locale: string): TourCardViewModel => ({
   id: dto.id,
   url: `/tours/${dto.id}`,
   title: dto.title,
-  dateRange: formatDateRange(dto.start_date, dto.end_date),
+  dateRange: formatDateRange(dto.start_date, dto.end_date, locale),
   hasNewActivity: dto.has_new_activity,
 });
 
 export const TourList = () => {
+  const { t, i18n } = useTranslation("tours");
   const { data, isLoading, isError, error, refetch } = useTourList();
 
   if (isLoading) {
@@ -49,8 +51,10 @@ export const TourList = () => {
   if (isError) {
     return (
       <div className="text-center">
-        <p className="mb-4 text-red-500">Failed to load tours: {error.message}</p>
-        <Button onClick={() => refetch()}>Retry</Button>
+        <p className="mb-4 text-red-500">
+          {t("tourList.loadingError")}: {error.message}
+        </p>
+        <Button onClick={() => refetch()}>{t("tourList.retry")}</Button>
       </div>
     );
   }
@@ -59,7 +63,7 @@ export const TourList = () => {
     return <EmptyState />;
   }
 
-  const tours = data.data.map(transformToViewModel);
+  const tours = data.data.map((tour) => transformToViewModel(tour, i18n.language));
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

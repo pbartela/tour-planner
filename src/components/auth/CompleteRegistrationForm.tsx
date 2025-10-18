@@ -5,8 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export const CompleteRegistrationForm = () => {
+  const { t } = useTranslation("auth");
   const [username, setUsername] = useState("");
   const [error, setError] = useState("");
 
@@ -16,7 +18,7 @@ export const CompleteRegistrationForm = () => {
 
     // TODO: call API endpoint /api/profiles/me
     if (username.length < 3) {
-      setError("Username must be at least 3 characters long.");
+      setError(t("completeRegistration.error"));
       return;
     }
     // On success, redirect to the `/welcome` onboarding page.
@@ -26,17 +28,17 @@ export const CompleteRegistrationForm = () => {
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
-        <CardTitle className="text-2xl">Complete Registration</CardTitle>
-        <CardDescription>Choose a username to finish setting up your account.</CardDescription>
+        <CardTitle className="text-2xl">{t("completeRegistration.title")}</CardTitle>
+        <CardDescription>{t("completeRegistration.description")}</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
         <form onSubmit={handleSubmit} className="grid gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="username">{t("completeRegistration.usernameLabel")}</Label>
             <Input
               id="username"
               type="text"
-              placeholder="tour_master_42"
+              placeholder={t("completeRegistration.usernamePlaceholder")}
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -44,7 +46,7 @@ export const CompleteRegistrationForm = () => {
           </div>
           {error && <p className="text-sm text-red-600 dark:text-red-500">{error}</p>}
           <Button type="submit" className="w-full">
-            Complete Registration
+            {t("completeRegistration.submit")}
           </Button>
         </form>
       </CardContent>

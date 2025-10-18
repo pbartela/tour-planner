@@ -1,0 +1,17 @@
+{
+  "tourList": {
+    "loadingError": "Failed to load tours",
+    "retry": "Retry",
+    "noTours": "No tours found.",
+    "newActivity": "New Activity"
+  },
+  "emptyState": {
+    "title": "You have no active tours",
+    "description": "Get started by creating a new one.",
+    "createTour": "Create a Tour"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "heading": "Your Tours"
+  }
+}

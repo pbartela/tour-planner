@@ -1,8 +1,9 @@
 ---
 import AuthLayout from "@/layouts/AuthLayout.astro";
 import CompleteRegistrationForm from "@/components/auth/CompleteRegistrationForm";
+import i18next from "i18next";
 ---
 
-<AuthLayout title="Complete Registration">
+<AuthLayout title={i18next.t("completeRegistrationPage.title")}>
 	<CompleteRegistrationForm client:load />
 </AuthLayout>
