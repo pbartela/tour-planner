@@ -24,12 +24,13 @@ These endpoints handle user authentication via Supabase's magic link (OTP) flow.
 
 #### Request Magic Link
 - **Method:** `POST`
-- **URL:** `/api/auth/signin`
-- **Description:** Initiates the login or registration process by sending a magic link to the user's email.
+- **URL:** `/api/auth/magic-link`
+- **Description:** Initiates the login or registration process by sending a magic link to the user's email. The backend automatically detects if the user is new and triggers the appropriate sign-up or sign-in flow.
 - **Request Body:**
   ```json
   {
-    "email": "user@example.com"
+    "email": "user@example.com",
+    "redirectTo": "/optional-path-after-login"
   }
   ```
 - **Response (Success):**
@@ -37,6 +38,7 @@ These endpoints handle user authentication via Supabase's magic link (OTP) flow.
   - **Body:** `{}`
 - **Response (Error):**
   - **Code:** `400 Bad Request` - Invalid email format.
+  - **Code:** `429 Too Many Requests` - Rate limit exceeded.
   - **Code:** `500 Internal Server Error` - Failed to send email.
 
 ---
@@ -465,7 +467,7 @@ Endpoints for managing tags on archived tours.
 
 ## 3. Authentication and Authorization
 
-- **Authentication:** The API uses Supabase for authentication. The frontend client initiates a "magic link" (OTP) login via the `/api/auth/signin` endpoint. Supabase sends an email. Upon clicking the link, the Supabase client library on the frontend establishes a session and obtains a JWT. This JWT must be included in the `Authorization` header for all subsequent requests to protected endpoints (e.g., `Authorization: Bearer <SUPABASE_JWT>`).
+- **Authentication:** The API uses Supabase for authentication. The frontend client initiates a "magic link" (OTP) login via the `/api/auth/magic-link` endpoint. Supabase sends an email. Upon clicking the link, the Supabase client library on the frontend establishes a session and obtains a JWT. This JWT must be included in the `Authorization` header for all subsequent requests to protected endpoints (e.g., `Authorization: Bearer <SUPABASE_JWT>`).
 
 - **Authorization:** Authorization is primarily enforced by PostgreSQL's Row-Level Security (RLS) policies, as defined in the database schema. The Astro backend uses the user's JWT to create a scoped Supabase client instance for each request. This ensures all database queries are executed in the context of the authenticated user, and RLS policies are automatically applied. The API layer returns `403 Forbidden` if a user attempts an action not permitted by RLS (e.g., editing a tour they do not own).
 

@@ -2,11 +2,6 @@
 import Layout from "@/layouts/Layout.astro";
 import TourDashboard from "@/components/TourDashboard";
 import i18next from "i18next";
-
-// TODO: Uncomment this once the authentication flow is implemented
-// if (!Astro.locals.session) {
-// 	return Astro.redirect("/auth/signin");
-// }
 ---
 
 <Layout title={i18next.t("dashboard.title", { ns: "tours" })}>

@@ -32,15 +32,15 @@ This document outlines the technical architecture for the authentication module 
 
 ### 2.2. Components
 
--   **`LoginForm.tsx` (New, React Component)**
+-   **`LoginForm.tsx` (Modified, React Component)**
     -   **Location:** `src/components/auth/LoginForm.tsx`
-    -   **Description:** A form with an email input field and a button with text like `t('auth.login.sendMagicLink')`.
+    -   **Description:** A unified form for both login and registration. It contains an email input field and a single "Continue with Email" button.
     -   **Responsibilities:**
         -   Manage form state (email value).
         -   Client-side validation for the email format.
         -   Display validation errors.
-        -   On submit, call the `POST /api/auth/signin` endpoint.
-        -   Display success (e.g., using a translation key like `t('auth.login.successMessage')`) or error messages from the API.
+        -   On submit, call the `POST /api/auth/magic-link` endpoint.
+        -   Display a generic success message (e.g., "Check your email for a link to continue") or error messages from the API.
 
 -   **`RegisterForm.tsx` (New, React Component)**
     -   **Location:** `src/components/auth/RegisterForm.tsx`
@@ -86,36 +86,24 @@ This document outlines the technical architecture for the authentication module 
 
 ### 2.4. User Flows
 
-#### 2.4.1. Registration Flow (US-001)
-
-1.  User navigates to `/register`.
-2.  User enters their email into the `RegisterForm`.
-3.  User clicks the button to send the magic link.
-4.  The frontend sends a request to `POST /api/auth/signup`.
-5.  The backend validates the email and asks Supabase to send a confirmation magic link.
-6.  The UI displays a message, referenced by a key like `t('auth.register.successMessage')`.
-7.  User receives an email and clicks the magic link.
-8.  Supabase authenticates the user and redirects them to a special callback URL that lands them on `/register/complete`.
-9.  A new user record is created in `auth.users`, and a corresponding profile with a `NULL` username is created in the `profiles` table.
-10. On the `/register/complete` page, the `CompleteRegistrationForm` is displayed.
-11. User enters a unique username. The form provides real-time availability feedback.
-12. User clicks "Complete Registration". The frontend sends a `PATCH /api/profiles/me` request.
-13. The backend updates the user's profile with the new username.
-14. The user is redirected to the `/welcome` onboarding page.
-
-#### 2.4.2. Login Flow (US-002)
+#### 2.4.1. Unified Magic Link Flow (Login & Registration)
 
 1.  User navigates to `/login`.
-2.  User enters their registered email address.
-3.  User clicks the button to send the magic link.
-4.  The `LoginForm` component sends a request to `POST /api/auth/signin`.
-5.  The UI displays a message, referenced by a key like `t('auth.login.successMessage')`.
-6.  User receives an email and clicks the magic link.
-7.  Supabase handles the authentication and redirects the user back to the application.
-8.  The application establishes a session.
-9.  The user is redirected to their tour dashboard (`/`).
+2.  User enters their email into the `LoginForm`.
+3.  User clicks the "Continue with Email" button.
+4.  The frontend sends a request to `POST /api/auth/magic-link`.
+5.  The backend checks if a user with that email exists.
+    *   **If user exists (Login):** The backend asks Supabase to send a standard sign-in magic link. The user is redirected to their dashboard (`/`) after clicking it.
+    *   **If user does not exist (Registration):** The backend asks Supabase to send a confirmation magic link. A new user record is created in `auth.users`, and a corresponding profile with a `NULL` username is created in the `profiles` table.
+6.  The UI displays a generic message: "Check your email for a link to continue".
+7.  User receives an email and clicks the magic link.
+8.  **For new users:** Supabase authenticates the user and redirects them to `/register/complete`.
+9.  On the `/register/complete` page, the `CompleteRegistrationForm` is displayed.
+10. User enters a unique username and clicks "Complete Registration".
+11. The frontend sends a `PATCH /api/profiles/me` request to save the username.
+12. The user is redirected to the `/welcome` onboarding page.
 
-#### 2.4.3. Invalid Link
+#### 2.4.2. Invalid Link
 
 1.  User clicks an expired or invalid magic link.
 2.  The user is redirected to a page (e.g., `/auth/error`) that displays an error message.
@@ -125,28 +113,19 @@ This document outlines the technical architecture for the authentication module 
 
 ### 3.1. API Endpoints
 
--   **`POST /api/auth/signin`**
-    -   **Description:** Sends a magic link for logging in.
-    -   **Request Body:** `{ "email": "user@example.com" }`
+-   **`POST /api/auth/magic-link` (New)**
+    -   **Description:** A single endpoint to handle both login and registration. It sends a magic link to the user's email.
+    -   **Request Body:** `{ "email": "user@example.com", "redirectTo": "/optional-path" }`
     -   **Validation:** `zod` schema to validate the email.
     -   **Logic:**
-        1.  Calls `supabase.auth.signInWithOtp` with the provided email.
-        2.  Redirect URL will be configured in Supabase dashboard to point to the app.
+        1.  Check if a user with the provided email already exists.
+        2.  If yes, call `supabase.auth.signInWithOtp`, configuring the redirect to the path specified in `redirectTo` or the homepage.
+        3.  If no, call `supabase.auth.signUp`, configuring the redirect to `/register/complete`.
     -   **Response:**
         -   `200 OK`: On success.
         -   `400 Bad Request`: If email is invalid.
+        -   `429 Too Many Requests`: If rate limited.
         -   `500 Internal Server Error`: For Supabase or other server errors.
-
--   **`POST /api/auth/signup`**
-    -   **Description:** Initiates the registration process by sending a magic link to the user's email.
-    -   **Request Body:** `{ "email": "user@example.com" }`
-    -   **Validation:** `zod` schema for email format.
-    -   **Logic:**
-        1.  Calls `supabase.auth.signUp` with the provided email. The redirect URL will be configured in Supabase to point to `/register/complete`.
-    -   **Response:**
-        -   `200 OK`: On success.
-        -   `400 Bad Request`: For invalid data.
-        -   `500 Internal Server Error`: For server errors.
 
 -   **`POST /api/auth/signout`**
     -   **Description:** Signs the user out.
