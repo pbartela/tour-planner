@@ -20,8 +20,6 @@ To refactor the existing authentication system into a single, unified flow where
 -   `public/locales/en-US/auth.json`: To add new i18n keys for the unified form.
 -   `public/locales/pl-PL/auth.json`: To add new i18n keys for the unified form.
 -   `src/types.ts`: To define a consistent `User` type for `Astro.locals`.
--   `.ai/api-plan.md`: To update the API documentation.
--   `.ai/auth-spec.md`: To update the technical specification.
 
 ### Files to be Deleted
 
@@ -93,11 +91,3 @@ To refactor the existing authentication system into a single, unified flow where
     *   Remove the `div` containing the link to the register page.
 2.  **Delete Files:**
     *   Delete all files listed in the "Files to be Deleted" section of this plan. This is a critical step to prevent confusion and dead code.
-
-## 4. Documentation Updates
-
--   **Update `.ai/api-plan.md`:** Replace the `/api/auth/signin` endpoint definition with the new `/api/auth/magic-link` endpoint, detailing its consolidated logic.
--   **Update `.ai/auth-spec.md`:**
-    *   Rewrite the "Registration Flow" and "Login Flow" sections to describe the new, unified process.
-    *   Update the component descriptions, removing `RegisterForm.tsx` and modifying `LoginForm.tsx`.
-    *   Update the API endpoint list, replacing `/signin` and `/signup` with `/magic-link`.

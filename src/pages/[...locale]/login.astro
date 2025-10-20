@@ -8,8 +8,4 @@ const redirect = Astro.url.searchParams.get("redirect");
 
 <AuthLayout title={i18next.t("loginPage.title")}>
   <LoginForm client:load redirectTo={redirect} />
-  <div class="mt-4 text-center text-sm">
-    {i18next.t("loginPage.prompt")}
-    <a href="/register" class="underline"> {i18next.t("loginPage.action")} </a>
-  </div>
 </AuthLayout>

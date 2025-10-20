@@ -53,6 +53,10 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
     );
 
     if (error) {
+      // Check if it's a username uniqueness violation
+      if (error.message.includes("duplicate key") || error.message.includes("unique")) {
+        return new Response(JSON.stringify({ message: "Username is already taken" }), { status: 409 });
+      }
       return new Response(JSON.stringify({ message: "Internal Server Error" }), { status: 500 });
     }
 

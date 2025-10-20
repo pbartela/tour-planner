@@ -1,29 +1,102 @@
-"use client";
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { getLocalizedPathname } from "astro-react-i18next/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "react-hot-toast";
+import { useCallback, useState } from "react";
+import debounce from "lodash/debounce";
+
+//TODO: Translate validation messages
+const CompleteRegistrationSchema = z.object({
+  username: z
+    .string()
+    .min(3, "Username must be at least 3 characters.")
+    .max(20, "Username cannot exceed 20 characters.")
+    .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores."),
+});
+
+type CompleteRegistrationFormValues = z.infer<typeof CompleteRegistrationSchema>;
 
 export const CompleteRegistrationForm = () => {
   const { t } = useTranslation("auth");
-  const [username, setUsername] = useState("");
-  const [error, setError] = useState("");
+  const [isUsernameAvailable, setIsUsernameAvailable] = useState<boolean | null>(null);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    trigger,
+    watch,
+  } = useForm<CompleteRegistrationFormValues>({
+    resolver: zodResolver(CompleteRegistrationSchema),
+    mode: "onBlur",
+  });
 
-    // TODO: call API endpoint /api/profiles/me
+  const checkUsername = async (username: string) => {
     if (username.length < 3) {
-      setError(t("completeRegistration.error"));
+      setIsUsernameAvailable(null);
       return;
     }
-    // On success, redirect to the `/welcome` onboarding page.
-    window.location.href = getLocalizedPathname("/welcome");
+    setIsCheckingUsername(true);
+    try {
+      const response = await fetch("/api/profiles/check-username", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username }),
+      });
+      const data = await response.json();
+      setIsUsernameAvailable(data.isAvailable);
+    } catch (error) {
+      setIsUsernameAvailable(null); // Reset on error
+    } finally {
+      setIsCheckingUsername(false);
+    }
+  };
+
+  const debouncedCheckUsername = useCallback(debounce(checkUsername, 500), []);
+
+  watch((value) => {
+    if (value.username) {
+      debouncedCheckUsername(value.username);
+    }
+  });
+
+  const onSubmit = async (data: CompleteRegistrationFormValues) => {
+    console.log("onSubmit", data);
+    debugger;
+    // Final check before submitting
+    await trigger("username");
+    if (errors.username || isUsernameAvailable === false) {
+      toast.error(t("completeRegistration.usernameTaken"));
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/profiles/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: data.username,
+          display_name: data.username,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success(t("completeRegistration.success"));
+        window.location.href = getLocalizedPathname("/");
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.message || t("completeRegistration.error"));
+      }
+    } catch (err) {
+      toast.error(t("completeRegistration.error"));
+    }
   };
 
   return (
@@ -33,21 +106,30 @@ export const CompleteRegistrationForm = () => {
         <CardDescription>{t("completeRegistration.description")}</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
-        <form onSubmit={handleSubmit} className="grid gap-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
           <div className="grid gap-2">
             <Label htmlFor="username">{t("completeRegistration.usernameLabel")}</Label>
             <Input
               id="username"
               type="text"
               placeholder={t("completeRegistration.usernamePlaceholder")}
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              {...register("username")}
             />
+            {isCheckingUsername && <p className="text-sm text-gray-500">{t("completeRegistration.checking")}</p>}
+            {isUsernameAvailable === true && !isCheckingUsername && (
+              <p className="text-sm text-green-600">{t("completeRegistration.usernameAvailable")}</p>
+            )}
+            {isUsernameAvailable === false && !isCheckingUsername && (
+              <p className="text-sm text-red-600">{t("completeRegistration.usernameTaken")}</p>
+            )}
+            {errors.username && <p className="text-sm text-red-600 dark:text-red-500">{errors.username.message}</p>}
           </div>
-          {error && <p className="text-sm text-red-600 dark:text-red-500">{error}</p>}
-          <Button type="submit" className="w-full">
-            {t("completeRegistration.submit")}
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isSubmitting || isCheckingUsername || isUsernameAvailable === false}
+          >
+            {isSubmitting ? t("completeRegistration.submitting") : t("completeRegistration.submit")}
           </Button>
         </form>
       </CardContent>

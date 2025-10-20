@@ -1,43 +1,48 @@
-import { defineMiddleware } from 'astro:middleware';
-import { supabaseClient } from '../db/supabase.client.ts';
+import { defineMiddleware } from "astro:middleware";
+import { supabaseClient as supabase } from "@/db/supabase.client";
+import { CompletedProfileSchema } from "@/lib/validators/profile.validators";
 
-const publicRoutes = ['/login', '/register', '/register/complete', '/api/auth/signin'];
+const protectedRoutes = ["/", "/profile", "/tours"];
+const authRoutes = ["/login", "/register/complete"];
+const publicRoutes = ["/auth-callback"];
 
 export const onRequest = defineMiddleware(async (context, next) => {
-  context.locals.supabase = supabaseClient;
+  context.locals.supabase = supabase;
 
-  const { url, cookies, redirect, params } = context;
+  const lang = context.params.locale || "en-US";
+  const pathWithoutLocale = context.params.locale
+    ? context.url.pathname.replace(new RegExp(`^/${context.params.locale}`), "") || "/"
+    : context.url.pathname;
 
-  const lang = params.locale ?? 'en-US';
-  const path = url.pathname;
-  const pathWithoutLocale = params.locale ? path.replace(new RegExp(`^/${params.locale}`), '') || '/' : path;
-
-  const isPublic = publicRoutes.some(publicRoute => pathWithoutLocale.startsWith(publicRoute));
-
-  if (isPublic) {
+  if (pathWithoutLocale.startsWith("/api/auth/") || publicRoutes.some((route) => pathWithoutLocale.startsWith(route))) {
     return next();
   }
 
-  const accessToken = cookies.get('sb-access-token');
-  const refreshToken = cookies.get('sb-refresh-token');
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const user = session?.user;
 
-  if (!accessToken || !refreshToken) {
-    return redirect(`/${lang}/login`);
+  context.locals.session = session;
+  context.locals.user = user ? { id: user.id, email: user.email! } : undefined;
+
+  const isProtectedRoute = protectedRoutes.some((route) => pathWithoutLocale.startsWith(route));
+  const isAuthRoute = authRoutes.some((route) => pathWithoutLocale.startsWith(route));
+
+  if (user) {
+    const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single();
+    const isProfileComplete = CompletedProfileSchema.safeParse(profile).success;
+
+    if (!isProfileComplete) {
+      if (pathWithoutLocale !== "/register/complete" && !pathWithoutLocale.startsWith("/api")) {
+        return context.redirect(`/${lang}/register/complete`);
+      }
+    } else if (isAuthRoute) {
+      return context.redirect(`/${lang}/`);
+    }
+  } else if (isProtectedRoute && !isAuthRoute) {
+    return context.redirect(`/${lang}/login?redirect=${encodeURIComponent(pathWithoutLocale)}`);
   }
-
-  const { data, error } = await supabaseClient.auth.setSession({
-    refresh_token: refreshToken.value,
-    access_token: accessToken.value,
-  });
-
-  if (error || !data.session) {
-    cookies.delete('sb-access-token', { path: '/' });
-    cookies.delete('sb-refresh-token', { path: '/' });
-    return redirect(`/${lang}/login`);
-  }
-
-  context.locals.user = data.user;
-  context.locals.session = data.session;
 
   return next();
 });

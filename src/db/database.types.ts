@@ -160,7 +160,7 @@ export type Database = {
           onboarding_completed: boolean
           theme: string
           updated_at: string
-          username: string
+          username: string | null
         }
         Insert: {
           created_at?: string
@@ -170,7 +170,7 @@ export type Database = {
           onboarding_completed?: boolean
           theme?: string
           updated_at?: string
-          username: string
+          username?: string | null
         }
         Update: {
           created_at?: string

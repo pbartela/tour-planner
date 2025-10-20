@@ -20,6 +20,10 @@ export interface PaginatedResponse<T> {
 // ============================================================================
 // Authentication
 // ============================================================================
+export type User = {
+	id: string;
+	email: string;
+};
 
 /**
  * Command model for initiating the magic link sign-in process.
@@ -46,7 +50,7 @@ export type ProfileDto = Omit<Tables<"profiles">, "updated_at">;
  * Corresponds to the request body of `PATCH /api/profiles/me`.
  */
 export type UpdateProfileCommand = Partial<
-  Pick<Tables<"profiles">, "display_name" | "language" | "theme" | "onboarding_completed">
+  Pick<Tables<"profiles">, "username" | "display_name" | "language" | "theme" | "onboarding_completed">
 >;
 
 // ============================================================================

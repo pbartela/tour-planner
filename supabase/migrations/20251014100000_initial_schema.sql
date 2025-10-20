@@ -23,7 +23,7 @@ create type public.invitation_status as enum ('pending', 'accepted', 'declined')
 -- profiles table
 create table public.profiles (
     id uuid primary key,
-    username text not null unique check (length(username) >= 3 and length(username) <= 20 and username ~ '^[a-zA-Z0-9_]+$'),
+    username text unique check (length(username) >= 3 and length(username) <= 20 and username ~ '^[a-zA-Z0-9_]+$'),
     display_name text,
     language text not null default 'en',
     theme text not null default 'system',
@@ -139,8 +139,8 @@ language plpgsql
 security definer set search_path = public
 as $$
 begin
-  insert into public.profiles (id, username)
-  values (new.id, new.raw_user_meta_data->>'username');
+  insert into public.profiles (id)
+  values (new.id);
   return new;
 end;
 $$;

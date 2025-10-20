@@ -21,6 +21,25 @@ class ProfileService {
     }
   }
 
+  public async getProfileByUsername(
+    supabase: SupabaseClient,
+    username: string
+  ): Promise<{ data: ProfileDto | null; error: Error | null }> {
+    try {
+      const { data, error } = await supabase.from("profiles").select("id").eq("username", username).single();
+
+      if (error && error.code !== "PGRST116") { // Ignore "No rows found" error
+        console.error("Error fetching profile by username:", error);
+        throw new Error("Failed to fetch profile from the database.");
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      console.error("Unexpected error in getProfileByUsername:", error);
+      return { data: null, error: error instanceof Error ? error : new Error("An unexpected error occurred.") };
+    }
+  }
+
   public async updateProfile(
     supabase: SupabaseClient,
     userId: string,
@@ -31,7 +50,8 @@ class ProfileService {
 
       if (error) {
         console.error("Error updating profile:", error);
-        throw new Error("Failed to update profile in the database.");
+        // Pass through the original error for better handling upstream
+        throw new Error(error.message || "Failed to update profile in the database.");
       }
 
       return { data, error: null };
