@@ -20,6 +20,7 @@ A web application for simplifying the process of planning group trips and outing
 **Plan Tour** is a web tool designed to simplify the planning of group trips and excursions. It allows users to create trip proposals, invite friends, and collectively discuss and decide on destinations and itineraries. The application centralizes communication and organization, eliminating the chaos of using multiple channels like chats, emails, or social media. The main goal is to provide a single, dedicated space for efficient and enjoyable organization of joint trips.
 
 This project aims to solve common problems in group travel planning, such as:
+
 - **Scattered Communication**: Important details get lost across various messaging apps.
 - **Lack of Centralized Information**: Key information like addresses, dates, or links is hard to find.
 - **Decision-Making Difficulties**: Gathering final commitments and approving a plan is complicated and time-consuming.
@@ -29,19 +30,19 @@ This project aims to solve common problems in group travel planning, such as:
 
 The project is built with a modern tech stack, focusing on performance, developer experience, and scalability.
 
--   **Frontend**:
-    -   [Astro 5](https://astro.build/) - For building fast, content-focused websites.
-    -   [React 19](https://react.dev/) - For creating interactive UI components.
-    -   [TypeScript 5](https://www.typescriptlang.org/) - For static typing and improved code quality.
-    -   [Tailwind CSS 4](https://tailwindcss.com/) - A utility-first CSS framework for rapid UI development.
-    -   [Shadcn/ui](https://ui.shadcn.com/) - A collection of beautifully designed, accessible UI components.
+- **Frontend**:
+  - [Astro 5](https://astro.build/) - For building fast, content-focused websites.
+  - [React 19](https://react.dev/) - For creating interactive UI components.
+  - [TypeScript 5](https://www.typescriptlang.org/) - For static typing and improved code quality.
+  - [Tailwind CSS 4](https://tailwindcss.com/) - A utility-first CSS framework for rapid UI development.
+  - [Shadcn/ui](https://ui.shadcn.com/) - A collection of beautifully designed, accessible UI components.
 
--   **Backend**:
-    -   [Supabase](https://supabase.io/) - An open-source Firebase alternative providing a PostgreSQL database, authentication, and a BaaS (Backend-as-a-Service) SDK.
+- **Backend**:
+  - [Supabase](https://supabase.io/) - An open-source Firebase alternative providing a PostgreSQL database, authentication, and a BaaS (Backend-as-a-Service) SDK.
 
--   **CI/CD & Hosting**:
-    -   [GitHub Actions](https://github.com/features/actions) - For continuous integration and deployment pipelines.
-    -   [DigitalOcean](https://www.digitalocean.com/) - For hosting the application via a Docker image.
+- **CI/CD & Hosting**:
+  - [GitHub Actions](https://github.com/features/actions) - For continuous integration and deployment pipelines.
+  - [DigitalOcean](https://www.digitalocean.com/) - For hosting the application via a Docker image.
 
 ## Getting Started Locally
 
@@ -49,8 +50,8 @@ To get a local copy up and running, follow these simple steps.
 
 ### Prerequisites
 
--   Node.js `22.14.0` (it's recommended to use [nvm](https://github.com/nvm-sh/nvm) - `nvm use`).
--   npm or a compatible package manager.
+- Node.js `22.14.0` (it's recommended to use [nvm](https://github.com/nvm-sh/nvm) - `nvm use`).
+- npm or a compatible package manager.
 
 ### Installation
 
@@ -82,14 +83,14 @@ To get a local copy up and running, follow these simple steps.
 
 In the project directory, you can run the following scripts:
 
-| Script       | Description                                              |
-| ------------ | -------------------------------------------------------- |
-| `npm run dev`    | Runs the app in development mode with hot-reloading.     |
-| `npm run build`  | Builds the app for production to the `dist/` folder.     |
-| `npm run preview`| Serves the production build locally for preview.         |
-| `npm run lint`   | Lints the codebase for potential errors.                 |
-| `npm run lint:fix` | Lints the codebase and automatically fixes issues.       |
-| `npm run format` | Formats the code using Prettier.                         |
+| Script             | Description                                          |
+| ------------------ | ---------------------------------------------------- |
+| `npm run dev`      | Runs the app in development mode with hot-reloading. |
+| `npm run build`    | Builds the app for production to the `dist/` folder. |
+| `npm run preview`  | Serves the production build locally for preview.     |
+| `npm run lint`     | Lints the codebase for potential errors.             |
+| `npm run lint:fix` | Lints the codebase and automatically fixes issues.   |
+| `npm run format`   | Formats the code using Prettier.                     |
 
 ## Project Scope
 
@@ -97,35 +98,36 @@ The initial version (MVP) of the application will focus on the core functionalit
 
 ### Key Features
 
--   **Trip Management**:
-    -   Create, edit, and delete trips with details like title, destination, dates, and description.
-    -   Trips are automatically archived and become read-only after their end date.
--   **User Accounts**:
-    -   Passwordless authentication using "magic links" sent to the user's email.
-    -   User profiles with customizable display names, language, and theme preferences (light/dark mode).
--   **Social & Voting System**:
-    -   Invite participants to a trip via email.
-    -   A "like" based voting system to confirm participation and approve trips.
-    -   A chronological comment section under each trip for discussions.
--   **Permissions Management**:
-    -   The trip creator (owner) has full administrative rights over the trip.
-    -   Participants can comment, vote, and leave a trip at any time.
-    -   If an owner deletes their account, ownership is automatically transferred to another participant.
--   **User Experience**:
-    -   Fully responsive design for both mobile and desktop.
-    -   Internationalization (i18n) support.
-    -   A simple onboarding process for new users.
-    -   Toast notifications for key actions like sending invitations or deleting comments.
+- **Trip Management**:
+  - Create, edit, and delete trips with details like title, destination, dates, and description.
+  - Trips are automatically archived and become read-only after their end date.
+- **User Accounts**:
+  - Passwordless authentication using "magic links" sent to the user's email.
+  - User profiles with customizable display names, language, and theme preferences (light/dark mode).
+- **Social & Voting System**:
+  - Invite participants to a trip via email.
+  - A "like" based voting system to confirm participation and approve trips.
+  - A chronological comment section under each trip for discussions.
+- **Permissions Management**:
+  - The trip creator (owner) has full administrative rights over the trip.
+  - Participants can comment, vote, and leave a trip at any time.
+  - If an owner deletes their account, ownership is automatically transferred to another participant.
+- **User Experience**:
+  - Fully responsive design for both mobile and desktop.
+  - Internationalization (i18n) support.
+  - A simple onboarding process for new users.
+  - Toast notifications for key actions like sending invitations or deleting comments.
 
 ### Out of Scope for MVP
 
 To ensure a focused and streamlined initial release, the following features are intentionally excluded from the MVP:
--   Adding intermediate points to a trip itinerary.
--   Voting on individual comments.
--   A global friends list feature.
--   Public, shareable links for trip invitations.
--   Advanced notification system (e.g., email/push notifications for all activities).
--   Traditional login methods (username/password or social logins).
+
+- Adding intermediate points to a trip itinerary.
+- Voting on individual comments.
+- A global friends list feature.
+- Public, shareable links for trip invitations.
+- Advanced notification system (e.g., email/push notifications for all activities).
+- Traditional login methods (username/password or social logins).
 
 ## Project Status
 

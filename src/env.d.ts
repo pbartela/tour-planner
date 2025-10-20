@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./db/database.types.ts";
 
 declare namespace App {
-  interface Locals extends import("astro").AstroClient {
+  interface Locals {
     supabase: import("@supabase/supabase-js").SupabaseClient;
     session: import("@supabase/supabase-js").Session | null;
     user?: {

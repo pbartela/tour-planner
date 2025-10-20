@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { getLocalizedPathname } from "astro-react-i18next/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "react-hot-toast";
@@ -52,14 +51,17 @@ export const CompleteRegistrationForm = () => {
       });
       const data = await response.json();
       setIsUsernameAvailable(data.isAvailable);
-    } catch (error) {
+    } catch {
       setIsUsernameAvailable(null); // Reset on error
     } finally {
       setIsCheckingUsername(false);
     }
   };
 
-  const debouncedCheckUsername = useCallback(debounce(checkUsername, 500), []);
+  const debouncedCheckUsername = useCallback((username: string) => {
+    const debouncedFn = debounce(() => checkUsername(username), 500);
+    debouncedFn();
+  }, []);
 
   watch((value) => {
     if (value.username) {
@@ -68,11 +70,9 @@ export const CompleteRegistrationForm = () => {
   });
 
   const onSubmit = async (data: CompleteRegistrationFormValues) => {
-    console.log("onSubmit", data);
-    debugger;
     // Final check before submitting
-    await trigger("username");
-    if (errors.username || isUsernameAvailable === false) {
+    const validationResult = await trigger("username");
+    if (!validationResult || errors.username || isUsernameAvailable === false) {
       toast.error(t("completeRegistration.usernameTaken"));
       return;
     }
@@ -84,17 +84,20 @@ export const CompleteRegistrationForm = () => {
         body: JSON.stringify({
           username: data.username,
           display_name: data.username,
+          onboarding_completed: true,
         }),
       });
 
       if (response.ok) {
+        await response.json();
         toast.success(t("completeRegistration.success"));
-        window.location.href = getLocalizedPathname("/");
+        // Force a page reload to ensure the middleware picks up the updated profile
+        window.location.reload();
       } else {
         const errorData = await response.json();
         toast.error(errorData.message || t("completeRegistration.error"));
       }
-    } catch (err) {
+    } catch {
       toast.error(t("completeRegistration.error"));
     }
   };
@@ -127,7 +130,9 @@ export const CompleteRegistrationForm = () => {
           <Button
             type="submit"
             className="w-full"
-            disabled={isSubmitting || isCheckingUsername || isUsernameAvailable === false}
+            disabled={
+              isSubmitting || isCheckingUsername || isUsernameAvailable === false || isUsernameAvailable === null
+            }
           >
             {isSubmitting ? t("completeRegistration.submitting") : t("completeRegistration.submit")}
           </Button>

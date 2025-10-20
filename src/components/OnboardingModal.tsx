@@ -45,9 +45,9 @@ export const OnboardingModal = ({ isOpen, onClose }: OnboardingModalProps) => {
 
   const handleFinish = async () => {
     try {
-      await fetch('/api/profiles/me', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+      await fetch("/api/profiles/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ onboarding_completed: true }),
       });
       onClose();
@@ -63,19 +63,15 @@ export const OnboardingModal = ({ isOpen, onClose }: OnboardingModalProps) => {
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{t(step.titleKey)}</DialogTitle>
-          <DialogDescription>
-            {t(step.descriptionKey)}
-          </DialogDescription>
+          <DialogDescription>{t(step.descriptionKey)}</DialogDescription>
         </DialogHeader>
-        
+
         {/* Progress Dots */}
         <div className="flex justify-center gap-2 my-4">
           {ONBOARDING_STEPS.map((_, index) => (
             <div
               key={index}
-              className={`h-2 w-2 rounded-full ${
-                index === currentStep ? "bg-primary" : "bg-gray-300"
-              }`}
+              className={`h-2 w-2 rounded-full ${index === currentStep ? "bg-primary" : "bg-gray-300"}`}
             />
           ))}
         </div>
@@ -92,4 +88,3 @@ export const OnboardingModal = ({ isOpen, onClose }: OnboardingModalProps) => {
     </Dialog>
   );
 };
-

@@ -1,50 +1,52 @@
 <architecture_analysis>
+
 ### 1. Components List
 
 Based on the `auth-spec.md`, the key UI elements for the authentication module are:
 
--   **Astro Pages**:
-    -   `/login`: For existing users to sign in.
-    -   `/register`: For new users to start registration.
-    -   `/register/complete`: For new users to set their username after email verification.
-    -   `/welcome`: Onboarding page for new users.
-    -   `/` (index.astro): Landing page with conditional content for authenticated/unauthenticated users.
--   **React Components**:
-    -   `LoginForm.tsx`: Handles the user login form.
-    -   `RegisterForm.tsx`: Handles the initial user registration form (email only).
-    -   `CompleteRegistrationForm.tsx`: Handles the final registration step (setting username).
-    -   `LogoutButton.tsx`: A button for users to sign out.
--   **Astro Layouts**:
-    -   `Layout.astro` (Modified): The main layout, which will conditionally render navigation based on auth state.
-    -   `AuthLayout.astro` (New): A simpler layout for the auth-related pages (`/login`, `/register`).
+- **Astro Pages**:
+  - `/login`: For existing users to sign in.
+  - `/register`: For new users to start registration.
+  - `/register/complete`: For new users to set their username after email verification.
+  - `/welcome`: Onboarding page for new users.
+  - `/` (index.astro): Landing page with conditional content for authenticated/unauthenticated users.
+- **React Components**:
+  - `LoginForm.tsx`: Handles the user login form.
+  - `RegisterForm.tsx`: Handles the initial user registration form (email only).
+  - `CompleteRegistrationForm.tsx`: Handles the final registration step (setting username).
+  - `LogoutButton.tsx`: A button for users to sign out.
+- **Astro Layouts**:
+  - `Layout.astro` (Modified): The main layout, which will conditionally render navigation based on auth state.
+  - `AuthLayout.astro` (New): A simpler layout for the auth-related pages (`/login`, `/register`).
 
 ### 2. Pages and Their Components
 
--   The `/login` page will use the `AuthLayout.astro` and render the `LoginForm.tsx` component.
--   The `/register` page will use the `AuthLayout.astro` and render the `RegisterForm.tsx` component.
--   The `/register/complete` page will use the `Layout.astro` (or another protected layout) and render the `CompleteRegistrationForm.tsx` component.
--   The main `Layout.astro` will contain the logic to display either Login/Register links or the `LogoutButton.tsx` within a user menu.
--   The `/welcome` page will use `Layout.astro` and display onboarding content.
+- The `/login` page will use the `AuthLayout.astro` and render the `LoginForm.tsx` component.
+- The `/register` page will use the `AuthLayout.astro` and render the `RegisterForm.tsx` component.
+- The `/register/complete` page will use the `Layout.astro` (or another protected layout) and render the `CompleteRegistrationForm.tsx` component.
+- The main `Layout.astro` will contain the logic to display either Login/Register links or the `LogoutButton.tsx` within a user menu.
+- The `/welcome` page will use `Layout.astro` and display onboarding content.
 
 ### 3. Data Flow Between Components
 
--   **`RegisterForm.tsx`**: The user enters an email. On submission, the component calls the `POST /api/auth/signup` endpoint. It displays a success or error message.
--   **`LoginForm.tsx`**: The user enters an email. On submission, the component calls the `POST /api/auth/signin` endpoint and shows a success/error message.
--   **`CompleteRegistrationForm.tsx`**: The user enters a username. The component performs real-time validation by calling `GET /api/profiles/check-username`. On submission, it calls `PATCH /api/profiles/me`. On success, it triggers a redirect to `/welcome`.
--   **`Layout.astro`**: It reads the user's session status from `Astro.locals.user` (populated by the middleware) to decide which navigation elements to render.
+- **`RegisterForm.tsx`**: The user enters an email. On submission, the component calls the `POST /api/auth/signup` endpoint. It displays a success or error message.
+- **`LoginForm.tsx`**: The user enters an email. On submission, the component calls the `POST /api/auth/signin` endpoint and shows a success/error message.
+- **`CompleteRegistrationForm.tsx`**: The user enters a username. The component performs real-time validation by calling `GET /api/profiles/check-username`. On submission, it calls `PATCH /api/profiles/me`. On success, it triggers a redirect to `/welcome`.
+- **`Layout.astro`**: It reads the user's session status from `Astro.locals.user` (populated by the middleware) to decide which navigation elements to render.
 
 ### 4. Component Functionality
 
--   **`LoginForm.tsx`**: Captures the user's email and initiates the magic link login process.
--   **`RegisterForm.tsx`**: Captures the user's email to start the registration flow.
--   **`CompleteRegistrationForm.tsx`**: Allows a newly verified user to finalize their profile by choosing a unique username.
--   **`LogoutButton.tsx`**: Triggers a `POST` request to `/api/auth/signout` to terminate the user's session.
--   **`AuthLayout.astro`**: Provides a minimal, centered layout for displaying authentication forms.
--   **`Layout.astro`**: Acts as the main application shell, adapting its UI based on the user's authentication state.
+- **`LoginForm.tsx`**: Captures the user's email and initiates the magic link login process.
+- **`RegisterForm.tsx`**: Captures the user's email to start the registration flow.
+- **`CompleteRegistrationForm.tsx`**: Allows a newly verified user to finalize their profile by choosing a unique username.
+- **`LogoutButton.tsx`**: Triggers a `POST` request to `/api/auth/signout` to terminate the user's session.
+- **`AuthLayout.astro`**: Provides a minimal, centered layout for displaying authentication forms.
+- **`Layout.astro`**: Acts as the main application shell, adapting its UI based on the user's authentication state.
 
 </architecture_analysis>
 
 <mermaid_diagram>
+
 ```mermaid
 flowchart TD
     classDef astroPage fill:#FF5E00,stroke:#333,stroke-width:2px,color:#fff;
@@ -102,4 +104,5 @@ flowchart TD
         C3 -- "Wywołuje (walidacja)" --> A5
     end
 ```
+
 </mermaid_diagram>

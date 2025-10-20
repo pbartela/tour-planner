@@ -1,26 +1,27 @@
 <authentication_analysis>
+
 ### 1. Authentication Flows
 
 - **Registration Flow (New User)**:
-    - User provides an email address.
-    - System sends a magic link.
-    - User clicks the link, gets authenticated, and is redirected to a page to set a username.
-    - User sets a unique username to complete registration.
-    - User is redirected to an onboarding page.
+  - User provides an email address.
+  - System sends a magic link.
+  - User clicks the link, gets authenticated, and is redirected to a page to set a username.
+  - User sets a unique username to complete registration.
+  - User is redirected to an onboarding page.
 - **Login Flow (Existing User)**:
-    - User provides their registered email address.
-    - System sends a magic link.
-    - User clicks the link, gets authenticated, and is redirected to their dashboard.
+  - User provides their registered email address.
+  - System sends a magic link.
+  - User clicks the link, gets authenticated, and is redirected to their dashboard.
 - **Session Management & Token Refresh**:
-    - On every request, the middleware validates the session using the JWT from cookies.
-    - If the token is expired but a valid refresh token exists, Supabase Auth issues a new JWT.
-    - The middleware stores user and session info in `Astro.locals`.
+  - On every request, the middleware validates the session using the JWT from cookies.
+  - If the token is expired but a valid refresh token exists, Supabase Auth issues a new JWT.
+  - The middleware stores user and session info in `Astro.locals`.
 - **Protected Routes**:
-    - The middleware checks for a valid session on protected routes.
-    - Unauthenticated users are redirected to the login page.
+  - The middleware checks for a valid session on protected routes.
+  - Unauthenticated users are redirected to the login page.
 - **Profile Completion Check**:
-    - The middleware verifies if a newly authenticated user has set their username.
-    - If the username is not set, the user is redirected to the `/register/complete` page.
+  - The middleware verifies if a newly authenticated user has set their username.
+  - If the username is not set, the user is redirected to the `/register/complete` page.
 
 ### 2. Actors and Interactions
 
@@ -49,6 +50,7 @@
 </authentication_analysis>
 
 <mermaid_diagram>
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -143,4 +145,5 @@ sequenceDiagram
     deactivate Astro Middleware
     deactivate Browser
 ```
+
 </mermaid_diagram>

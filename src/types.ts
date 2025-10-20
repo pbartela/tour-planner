@@ -21,8 +21,8 @@ export interface PaginatedResponse<T> {
 // Authentication
 // ============================================================================
 export type User = {
-	id: string;
-	email: string;
+  id: string;
+  email: string;
 };
 
 /**

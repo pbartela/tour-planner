@@ -17,5 +17,5 @@ export const createTourCommandSchema = z.object({
 });
 
 export const updateTourCommandSchema = createTourCommandSchema.partial().extend({
-	are_votes_hidden: z.boolean().optional(),
+  are_votes_hidden: z.boolean().optional(),
 });

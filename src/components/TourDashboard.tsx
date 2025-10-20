@@ -16,12 +16,12 @@ export const TourDashboard = ({ onboardingCompleted }: TourDashboardProps) => {
     // but for now, we'll just close the modal visually.
   };
 
-	return (
-		<QueryProvider>
-			<TourList />
+  return (
+    <QueryProvider>
+      <TourList />
       <OnboardingModal isOpen={isModalOpen} onClose={handleCloseModal} />
-		</QueryProvider>
-	);
+    </QueryProvider>
+  );
 };
 
 export default TourDashboard;

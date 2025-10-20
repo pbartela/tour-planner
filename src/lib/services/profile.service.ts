@@ -28,7 +28,8 @@ class ProfileService {
     try {
       const { data, error } = await supabase.from("profiles").select("id").eq("username", username).single();
 
-      if (error && error.code !== "PGRST116") { // Ignore "No rows found" error
+      if (error && error.code !== "PGRST116") {
+        // Ignore "No rows found" error
         console.error("Error fetching profile by username:", error);
         throw new Error("Failed to fetch profile from the database.");
       }

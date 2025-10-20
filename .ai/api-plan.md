@@ -4,15 +4,15 @@ This document outlines the REST API for the Tour Planner application. The API is
 
 ## 1. Resources
 
-| Resource | Description | Database Table(s) |
-| :--- | :--- | :--- |
-| `Profile` | Represents a user's profile information. | `public.profiles` |
-| `Tour` | Represents a single tour or trip. | `public.tours` |
-| `Participant` | Represents a user's participation in a tour. | `public.participants` |
-| `Comment` | Represents a comment made on a tour. | `public.comments` |
-| `Vote` | Represents a "like" or vote on a tour. | `public.votes` |
-| `Invitation` | Represents an invitation for a user to join a tour. | `public.invitations` |
-| `Tag` | Represents a tag for categorizing tours. | `public.tags`, `public.tour_tags` |
+| Resource      | Description                                         | Database Table(s)                 |
+| :------------ | :-------------------------------------------------- | :-------------------------------- |
+| `Profile`     | Represents a user's profile information.            | `public.profiles`                 |
+| `Tour`        | Represents a single tour or trip.                   | `public.tours`                    |
+| `Participant` | Represents a user's participation in a tour.        | `public.participants`             |
+| `Comment`     | Represents a comment made on a tour.                | `public.comments`                 |
+| `Vote`        | Represents a "like" or vote on a tour.              | `public.votes`                    |
+| `Invitation`  | Represents an invitation for a user to join a tour. | `public.invitations`              |
+| `Tag`         | Represents a tag for categorizing tours.            | `public.tags`, `public.tour_tags` |
 
 ## 2. Endpoints
 
@@ -23,6 +23,7 @@ These endpoints handle user authentication via Supabase's magic link (OTP) flow.
 ---
 
 #### Request Magic Link
+
 - **Method:** `POST`
 - **URL:** `/api/auth/magic-link`
 - **Description:** Initiates the login or registration process by sending a magic link to the user's email. The backend automatically detects if the user is new and triggers the appropriate sign-up or sign-in flow.
@@ -50,6 +51,7 @@ Endpoints for managing user profiles. The `me` keyword is used to refer to the c
 ---
 
 #### Get Current User's Profile
+
 - **Method:** `GET`
 - **URL:** `/api/profiles/me`
 - **Description:** Retrieves the profile of the currently authenticated user.
@@ -74,6 +76,7 @@ Endpoints for managing user profiles. The `me` keyword is used to refer to the c
 ---
 
 #### Update Current User's Profile
+
 - **Method:** `PATCH`
 - **URL:** `/api/profiles/me`
 - **Description:** Updates the profile of the currently authenticated user. Also used to mark onboarding as complete.
@@ -102,6 +105,7 @@ Endpoints for managing tours.
 ---
 
 #### Get Tours
+
 - **Method:** `GET`
 - **URL:** `/api/tours`
 - **Description:** Retrieves a list of tours the current user is participating in.
@@ -137,6 +141,7 @@ Endpoints for managing tours.
 ---
 
 #### Create a New Tour
+
 - **Method:** `POST`
 - **URL:** `/api/tours`
 - **Description:** Creates a new tour. The creator is automatically set as the owner and a participant.
@@ -162,6 +167,7 @@ Endpoints for managing tours.
 ---
 
 #### Get Tour Details
+
 - **Method:** `GET`
 - **URL:** `/api/tours/{tourId}`
 - **Description:** Retrieves the full details of a specific tour.
@@ -192,6 +198,7 @@ Endpoints for managing tours.
 ---
 
 #### Update a Tour
+
 - **Method:** `PATCH`
 - **URL:** `/api/tours/{tourId}`
 - **Description:** Updates the details of a tour. Can also be used by the owner to block/unblock voting. Only the tour owner can perform this action.
@@ -213,6 +220,7 @@ Endpoints for managing tours.
 ---
 
 #### Delete a Tour
+
 - **Method:** `DELETE`
 - **URL:** `/api/tours/{tourId}`
 - **Description:** Deletes a tour. Only the tour owner can perform this action.
@@ -232,6 +240,7 @@ Endpoints for managing tour participants.
 ---
 
 #### Get Tour Participants
+
 - **Method:** `GET`
 - **URL:** `/api/tours/{tourId}/participants`
 - **Description:** Retrieves the list of participants for a tour.
@@ -255,6 +264,7 @@ Endpoints for managing tour participants.
 ---
 
 #### Remove a Participant (Owner action)
+
 - **Method:** `DELETE`
 - **URL:** `/api/tours/{tourId}/participants/{userId}`
 - **Description:** Removes a participant from a tour. Only the tour owner can perform this action. The owner cannot remove themselves.
@@ -267,6 +277,7 @@ Endpoints for managing tour participants.
 ---
 
 #### Leave a Tour (Participant action)
+
 - **Method:** `DELETE`
 - **URL:** `/api/tours/{tourId}/participants/me`
 - **Description:** Allows the authenticated user to leave a tour. A tour owner cannot leave a tour they own.
@@ -285,6 +296,7 @@ Endpoints for managing invitations.
 ---
 
 #### Invite Participants to a Tour
+
 - **Method:** `POST`
 - **URL:** `/api/tours/{tourId}/invitations`
 - **Description:** Sends email invitations to join a tour. Only the tour owner can invite.
@@ -316,6 +328,7 @@ Endpoints for managing comments on a tour.
 ---
 
 #### Get Tour Comments
+
 - **Method:** `GET`
 - **URL:** `/api/tours/{tourId}/comments`
 - **Description:** Retrieves all comments for a tour, sorted by creation date.
@@ -347,6 +360,7 @@ Endpoints for managing comments on a tour.
 ---
 
 #### Create a Comment
+
 - **Method:** `POST`
 - **URL:** `/api/tours/{tourId}/comments`
 - **Description:** Adds a new comment to a tour.
@@ -366,6 +380,7 @@ Endpoints for managing comments on a tour.
 ---
 
 #### Update a Comment
+
 - **Method:** `PATCH`
 - **URL:** `/api/tours/{tourId}/comments/{commentId}`
 - **Description:** Updates a comment. Users can only update their own comments.
@@ -385,6 +400,7 @@ Endpoints for managing comments on a tour.
 ---
 
 #### Delete a Comment
+
 - **Method:** `DELETE`
 - **URL:** `/api/tours/{tourId}/comments/{commentId}`
 - **Description:** Deletes a comment. Users can only delete their own comments.
@@ -403,6 +419,7 @@ Endpoints for voting on a tour.
 ---
 
 #### Get Tour Votes
+
 - **Method:** `GET`
 - **URL:** `/api/tours/{tourId}/votes`
 - **Description:** Retrieves all votes for a tour.
@@ -422,6 +439,7 @@ Endpoints for voting on a tour.
 ---
 
 #### Cast or Remove a Vote
+
 - **Method:** `POST`
 - **URL:** `/api/tours/{tourId}/vote`
 - **Description:** Toggles the current user's vote ("like") for a tour. If the user has voted, it removes the vote. If they haven't, it adds a vote.
@@ -446,6 +464,7 @@ Endpoints for managing tags on archived tours.
 ---
 
 #### Add Tags to a Tour
+
 - **Method:** `POST`
 - **URL:** `/api/tours/{tourId}/tags`
 - **Description:** Adds one or more tags to an archived tour.

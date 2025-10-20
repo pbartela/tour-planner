@@ -5,75 +5,75 @@ export const prerender = false;
 ---
 
 <html lang="en">
-<head>
+  <head>
     <meta charset="utf-8" />
     <title>Authenticating...</title>
     <script>
-        // Handle authentication callback with tokens in URL fragment
-        async function handleAuthCallback() {
-            const fragment = window.location.hash.substring(1);
-            const params = new URLSearchParams(fragment);
-            
-            const accessToken = params.get('access_token');
-            const refreshToken = params.get('refresh_token');
-            const error = params.get('error');
-            const errorDescription = params.get('error_description');
-            
-            // Get the intended destination from query params
-            const urlParams = new URLSearchParams(window.location.search);
-            const next = urlParams.get('next') || '/en-US/';
-            
-            if (error) {
-                console.error('Auth error:', error, errorDescription);
-                window.location.href = '/en-US/login?error=' + encodeURIComponent(error);
-                return;
-            }
-            
-            if (accessToken && refreshToken) {
-                try {
-                    // Send tokens to server to establish session
-                    const response = await fetch('/api/auth/session', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            access_token: accessToken,
-                            refresh_token: refreshToken,
-                        }),
-                    });
-                    
-                    if (response.ok) {
-                        const result = await response.json();
-                        if (result.needsRegistration) {
-                            window.location.href = '/en-US/register/complete';
-                        } else {
-                            window.location.href = next;
-                        }
-                    } else {
-                        console.error('Failed to establish session');
-                        window.location.href = '/en-US/login?error=session_failed';
-                    }
-                } catch (err) {
-                    console.error('Session establishment error:', err);
-                    window.location.href = '/en-US/login?error=unexpected_error';
-                }
-            } else {
-                // No tokens found
-                window.location.href = '/en-US/login?error=no_tokens';
-            }
+      // Handle authentication callback with tokens in URL fragment
+      async function handleAuthCallback() {
+        const fragment = window.location.hash.substring(1);
+        const params = new URLSearchParams(fragment);
+
+        const accessToken = params.get("access_token");
+        const refreshToken = params.get("refresh_token");
+        const error = params.get("error");
+        const errorDescription = params.get("error_description");
+
+        // Get the intended destination from query params
+        const urlParams = new URLSearchParams(window.location.search);
+        const next = urlParams.get("next") || "/en-US/";
+
+        if (error) {
+          console.error("Auth error:", error, errorDescription);
+          window.location.href = "/en-US/login?error=" + encodeURIComponent(error);
+          return;
         }
-        
-        // Run when page loads
-        window.addEventListener('load', handleAuthCallback);
+
+        if (accessToken && refreshToken) {
+          try {
+            // Send tokens to server to establish session
+            const response = await fetch("/api/auth/session", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                access_token: accessToken,
+                refresh_token: refreshToken,
+              }),
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              if (result.needsRegistration) {
+                window.location.href = "/en-US/register/complete";
+              } else {
+                window.location.href = next;
+              }
+            } else {
+              console.error("Failed to establish session");
+              window.location.href = "/en-US/login?error=session_failed";
+            }
+          } catch (err) {
+            console.error("Session establishment error:", err);
+            window.location.href = "/en-US/login?error=unexpected_error";
+          }
+        } else {
+          // No tokens found
+          window.location.href = "/en-US/login?error=no_tokens";
+        }
+      }
+
+      // Run when page loads
+      window.addEventListener("load", handleAuthCallback);
     </script>
-</head>
-<body>
+  </head>
+  <body>
     <div style="display: flex; align-items: center; justify-content: center; height: 100vh; font-family: system-ui;">
-        <div style="text-align: center;">
-            <h2>Authenticating...</h2>
-            <p>Please wait while we sign you in.</p>
-        </div>
+      <div style="text-align: center;">
+        <h2>Authenticating...</h2>
+        <p>Please wait while we sign you in.</p>
+      </div>
     </div>
-</body>
+  </body>
 </html>
