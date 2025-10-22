@@ -1,10 +1,11 @@
 import { defineMiddleware } from "astro:middleware";
 import { supabaseClient as supabase } from "@/db/supabase.client";
 import { CompletedProfileSchema } from "@/lib/validators/profile.validators";
+import type { User } from "src/types";
 
 const protectedRoutes = ["/", "/profile", "/tours"];
-const authRoutes = ["/login", "/register/complete"];
-const publicRoutes = ["/auth-callback"];
+// Routes that authenticated users should be redirected away from.
+const authRoutes = ["/login"];
 
 export const onRequest = defineMiddleware(async (context, next) => {
   context.locals.supabase = supabase;
@@ -14,33 +15,51 @@ export const onRequest = defineMiddleware(async (context, next) => {
     ? context.url.pathname.replace(new RegExp(`^/${context.params.locale}`), "") || "/"
     : context.url.pathname;
 
-  if (pathWithoutLocale.startsWith("/api/auth/") || publicRoutes.some((route) => pathWithoutLocale.startsWith(route))) {
+  // API routes are not handled by this page-level redirect middleware.
+  if (pathWithoutLocale.startsWith("/api/")) {
     return next();
   }
 
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  const user = session?.user;
+  const sessionUser = session?.user;
 
   context.locals.session = session;
-  context.locals.user = user ? { id: user.id, email: user.email! } : undefined;
 
-  const isProtectedRoute = protectedRoutes.some((route) => pathWithoutLocale.startsWith(route));
-  const isAuthRoute = authRoutes.some((route) => pathWithoutLocale.startsWith(route));
+  if (sessionUser) {
+    const { data: profile } = await supabase.from("profiles").select("*").eq("id", sessionUser.id).single();
 
-  if (user) {
-    const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single();
-    const isProfileComplete = CompletedProfileSchema.safeParse(profile).success;
+    if (profile) {
+      const user: User = {
+        id: sessionUser.id,
+        email: sessionUser.email!,
+        profile,
+      };
+      context.locals.user = user;
 
-    if (!isProfileComplete) {
-      if (pathWithoutLocale !== "/register/complete" && !pathWithoutLocale.startsWith("/api")) {
-        return context.redirect(`/${lang}/register/complete`);
+      const isProfileComplete = CompletedProfileSchema.safeParse(profile).success;
+
+      // If profile is incomplete, user must be on the complete registration page.
+      if (!isProfileComplete) {
+        if (pathWithoutLocale !== "/register/complete") {
+          return context.redirect(`/${lang}/register/complete`);
+        }
+      } else if (authRoutes.some((route) => pathWithoutLocale.startsWith(route))) {
+        // If profile is complete, redirect away from auth routes (e.g. /login).
+        return context.redirect(`/${lang}/`);
       }
-    } else if (isAuthRoute) {
-      return context.redirect(`/${lang}/`);
     }
-  } else if (isProtectedRoute && !isAuthRoute) {
+    // If there is a session user but no profile, they are effectively logged out
+    // from the app's perspective. The logic below will handle redirection if needed.
+  }
+
+  const isProtectedRoute = protectedRoutes.some((route) =>
+    route === "/" ? pathWithoutLocale === route : pathWithoutLocale.startsWith(route)
+  );
+
+  // If user is not logged in and trying to access a protected route, redirect to login.
+  if (!context.locals.user && isProtectedRoute) {
     return context.redirect(`/${lang}/login?redirect=${encodeURIComponent(pathWithoutLocale)}`);
   }
 

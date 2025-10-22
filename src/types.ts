@@ -20,18 +20,16 @@ export interface PaginatedResponse<T> {
 // ============================================================================
 // Authentication
 // ============================================================================
+
+/**
+ * Represents the authenticated user object, combining Supabase user data
+ * with the application-specific profile. This is the shape of `Astro.locals.user`.
+ */
 export type User = {
   id: string;
   email: string;
+  profile: ProfileDto;
 };
-
-/**
- * Command model for initiating the magic link sign-in process.
- * Corresponds to the request body of `POST /api/auth/signin`.
- */
-export interface SignInCommand {
-  email: string;
-}
 
 // ============================================================================
 // Profiles

@@ -91,7 +91,6 @@ This endpoint retrieves the profile data of the currently authenticated user. It
   ```json
   {
     "id": "c3a4b1d2-...",
-    "username": "tour_master",
     "display_name": "Alex",
     "language": "en",
     "theme": "dark",

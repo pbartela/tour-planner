@@ -2,11 +2,15 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "command": "./node_modules/.bin/astro dev",
-      "name": "Development server",
+      "name": "Node: Astro Dev",
+      "type": "node",
       "request": "launch",
-      "type": "node-terminal"
-    },    
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/astro",
+      "runtimeArgs": ["dev"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": ["<node_internals>/**"]
+    },
     {
       "name": "Launch Chrome against localhost",
       "type": "chrome",
@@ -14,6 +18,13 @@
       "url": "http://localhost:3000",
       "webRoot": "${workspaceFolder}",
       "sourceMaps": true
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Node + Chrome",
+      "configurations": ["Node: Astro Dev", "Launch Chrome against localhost"],
+      "stopAll": true
     }
   ]
 }

@@ -13,9 +13,6 @@ To refactor the existing authentication system into a single, unified flow where
 ### Files to be Modified
 
 - `src/components/auth/LoginForm.tsx`: To update the UI, text, and logic to call the new endpoint.
-- `src/middleware/index.ts`: To enforce profile completion for new users.
-- `src/lib/validators/auth.validators.ts`: To consolidate Zod validation for the magic link flow.
-- `src/lib/validators/profile.validators.ts`: To add a Zod schema for validating a completed user profile.
 - `src/pages/[...locale]/login.astro`: To simplify the page and remove the link to the old register page.
 - `public/locales/en-US/auth.json`: To add new i18n keys for the unified form.
 - `public/locales/pl-PL/auth.json`: To add new i18n keys for the unified form.
@@ -42,7 +39,7 @@ To refactor the existing authentication system into a single, unified flow where
       - Set the `emailRedirectTo` option to a sanitized absolute URL based on the `redirectTo` parameter from the client, defaulting to the homepage.
     - **If User Does Not Exist (Sign-up):**
       - Call `supabase.auth.signUp()`.
-      - Set the `emailRedirectTo` option to the absolute URL for `/register/complete`.
+      - Set the `emailRedirectTo` option to the absolute URL for the welcome/onboarding page.
 6.  **Error Handling:** Wrap the Supabase calls in a `try...catch` block. On failure, return a `500 Internal Server Error` with a generic JSON error message.
 7.  **Success Response:** On success, return a `200 OK` response with an empty body.
 
@@ -51,19 +48,13 @@ To refactor the existing authentication system into a single, unified flow where
 1.  **In `src/lib/validators/auth.validators.ts`:**
     - Remove the old schemas.
     - Create a single `MagicLinkSchema` containing `z.string().email()`.
-2.  **In `src/lib/validators/profile.validators.ts`:**
-    - Create a `CompletedProfileSchema` that validates `username` as `z.string().min(3).max(20)`. This will be used by the middleware.
 
-### Step 3: Middleware - Enforce Profile Completion
+### Step 3: Middleware
 
 1.  **Modify `src/middleware/index.ts`:**
 2.  After retrieving the user session, check if `Astro.locals.user` exists.
 3.  If the user exists, fetch their corresponding data from the `profiles` table.
-4.  Use the `CompletedProfileSchema` to safely parse the fetched profile.
-5.  **If parsing fails (i.e., `username` is `null` or invalid):**
-    - Check if the current request path is `/register/complete` or an essential API path.
-    - If it is not, perform a `return context.redirect("/register/complete")`.
-6.  Define and use a consistent `User` type from `src/types.ts` for `Astro.locals.user`.
+4.  Define and use a consistent `User` type from `src/types.ts` for `Astro.locals.user`.
 
 ### Step 4: Frontend - Update `LoginForm.tsx`
 

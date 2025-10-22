@@ -47,7 +47,7 @@ class ProfileService {
     command: UpdateProfileCommand
   ): Promise<{ data: ProfileDto | null; error: Error | null }> {
     try {
-      const { data, error } = await supabase.from("profiles").update(command).eq("id", userId).select().single();
+      const { data, error } = await supabase.from("profiles").update(command).eq("id", userId).select().maybeSingle();
 
       if (error) {
         console.error("Error updating profile:", error);

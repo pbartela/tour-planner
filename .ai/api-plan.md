@@ -1,4 +1,4 @@
-# REST API Plan
+REST API Plan
 
 This document outlines the REST API for the Tour Planner application. The API is designed to be RESTful, using standard HTTP methods and status codes. All endpoints are prefixed with `/api`.
 
@@ -22,7 +22,7 @@ These endpoints handle user authentication via Supabase's magic link (OTP) flow.
 
 ---
 
-#### Request Magic Link
+#### Request Magic Link*
 
 - **Method:** `POST`
 - **URL:** `/api/auth/magic-link`
@@ -61,7 +61,6 @@ Endpoints for managing user profiles. The `me` keyword is used to refer to the c
     ```json
     {
       "id": "c3a4b1d2-..."
-      "username": "tour_master",
       "display_name": "Alex",
       "language": "en",
       "theme": "dark",
@@ -251,7 +250,6 @@ Endpoints for managing tour participants.
     [
       {
         "user_id": "c3a4b1d2-...",
-        "username": "tour_master",
         "display_name": "Alex",
         "joined_at": "2025-10-16T10:00:00Z"
       }
@@ -344,7 +342,6 @@ Endpoints for managing comments on a tour.
         {
           "id": "e5d6c7b8-...",
           "user_id": "c3a4b1d2-...",
-          "username": "tour_master",
           "content": "Can't wait for this trip!",
           "created_at": "2025-10-17T11:00:00Z",
           "updated_at": "2025-10-17T11:00:00Z"

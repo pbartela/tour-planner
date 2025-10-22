@@ -23,7 +23,6 @@ create type public.invitation_status as enum ('pending', 'accepted', 'declined')
 -- profiles table
 create table public.profiles (
     id uuid primary key,
-    username text unique check (length(username) >= 3 and length(username) <= 20 and username ~ '^[a-zA-Z0-9_]+$'),
     display_name text,
     language text not null default 'en',
     theme text not null default 'system',
@@ -123,8 +122,8 @@ comment on table public.tour_tags is 'joining table for the many-to-many relatio
 alter table public.tour_tags enable row level security;
 
 -- anonymized user record
-insert into public.profiles (id, username, display_name)
-values ('00000000-0000-0000-0000-000000000000', 'anonymized', 'Anonymized User');
+insert into public.profiles (id, display_name)
+values ('00000000-0000-0000-0000-000000000000', 'Anonymized User');
 
 -- indexes
 create index on public.participants (user_id);
@@ -211,7 +210,11 @@ create policy "tour owners can delete their tours" on public.tours
 
 -- participants
 create policy "users can view participants of tours they are in" on public.participants
-  for select using (exists (select 1 from participants p where p.tour_id = participants.tour_id and p.user_id = auth.uid()));
+  for select using (
+    auth.uid() in (
+      select user_id from participants where tour_id = participants.tour_id
+    )
+  );
 
 create policy "tour owners can add new participants" on public.participants
   for insert with check (exists (select 1 from tours where id = participants.tour_id and owner_id = auth.uid()));

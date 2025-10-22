@@ -1,16 +1,22 @@
 /// <reference types="astro/client" />
 
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./db/database.types.ts";
+import type { User } from "./types.ts";
 
-declare namespace App {
-  interface Locals {
-    supabase: import("@supabase/supabase-js").SupabaseClient;
-    session: import("@supabase/supabase-js").Session | null;
-    user?: {
-      id: string;
-      email: string;
-    };
+declare global {
+  namespace App {
+    interface Locals {
+      supabase: SupabaseClient<Database>;
+      session: Session | null;
+      user: User | undefined;
+      cookies: {
+        delete(
+          name: "sb-access-token" | "sb-refresh-token",
+          options?: import("astro").CookieDeleteOptions,
+        ): void;
+      };
+    }
   }
 }
 

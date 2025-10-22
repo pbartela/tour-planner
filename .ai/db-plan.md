@@ -12,7 +12,6 @@ Stores user profile information, extending the `auth.users` table.
 | Column                 | Type          | Constraints                                                                                         | Description                                                      |
 | :--------------------- | :------------ | :-------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
 | `id`                   | `uuid`        | Primary Key, Foreign Key to `auth.users.id`                                                         | References the user in Supabase's auth system.                   |
-| `username`             | `text`        | Unique, CHECK `(length(username) >= 3 AND length(username) <= 20 AND username ~ '^[a-zA-Z0-9_]+$')` | Unique username (3-20 characters, alphanumeric and underscores). |
 | `display_name`         | `text`        |                                                                                                     | Optional display name (full name).                               |
 | `language`             | `text`        | Not Null, Default `'en'`                                                                            | User's preferred language.                                       |
 | `theme`                | `text`        | Not Null, Default `'system'`                                                                        | User's preferred theme (e.g., 'light', 'dark', 'system').        |

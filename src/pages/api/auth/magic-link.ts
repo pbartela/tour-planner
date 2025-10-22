@@ -1,66 +1,37 @@
 import type { APIRoute } from "astro";
-import { supabaseClient as supabase } from "@/db/supabase.client";
-import { MagicLinkSchema } from "@/lib/validators/auth.validators";
-import { createSupabaseAdminClient } from "@/db/supabase.admin.client";
+import { MagicLinkSchema } from "src/lib/validators/auth.validators";
+import { createSupabaseAdminClient } from "src/db/supabase.admin.client";
 
-export const prerender = false;
+export const POST: APIRoute = async ({ request }) => {
+  const data = await request.json();
+  const parsedData = MagicLinkSchema.safeParse(data);
 
-export const POST: APIRoute = async ({ request, url }) => {
-  const body = await request.json();
-  const result = MagicLinkSchema.safeParse(body);
-
-  if (!result.success) {
-    return new Response(JSON.stringify({ error: "Invalid input" }), {
-      status: 400,
-    });
+  if (!parsedData.success) {
+    return new Response(JSON.stringify(parsedData.error), { status: 400 });
   }
 
-  const { email, redirectTo, locale } = result.data;
-  const lang = locale || "en-US";
+  const { email, redirectTo } = parsedData.data;
 
-  try {
-    const supabaseAdmin = createSupabaseAdminClient();
-    const {
-      data: { users },
-      error: userError,
-    } = await supabaseAdmin.auth.admin.listUsers();
+  const redirectURL = new URL(request.headers.get("referer") || "/", request.url);
+  redirectURL.pathname = redirectTo || redirectURL.pathname;
 
-    if (userError) {
-      console.error("Error finding user:", userError);
-      throw new Error(`Error finding user: ${userError.message}`);
-    }
-    const user = users.find((u) => u.email === email);
-    if (user) {
-      // User exists, so sign them in
-      const { error: signInError } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${url.origin}/auth-callback?next=${encodeURIComponent(redirectTo || `/${lang}/`)}`,
-        },
-      });
-      if (signInError) {
-        throw signInError;
-      }
-    } else {
-      // User does not exist, so create them and send a magic link
-      const { error: signUpError } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          shouldCreateUser: true,
-          emailRedirectTo: `${url.origin}/auth-callback?next=${encodeURIComponent(`/${lang}/register/complete`)}`,
-        },
-      });
-      if (signUpError) {
-        throw signUpError;
-      }
-    }
+  // Use admin client for server-side auth operations
+  const supabaseAdmin = createSupabaseAdminClient();
 
-    return new Response(null, { status: 200 });
-  } catch (error) {
-    // TODO: Add error logging
-    console.error("Unexpected error in POST /api/auth/magic-link:", error);
-    return new Response(JSON.stringify({ error: "Internal Server Error" }), {
+  // Use signInWithOtp which handles both existing and new users
+  const { error } = await supabaseAdmin.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: redirectURL.toString(),
+      shouldCreateUser: true,
+    },
+  });
+
+  if (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
     });
   }
+
+  return new Response(JSON.stringify({ message: "Magic link sent successfully" }), { status: 200 });
 };

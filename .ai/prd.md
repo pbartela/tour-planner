@@ -26,7 +26,7 @@ Organizing trips in a group of friends is often chaotic, inefficient, and leads 
 ### 3.2. User Account System
 
 - Registration and login are passwordless, using "magic links" sent to the user's email address. The links are valid for 15-20 minutes.
-- Each user has a profile where they can edit their display name (a unique username or an optional first/last name) and preferences, such as application language and theme.
+- Each user has a profile where they can edit their display name and preferences, such as application language and theme.
 - The user's profile contains lists of their active and archived tours.
 
 ### 3.3. Social and Voting System
@@ -70,11 +70,9 @@ The following functionalities are intentionally out of scope for the MVP (Minimu
 
 - **ID:** US-001
 - **Title:** New user registration via magic link
-- **Description:** As a new user, I want to be able to register an account by providing my email and a unique username, so I can start planning tours.
+- **Description:** As a new user, I want to be able to register an account by providing my email, so I can start planning tours.
 - **Acceptance Criteria:**
   - After providing my email on the registration page, I receive a message with a magic link.
-  - After clicking the link, I am taken to a registration completion page where I must provide a unique username (3-20 alphanumeric characters and underscores).
-  - The system checks the uniqueness of the username in real-time.
   - After successful registration, I am logged in and see a welcome screen (onboarding).
 
 - **ID:** US-002
@@ -109,7 +107,7 @@ The following functionalities are intentionally out of scope for the MVP (Minimu
 - **Description:** As a logged-in user, I want to be able to edit the details on my profile to update them.
 - **Acceptance Criteria:**
   - There is an edit option on the profile page.
-  - I can change my display name (choice between a unique username and an optional first/last name).
+  - I can change my display name.
   - I cannot change my email address.
   - Changes are saved after clicking the "Save" button.
 
