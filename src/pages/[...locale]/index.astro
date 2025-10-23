@@ -4,15 +4,11 @@ import TourDashboard from "@/components/TourDashboard";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { profileService } from "@/lib/services/profile.service";
 
-const { user, supabase } = Astro.locals;
-let onboardingCompleted = true; // Default to true for existing users or if fetch fails
+const { user } = Astro.locals;
 
-if (user) {
-  const { data: profile } = await profileService.getProfile(supabase, user.id);
-  if (profile) {
-    onboardingCompleted = profile.onboarding_completed;
-  }
-}
+// User is guaranteed to exist here because of middleware protection.
+// Default to true only as a fallback, though it shouldn't be needed.
+const onboardingCompleted = user?.profile.onboarding_completed ?? true;
 ---
 
 <Layout title="Dashboard">

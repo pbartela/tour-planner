@@ -5,8 +5,13 @@ import { updateProfileCommandSchema } from "@/lib/validators/profile.validators"
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ locals }) => {
-  const { supabase, session } = locals;
+export const GET: APIRoute = async ({ locals, cookies }) => {
+  const { supabase } = locals;
+
+  // Get session from Supabase since middleware doesn't run for API routes
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
   if (!session?.user) {
     return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
@@ -31,8 +36,13 @@ export const GET: APIRoute = async ({ locals }) => {
   }
 };
 
-export const PATCH: APIRoute = async ({ request, locals }) => {
-  const { supabase, session } = locals;
+export const PATCH: APIRoute = async ({ request, locals, cookies }) => {
+  const { supabase } = locals;
+
+  // Get session from Supabase since middleware doesn't run for API routes
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
   if (!session?.user) {
     return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });

@@ -1,13 +1,14 @@
 import { defineMiddleware } from "astro:middleware";
-import { supabaseClient as supabase } from "@/db/supabase.client";
 import { CompletedProfileSchema } from "@/lib/validators/profile.validators";
 import type { User } from "src/types";
+import { createSupabaseServerClient } from "@/db/supabase.client";
 
 const protectedRoutes = ["/", "/profile", "/tours"];
 // Routes that authenticated users should be redirected away from.
 const authRoutes = ["/login"];
 
 export const onRequest = defineMiddleware(async (context, next) => {
+  const supabase = createSupabaseServerClient(context.cookies);
   context.locals.supabase = supabase;
 
   const lang = context.params.locale || "en-US";
@@ -38,15 +39,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
       };
       context.locals.user = user;
 
-      const isProfileComplete = CompletedProfileSchema.safeParse(profile).success;
-
-      // If profile is incomplete, user must be on the complete registration page.
-      if (!isProfileComplete) {
-        if (pathWithoutLocale !== "/register/complete") {
-          return context.redirect(`/${lang}/register/complete`);
-        }
-      } else if (authRoutes.some((route) => pathWithoutLocale.startsWith(route))) {
-        // If profile is complete, redirect away from auth routes (e.g. /login).
+      // If a user is fully authenticated and tries to visit an auth route (e.g., /login),
+      // redirect them to the main dashboard.
+      if (authRoutes.some((route) => pathWithoutLocale.startsWith(route))) {
         return context.redirect(`/${lang}/`);
       }
     }

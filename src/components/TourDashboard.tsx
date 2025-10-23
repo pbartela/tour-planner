@@ -1,26 +1,30 @@
-import { QueryProvider } from "@/components/QueryProvider";
-import { TourList } from "@/components/tours/TourList";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OnboardingModal } from "@/components/OnboardingModal";
-import { useState } from "react";
 
 interface TourDashboardProps {
   onboardingCompleted: boolean;
 }
 
-export const TourDashboard = ({ onboardingCompleted }: TourDashboardProps) => {
-  const [isModalOpen, setIsModalOpen] = useState(!onboardingCompleted);
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    // Optionally, you could refetch user data here to confirm onboarding status,
-    // but for now, we'll just close the modal visually.
-  };
+const TourDashboard = ({ onboardingCompleted }: TourDashboardProps) => {
+  if (!onboardingCompleted) {
+    return <OnboardingModal isOpen={true} />;
+  }
 
   return (
-    <QueryProvider>
-      <TourList />
-      <OnboardingModal isOpen={isModalOpen} onClose={handleCloseModal} />
-    </QueryProvider>
+    <div className="container mx-auto py-10">
+      <Card>
+        <CardHeader>
+          <CardTitle>Welcome to your Dashboard!</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center">
+            <p className="mb-4">You don't have any active tours yet.</p>
+            <Button>Create Your First Tour</Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

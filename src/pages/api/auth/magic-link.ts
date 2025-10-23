@@ -12,8 +12,12 @@ export const POST: APIRoute = async ({ request }) => {
 
   const { email, redirectTo } = parsedData.data;
 
-  const redirectURL = new URL(request.headers.get("referer") || "/", request.url);
-  redirectURL.pathname = redirectTo || redirectURL.pathname;
+  // Always redirect to auth callback page, passing the intended destination as a query param
+  const redirectURL = new URL(request.url);
+  redirectURL.pathname = "/auth-callback";
+  if (redirectTo) {
+    redirectURL.searchParams.set("next", redirectTo);
+  }
 
   // Use admin client for server-side auth operations
   const supabaseAdmin = createSupabaseAdminClient();

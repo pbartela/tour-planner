@@ -81,7 +81,7 @@ The following functionalities are intentionally out of scope for the MVP (Minimu
 - **Acceptance Criteria:**
   - After providing my registered email on the login page, I receive a message with a magic link.
   - The link is valid for 15-20 minutes.
-  - After clicking a valid link, I am automatically logged in and redirected to my tour list.
+  - After clicking a valid link, I am automatically logged in and redirected to my tour list if redirect parameter was empty or invalid.
   - Attempting to use an invalid or expired link results in an error message and a request to generate a new link.
 
 - **ID:** US-003

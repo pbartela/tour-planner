@@ -10,7 +10,7 @@ export const prerender = false;
     <title>Authenticating...</title>
     <script>
       // Handle authentication callback with tokens in URL fragment
-      async function handleAuthCallback() {
+      const handleAuthCallback = async () => {
         const fragment = window.location.hash.substring(1);
         const params = new URLSearchParams(fragment);
 
@@ -24,6 +24,7 @@ export const prerender = false;
         const next = urlParams.get("next") || "/en-US/";
 
         if (error) {
+          // eslint-disable-next-line no-console
           console.error("Auth error:", error, errorDescription);
           window.location.href = "/en-US/login?error=" + encodeURIComponent(error);
           return;
@@ -44,17 +45,16 @@ export const prerender = false;
             });
 
             if (response.ok) {
-              const result = await response.json();
-              if (result.needsRegistration) {
-                window.location.href = "/en-US/register/complete";
-              } else {
-                window.location.href = next;
-              }
+              // Since we removed username logic, all users go to dashboard/welcome page
+              // New users will see the onboarding modal automatically
+              window.location.href = next;
             } else {
+              // eslint-disable-next-line no-console
               console.error("Failed to establish session");
               window.location.href = "/en-US/login?error=session_failed";
             }
           } catch (err) {
+            // eslint-disable-next-line no-console
             console.error("Session establishment error:", err);
             window.location.href = "/en-US/login?error=unexpected_error";
           }
@@ -62,10 +62,10 @@ export const prerender = false;
           // No tokens found
           window.location.href = "/en-US/login?error=no_tokens";
         }
-      }
+      };
 
       // Run when page loads
-      window.addEventListener("load", handleAuthCallback);
+      window.addEventListener("load", () => handleAuthCallback());
     </script>
   </head>
   <body>

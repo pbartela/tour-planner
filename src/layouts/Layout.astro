@@ -1,6 +1,7 @@
 ---
 import { ViewTransitions } from "astro:transitions";
 import { Toaster } from "react-hot-toast";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 interface Props {
   title: string;
@@ -22,31 +23,33 @@ const { user } = Astro.locals;
     <ViewTransitions />
   </head>
   <body>
-    <header class="bg-gray-800 text-white p-4">
-      <nav class="container mx-auto flex justify-between items-center">
-        <a href="/" class="text-xl font-bold">Tour Planner</a>
-        <div>
-          {user ? (
-            <div class="flex items-center gap-4">
-              <span>Welcome, {user.profile.display_name || user.email}</span>
-              <form action="/api/auth/signout" method="post">
-                <button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
-                  Logout
-                </button>
-              </form>
-            </div>
-          ) : (
-            <a href="/login" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-              Login
-            </a>
-          )}
-        </div>
-      </nav>
-    </header>
-    <main class="container mx-auto p-4">
-      <Toaster />
-      <slot />
-    </main>
+    <ThemeProvider userTheme={user?.profile?.theme} client:load>
+      <header class="bg-gray-800 text-white p-4">
+        <nav class="container mx-auto flex justify-between items-center">
+          <a href="/" class="text-xl font-bold">Tour Planner</a>
+          <div>
+            {user ? (
+              <div class="flex items-center gap-4">
+                <span>Welcome, {user.profile.display_name || user.email}</span>
+                <form action="/api/auth/signout" method="post">
+                  <button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
+                    Logout
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <a href="/login" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                Login
+              </a>
+            )}
+          </div>
+        </nav>
+      </header>
+      <main class="container mx-auto p-4">
+        <Toaster />
+        <slot />
+      </main>
+    </ThemeProvider>
   </body>
 </html>
 <style is:global>
@@ -58,8 +61,6 @@ const { user } = Astro.locals;
   }
   html {
     font-family: system-ui, sans-serif;
-    background: #13151a;
-    background-size: 224px;
   }
   code {
     font-family:
