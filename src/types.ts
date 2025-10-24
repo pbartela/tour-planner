@@ -207,3 +207,18 @@ export interface ToggleVoteResponseDto {
 export interface AddTagsCommand {
   tags: string[];
 }
+
+// ============================================================================
+// Error Handling
+// ============================================================================
+
+/**
+ * Represents error information for user-facing error messages.
+ * Used by the error mapping service to provide localized error details.
+ */
+export interface ErrorInfo {
+  title: string;
+  message: string;
+  action: string;
+  errorCode: string;
+}

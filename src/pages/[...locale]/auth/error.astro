@@ -1,0 +1,54 @@
+---
+import AuthLayout from "@/layouts/AuthLayout.astro";
+import { getErrorInfo } from "@/lib/server/error-mapping.service";
+import i18next from "i18next";
+
+const error = Astro.url.searchParams.get("error");
+const errorDescription = Astro.url.searchParams.get("error_description");
+const locale = Astro.params.locale || import.meta.env.PUBLIC_DEFAULT_LOCALE || "en-US";
+
+// Use the error mapping service to get localized error information
+const errorInfo = getErrorInfo(error, errorDescription, locale);
+---
+
+<AuthLayout title={errorInfo.title}>
+  <div class="flex flex-col items-center justify-center min-h-[60vh] px-4">
+    <div class="text-center max-w-md">
+      <!-- Error Icon -->
+      <div class="mb-6">
+        <div class="w-16 h-16 mx-auto bg-error/10 rounded-full flex items-center justify-center">
+          <svg class="w-8 h-8 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+            ></path>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Error Title -->
+      <h1 class="text-2xl font-bold text-base-content mb-4">
+        {errorInfo.title}
+      </h1>
+
+      <!-- Error Message -->
+      <p class="text-base-content/70 mb-6 leading-relaxed">
+        {errorInfo.message}
+      </p>
+
+      <!-- Action Button -->
+      <div class="space-y-3">
+        <a href={`/${locale}/login`} class="btn btn-primary btn-lg w-full">
+          {errorInfo.action}
+        </a>
+
+        <!-- Additional Help -->
+        <div class="text-sm text-base-content/50 mt-4">
+          <p>{i18next.t("authError.helpText", { lng: locale })}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</AuthLayout>

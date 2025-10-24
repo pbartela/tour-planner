@@ -15,7 +15,7 @@ export default defineConfig({
     react(),
     sitemap(),
     reactI18next({
-      defaultLocale: "en-US",
+      defaultLocale: process.env.PUBLIC_DEFAULT_LOCALE || "en-US",
       locales: ["en-US", "pl-PL"],
       namespaces: ["auth", "tours"],
       defaultNamespace: "auth",

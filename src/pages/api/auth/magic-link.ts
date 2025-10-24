@@ -10,13 +10,16 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify(parsedData.error), { status: 400 });
   }
 
-  const { email, redirectTo } = parsedData.data;
+  const { email, redirectTo, locale } = parsedData.data;
 
   // Always redirect to auth callback page, passing the intended destination as a query param
   const redirectURL = new URL(request.url);
   redirectURL.pathname = "/auth-callback";
   if (redirectTo) {
     redirectURL.searchParams.set("next", redirectTo);
+  }
+  if (locale) {
+    redirectURL.searchParams.set("locale", locale);
   }
 
   // Use admin client for server-side auth operations

@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createSupabaseServerClient } from "../../../db/supabase.client";
+import { validateSession } from "@/lib/server/session-validation.service";
 import { z } from "zod";
 
 const sessionSchema = z.object({
@@ -16,39 +17,38 @@ export const POST: APIRoute = async (context) => {
     const supabase = createSupabaseServerClient(context.cookies);
 
     // Set the session using the tokens
-    const { data, error } = await supabase.auth.setSession({
+    const { error } = await supabase.auth.setSession({
       access_token,
       refresh_token,
     });
 
     if (error) {
-      console.error("Session establishment error:", error);
       return new Response(JSON.stringify({ error: "Failed to establish session" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    // Check if this is a new user (no profile exists)
-    let isNewUser = false;
-    if (data.user?.id) {
-      const { error: profileError } = await supabase.from("profiles").select("id").eq("id", data.user.id).single();
-      isNewUser = profileError?.code === "PGRST116"; // No rows returned
+    // SECURITY: Validate the session server-side after setting it
+    const validatedUser = await validateSession(supabase);
+    if (!validatedUser) {
+      return new Response(JSON.stringify({ error: "Session validation failed" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     return new Response(
       JSON.stringify({
         success: true,
         needsRegistration: false, // We removed username logic, so no additional registration needed
-        isNewUser,
       }),
       {
         status: 200,
         headers: { "Content-Type": "application/json" },
       }
     );
-  } catch (error) {
-    console.error("Session API error:", error);
+  } catch {
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

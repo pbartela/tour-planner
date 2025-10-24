@@ -2,23 +2,24 @@ import type { APIRoute } from "astro";
 
 import { profileService } from "@/lib/services/profile.service";
 import { updateProfileCommandSchema } from "@/lib/validators/profile.validators";
+import { handleDatabaseError } from "@/lib/utils/error-handler";
 
 export const prerender = false;
 
 export const GET: APIRoute = async ({ locals }) => {
   const { supabase } = locals;
 
-  // Get session from Supabase since middleware doesn't run for API routes
+  // Get user from Supabase since middleware doesn't run for API routes
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session?.user) {
+  if (!user) {
     return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
   }
 
   try {
-    const { data: profile, error } = await profileService.getProfile(supabase, session.user.id);
+    const { data: profile, error } = await profileService.getProfile(supabase, user.id);
 
     if (error) {
       // The service already logged the detailed error
@@ -39,12 +40,12 @@ export const GET: APIRoute = async ({ locals }) => {
 export const PATCH: APIRoute = async ({ request, locals }) => {
   const { supabase } = locals;
 
-  // Get session from Supabase since middleware doesn't run for API routes
+  // Get user from Supabase since middleware doesn't run for API routes
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session?.user) {
+  if (!user) {
     return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
   }
 
@@ -56,18 +57,11 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
       return new Response(JSON.stringify(validation.error.flatten()), { status: 400 });
     }
 
-    const { data: updatedProfile, error } = await profileService.updateProfile(
-      supabase,
-      session.user.id,
-      validation.data
-    );
+    const { data: updatedProfile, error } = await profileService.updateProfile(supabase, user.id, validation.data);
 
     if (error) {
-      // Check if it's a username uniqueness violation
-      if (error.message.includes("duplicate key") || error.message.includes("unique")) {
-        return new Response(JSON.stringify({ message: "Username is already taken" }), { status: 409 });
-      }
-      return new Response(JSON.stringify({ message: "Internal Server Error" }), { status: 500 });
+      const { message, status } = handleDatabaseError(error);
+      return new Response(JSON.stringify({ message }), { status });
     }
 
     return new Response(JSON.stringify(updatedProfile), { status: 200 });

@@ -22,11 +22,18 @@ export const prerender = false;
 
         // Get the intended destination from query params
         var urlParams = new URLSearchParams(window.location.search);
-        var next = urlParams.get("next") || "/en-US/";
+        var locale = urlParams.get("locale") || import.meta.env.PUBLIC_DEFAULT_LOCALE || "en-US";
+        document.cookie = "locale=" + locale + ";path=/;max-age=31536000;samesite=lax"; // 1 year
+        var next = urlParams.get("next") || "/" + locale + "/";
 
         if (error) {
           console.error("Auth error:", error, errorDescription);
-          window.location.href = "/en-US/login?error=" + encodeURIComponent(error);
+          // Redirect to dedicated error page with error details
+          var errorUrl = "/" + locale + "/auth/error?error=" + encodeURIComponent(error);
+          if (errorDescription) {
+            errorUrl += "&error_description=" + encodeURIComponent(errorDescription);
+          }
+          window.location.href = errorUrl;
           return;
         }
 
@@ -48,16 +55,16 @@ export const prerender = false;
                 window.location.href = next;
               } else {
                 console.error("Failed to establish session");
-                window.location.href = "/en-US/login?error=session_failed";
+                window.location.href = "/" + locale + "/auth/error?error=session_failed";
               }
             })
             .catch(function (err) {
               console.error("Session establishment error:", err);
-              window.location.href = "/en-US/login?error=unexpected_error";
+              window.location.href = "/" + locale + "/auth/error?error=unexpected_error";
             });
         } else {
           // No tokens found
-          window.location.href = "/en-US/login?error=no_tokens";
+          window.location.href = "/" + locale + "/auth/error?error=no_tokens";
         }
       }
 

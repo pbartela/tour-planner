@@ -3,6 +3,8 @@ import type { Database } from "./database.types";
 
 export function createSupabaseAdminClient() {
   const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
+  // CRITICAL: This must use SUPABASE_SERVICE_ROLE_KEY (without PUBLIC_ prefix)
+  // This key grants admin privileges and must never be exposed to the client
   const supabaseKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {

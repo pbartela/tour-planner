@@ -9,9 +9,13 @@ export const prerender = false;
 const tourIdSchema = z.string().uuid();
 
 export const GET: APIRoute = async ({ params, locals }) => {
-  const { supabase, session } = locals;
+  const { supabase } = locals;
 
-  if (!session?.user) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
     return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
   }
 
@@ -40,9 +44,13 @@ export const GET: APIRoute = async ({ params, locals }) => {
 };
 
 export const PATCH: APIRoute = async ({ params, request, locals }) => {
-  const { supabase, session } = locals;
+  const { supabase } = locals;
 
-  if (!session?.user) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
     return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
   }
 
@@ -88,9 +96,13 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
 };
 
 export const DELETE: APIRoute = async ({ params, locals }) => {
-  const { supabase, session } = locals;
+  const { supabase } = locals;
 
-  if (!session?.user) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
     return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
   }
 
