@@ -1,7 +1,9 @@
 ---
-import { ViewTransitions } from "astro:transitions";
+import { ClientRouter } from "astro:transitions";
 import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { ThemeController } from "@/components/ThemeController";
+import "@/styles/global.css";
 
 interface Props {
   title: string;
@@ -20,28 +22,31 @@ const { user } = Astro.locals;
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
-    <ViewTransitions />
+    <ClientRouter />
   </head>
   <body>
     <ThemeProvider userTheme={user?.profile?.theme} client:load>
-      <header class="bg-gray-800 text-white p-4">
-        <nav class="container mx-auto flex justify-between items-center">
-          <a href="/" class="text-xl font-bold">Tour Planner</a>
-          <div>
-            {user ? (
-              <div class="flex items-center gap-4">
-                <span>Welcome, {user.profile.display_name || user.email}</span>
-                <form action="/api/auth/signout" method="post">
-                  <button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
-                    Logout
-                  </button>
-                </form>
-              </div>
-            ) : (
-              <a href="/login" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-                Login
-              </a>
-            )}
+      <header class="bg-base-100 border-b border-base-300">
+        <nav class="container mx-auto flex justify-between items-center p-4">
+          <a href="/" class="text-xl font-bold text-base-content">Tour Planner</a>
+          <div class="flex items-center gap-4">
+            <ThemeController client:load />
+            {
+              user ? (
+                <div class="flex items-center gap-4">
+                  <span class="text-base-content">Welcome, {user.profile.display_name || user.email}</span>
+                  <form action="/api/auth/signout" method="post">
+                    <button type="submit" class="btn btn-error btn-sm">
+                      Logout
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                <a href="/login" class="btn btn-primary btn-sm">
+                  Login
+                </a>
+              )
+            }
           </div>
         </nav>
       </header>
@@ -52,25 +57,3 @@ const { user } = Astro.locals;
     </ThemeProvider>
   </body>
 </html>
-<style is:global>
-  :root {
-    --accent: 136, 58, 234;
-    --accent-light: 224, 204, 250;
-    --accent-dark: 49, 10, 101;
-    --accent-gradient: linear-gradient(45deg, rgb(var(--accent)), rgb(var(--accent-light)) 30%, white 60%);
-  }
-  html {
-    font-family: system-ui, sans-serif;
-  }
-  code {
-    font-family:
-      Menlo,
-      Monaco,
-      Lucida Console,
-      Liberation Mono,
-      DejaVu Sans Mono,
-      Bitstream Vera Sans Mono,
-      Courier New,
-      monospace;
-  }
-</style>

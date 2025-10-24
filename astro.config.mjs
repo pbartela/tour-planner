@@ -28,7 +28,6 @@ export default defineConfig({
       sourcemap: true,
     },
     server: {
-      sourcemap: true,
       middlewareMode: false,
     },
     resolve: {

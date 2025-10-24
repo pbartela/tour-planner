@@ -1,22 +1,52 @@
 import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
+const inputVariants = cva("input w-full", {
+  variants: {
+    // DaisyUI Color variants
+    variant: {
+      // DaisyUI Color variants
+      neutral: "input-neutral",
+      primary: "input-primary",
+      secondary: "input-secondary",
+      accent: "input-accent",
+      info: "input-info",
+      success: "input-success",
+      warning: "input-warning",
+      error: "input-error",
 
-const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className, type, ...props }, ref) => {
-  return (
-    <input
-      type={type}
-      className={cn(
-        "flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-gray-950 dark:ring-offset-gray-950 dark:placeholder:text-gray-400 dark:focus-visible:ring-gray-300",
-        className
-      )}
-      ref={ref}
-      {...props}
-    />
-  );
+      // DaisyUI Style variants
+      ghost: "input-ghost",
+    },
+
+    // DaisyUI Size variants
+    size: {
+      // DaisyUI sizes
+      xs: "input-xs",
+      sm: "input-sm",
+      md: "input-md", // DaisyUI default
+      lg: "input-lg",
+      xl: "input-xl",
+
+      // Legacy shadcn sizes for backward compatibility
+      "shadcn-default": "h-10",
+      "shadcn-sm": "h-9 rounded-md px-3 text-sm",
+      "shadcn-lg": "h-11 rounded-md px-3 text-base",
+    },
+  },
+  defaultVariants: {
+    variant: "neutral",
+    size: "md",
+  },
+});
+
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement>, VariantProps<typeof inputVariants> {}
+
+const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className, variant, size, type, ...props }, ref) => {
+  return <input type={type} className={cn(inputVariants({ variant, size, className }))} ref={ref} {...props} />;
 });
 Input.displayName = "Input";
 
-export { Input };
+export { Input, inputVariants };

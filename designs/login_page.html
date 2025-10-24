@@ -1,0 +1,83 @@
+<!doctype html>
+
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Login - Trip Planner</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#13a4ec",
+              "background-light": "#f6f7f8",
+              "background-dark": "#101c22",
+            },
+            fontFamily: {
+              display: ["Plus Jakarta Sans", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "0.5rem",
+              lg: "1rem",
+              xl: "1.5rem",
+              full: "9999px",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        min-height: max(884px, 100dvh);
+      }
+    </style>
+  </head>
+  <body class="bg-background-light dark:bg-background-dark font-display">
+    <div
+      class="relative flex min-h-screen w-full flex-col items-center justify-center bg-background-light dark:bg-background-dark p-4"
+    >
+      <div class="w-full max-w-md">
+        <div class="flex justify-center mb-8">
+          <div class="p-4 rounded-full bg-primary/20 flex items-center justify-center">
+            <span class="material-symbols-outlined text-primary text-4xl" data-icon="travel_explore"
+              >travel_explore</span
+            >
+          </div>
+        </div>
+        <h1
+          class="text-[#111618] dark:text-white tracking-light text-[32px] font-bold leading-tight px-4 text-center pb-3 pt-6"
+        >
+          Start your next adventure
+        </h1>
+        <p class="text-[#617c89] dark:text-gray-300 text-base font-normal leading-normal pb-3 pt-1 px-4 text-center">
+          Enter your email to receive a magic link to sign in or create an account.
+        </p>
+        <div class="flex flex-col items-center gap-4 px-4 py-3 mt-4">
+          <label class="flex flex-col w-full">
+            <p class="text-[#111618] dark:text-white text-base font-medium leading-normal pb-2">Email</p>
+            <input
+              class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-[#111618] dark:text-white dark:bg-background-dark focus:outline-0 focus:ring-0 border border-[#dbe2e6] dark:border-gray-600 bg-white focus:border-primary dark:focus:border-primary h-14 placeholder:text-[#617c89] p-[15px] text-base font-normal leading-normal"
+              placeholder="your.email@example.com"
+              value=""
+            />
+          </label>
+          <div class="flex w-full px-0 py-3">
+            <button
+              class="flex min-w-[84px] w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-5 flex-1 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors"
+            >
+              <span class="truncate">Send Magic Link</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,3 +1,6 @@
+// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+import storybook from "eslint-plugin-storybook";
+
 import { includeIgnoreFile } from "@eslint/compat";
 import eslint from "@eslint/js";
 import eslintPluginPrettier from "eslint-plugin-prettier/recommended";
@@ -62,5 +65,6 @@ export default tseslint.config(
   jsxA11yConfig,
   reactConfig,
   eslintPluginAstro.configs["flat/recommended"],
-  eslintPluginPrettier
+  eslintPluginPrettier,
+  storybook.configs["flat/recommended"]
 );

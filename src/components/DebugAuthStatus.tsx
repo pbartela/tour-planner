@@ -1,4 +1,4 @@
-import { supabaseClient as supabaseBrowserClient } from "@/db/supabase.client";
+import { supabaseBrowserClient } from "@/db/supabase.client";
 import { useEffect, useState } from "react";
 
 interface AuthStatus {
@@ -43,15 +43,15 @@ export const DebugAuthStatus = () => {
   };
 
   if (status.isLoading) {
-    return <div className="text-sm text-gray-500">Loading...</div>;
+    return <div className="text-sm text-base-content/70">Loading...</div>;
   }
 
   return (
-    <div className="fixed bottom-4 right-4 p-3 bg-gray-900 text-white rounded shadow-lg text-sm max-w-xs">
+    <div className="fixed bottom-4 right-4 p-3 bg-base-300 text-base-content rounded shadow-lg text-sm max-w-xs">
       <div className="font-bold mb-2">Debug: Auth Status</div>
       <div className="mb-2">
         Status:{" "}
-        <span className={status.isLoggedIn ? "text-green-400" : "text-red-400"}>
+        <span className={status.isLoggedIn ? "text-success" : "text-error"}>
           {status.isLoggedIn ? "✓ Logged In" : "✗ Not Logged In"}
         </span>
       </div>

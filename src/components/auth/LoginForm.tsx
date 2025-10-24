@@ -1,13 +1,13 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { InputWithLabel } from "@/components/ui/InputWithLabel";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
+
+import { AuthHeader } from "./AuthHeader";
 
 const createMagicLinkSchema = (t: (key: string) => string) =>
   z.object({
@@ -56,27 +56,29 @@ export const LoginForm = ({ redirectTo }: { redirectTo?: string | null }) => {
   };
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader>
-        <CardTitle className="text-2xl">{t("magicLink.title")}</CardTitle>
-        <CardDescription>{t("magicLink.description")}</CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-4">
-        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="email">{t("magicLink.emailLabel")}</Label>
-            <Input id="email" type="email" placeholder={t("magicLink.emailPlaceholder")} {...register("email")} />
-            {errors.email && <p className="text-sm text-red-600 dark:text-red-500">{errors.email.message}</p>}
-          </div>
+    <>
+      <AuthHeader title={t("magicLink.title")} description={t("magicLink.description")} />
+      <div className="mt-4 flex flex-col items-center gap-4 px-4 py-3">
+        <form onSubmit={handleSubmit(onSubmit)} className="grid w-full gap-4">
+          <InputWithLabel
+            id="email"
+            label={t("magicLink.emailLabel")}
+            type="email"
+            placeholder={t("magicLink.emailPlaceholder")}
+            {...register("email")}
+            error={errors.email?.message}
+          />
           {message && <p className="text-sm text-green-600 dark:text-green-500">{message}</p>}
-          {error && <p className="text-sm text-red-600 dark:text-red-500">{error}</p>}
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSubmitting ? t("magicLink.submitting") : t("magicLink.submit")}
-          </Button>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <div className="flex w-full px-0 py-3">
+            <Button type="submit" className="w-full" variant="primary" size="lg" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting ? t("magicLink.submitting") : t("magicLink.submit")}
+            </Button>
+          </div>
         </form>
-      </CardContent>
-    </Card>
+      </div>
+    </>
   );
 };
 

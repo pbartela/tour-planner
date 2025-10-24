@@ -71,7 +71,7 @@ export const OnboardingModal = ({ isOpen, onClose }: OnboardingModalProps) => {
           {ONBOARDING_STEPS.map((_, index) => (
             <div
               key={index}
-              className={`h-2 w-2 rounded-full ${index === currentStep ? "bg-primary" : "bg-gray-300"}`}
+              className={`h-2 w-2 rounded-full ${index === currentStep ? "bg-primary" : "bg-base-content/30"}`}
             />
           ))}
         </div>
