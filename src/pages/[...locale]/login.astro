@@ -1,0 +1,11 @@
+---
+import AuthLayout from "@/layouts/AuthLayout.astro";
+import LoginForm from "@/components/auth/LoginForm";
+import i18next from "i18next";
+
+const redirect = Astro.url.searchParams.get("redirect");
+---
+
+<AuthLayout title={i18next.t("loginPage.title")}>
+  <LoginForm client:load redirectTo={redirect} />
+</AuthLayout>

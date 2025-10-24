@@ -1,0 +1,91 @@
+---
+// This page handles magic link authentication on the client side
+// since the tokens are in the URL fragment which isn't accessible server-side
+export const prerender = false;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Authenticating...</title>
+    <script>
+      /* eslint-disable */
+      // Handle authentication callback with tokens in URL fragment
+      function handleAuthCallback() {
+        var fragment = window.location.hash.substring(1);
+        var params = new URLSearchParams(fragment);
+
+        var accessToken = params.get("access_token");
+        var refreshToken = params.get("refresh_token");
+        var error = params.get("error");
+        var errorDescription = params.get("error_description");
+
+        // Get the intended destination from query params
+        var urlParams = new URLSearchParams(window.location.search);
+        var locale = urlParams.get("locale") || import.meta.env.PUBLIC_DEFAULT_LOCALE || "en-US";
+        document.cookie = "locale=" + locale + ";path=/;max-age=31536000;samesite=lax"; // 1 year
+        var next = urlParams.get("next") || "/" + locale + "/";
+
+        // Defense in depth: Validate redirect URL on client-side
+        // Prevent open redirect attacks by ensuring it's a relative path
+        if (next.startsWith('//') || next.includes(':') || !next.startsWith('/')) {
+          console.warn('Invalid redirect detected, using default');
+          next = "/" + locale + "/";
+        }
+
+        if (error) {
+          console.error("Auth error:", error, errorDescription);
+          // Redirect to dedicated error page with error details
+          var errorUrl = "/" + locale + "/auth/error?error=" + encodeURIComponent(error);
+          if (errorDescription) {
+            errorUrl += "&error_description=" + encodeURIComponent(errorDescription);
+          }
+          window.location.href = errorUrl;
+          return;
+        }
+
+        if (accessToken && refreshToken) {
+          fetch("/api/auth/session", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            }),
+          })
+            .then(function (response) {
+              if (response.ok) {
+                // Since we removed username logic, all users go to dashboard/welcome page
+                // New users will see the onboarding modal automatically
+                window.location.href = next;
+              } else {
+                console.error("Failed to establish session");
+                window.location.href = "/" + locale + "/auth/error?error=session_failed";
+              }
+            })
+            .catch(function (err) {
+              console.error("Session establishment error:", err);
+              window.location.href = "/" + locale + "/auth/error?error=unexpected_error";
+            });
+        } else {
+          // No tokens found
+          window.location.href = "/" + locale + "/auth/error?error=no_tokens";
+        }
+      }
+
+      // Run when page loads
+      window.addEventListener("load", handleAuthCallback);
+      /* eslint-enable */
+    </script>
+  </head>
+  <body>
+    <div style="display: flex; align-items: center; justify-content: center; height: 100vh; font-family: system-ui;">
+      <div style="text-align: center;">
+        <h2>Authenticating...</h2>
+        <p>Please wait while we sign you in.</p>
+      </div>
+    </div>
+  </body>
+</html>

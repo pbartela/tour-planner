@@ -1,59 +1,107 @@
-import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { cva, type VariantProps } from "class-variance-authority"
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
-  {
-    variants: {
-      variant: {
-        default:
-          "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
-        outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
-        secondary:
-          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
-        ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-        link: "text-primary underline-offset-4 hover:underline",
-      },
-      size: {
-        default: "h-9 px-4 py-2 has-[>svg]:px-3",
-        sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
-        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
-        icon: "size-9",
-      },
+const buttonVariants = cva("btn", {
+  variants: {
+    // DaisyUI Color Variants
+    variant: {
+      // DaisyUI Color variants
+      neutral: "btn-neutral",
+      primary: "btn-primary",
+      secondary: "btn-secondary",
+      accent: "btn-accent",
+      info: "btn-info",
+      success: "btn-success",
+      warning: "btn-warning",
+      error: "btn-error",
+
+      // DaisyUI Style variants (combined with colors above)
+      "neutral-outline": "btn-neutral btn-outline",
+      "primary-outline": "btn-primary btn-outline",
+      "secondary-outline": "btn-secondary btn-outline",
+      "accent-outline": "btn-accent btn-outline",
+      "info-outline": "btn-info btn-outline",
+      "success-outline": "btn-success btn-outline",
+      "warning-outline": "btn-warning btn-outline",
+      "error-outline": "btn-error btn-outline",
+
+      "neutral-dash": "btn-neutral btn-dash",
+      "primary-dash": "btn-primary btn-dash",
+      "secondary-dash": "btn-secondary btn-dash",
+      "accent-dash": "btn-accent btn-dash",
+      "info-dash": "btn-info btn-dash",
+      "success-dash": "btn-success btn-dash",
+      "warning-dash": "btn-warning btn-dash",
+      "error-dash": "btn-error btn-dash",
+
+      "neutral-soft": "btn-neutral btn-soft",
+      "primary-soft": "btn-primary btn-soft",
+      "secondary-soft": "btn-secondary btn-soft",
+      "accent-soft": "btn-accent btn-soft",
+      "info-soft": "btn-info btn-soft",
+      "success-soft": "btn-success btn-soft",
+      "warning-soft": "btn-warning btn-soft",
+      "error-soft": "btn-error btn-soft",
+
+      // DaisyUI Special variants
+      ghost: "btn-ghost",
+      link: "btn-link",
+
+      // Active states (can be combined)
+      "neutral-active": "btn-neutral btn-active",
+      "primary-active": "btn-primary btn-active",
+      "secondary-active": "btn-secondary btn-active",
+      "accent-active": "btn-accent btn-active",
+      "info-active": "btn-info btn-active",
+      "success-active": "btn-success btn-active",
+      "warning-active": "btn-warning btn-active",
+      "error-active": "btn-error btn-active",
     },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
+
+    // DaisyUI Size variants
+    size: {
+      xs: "btn-xs",
+      sm: "btn-sm",
+      default: "", // md is default
+      lg: "btn-lg",
+      xl: "btn-xl",
+      // Legacy shadcn sizes for backward compatibility
+      "shadcn-default": "h-9 px-4 py-2 has-[>svg]:px-3",
+      "shadcn-lg": "h-12 px-5 rounded-xl",
     },
-  }
-)
+
+    // DaisyUI Shape variants
+    shape: {
+      default: "",
+      wide: "btn-wide",
+      block: "btn-block",
+      square: "btn-square",
+      circle: "btn-circle",
+    },
+  },
+  defaultVariants: {
+    variant: "neutral",
+    size: "default",
+    shape: "default",
+  },
+});
 
 function Button({
   className,
   variant,
   size,
+  shape,
   asChild = false,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
+    asChild?: boolean;
   }) {
-  const Comp = asChild ? Slot : "button"
-
-  return (
-    <Comp
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  )
+  const Comp = asChild ? Slot : "button";
+  return <Comp data-slot="button" className={cn(buttonVariants({ variant, size, shape, className }))} {...props} />;
 }
 
-export { Button, buttonVariants }
+export { Button, buttonVariants };

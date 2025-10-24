@@ -1,23 +1,25 @@
-### Główny problem
-Aplikacja rozwiązuje problem umawiania się grup znajomych na wyjazdy. Pozwala ustalić wspóplny cel oraz plan podróży, wymienić się przemyśleniami i opiniami 
-o wycieczce.
+### Main Problem
 
-### Najmniejszy zestaw funkcjonalności 
-- Tworzenie, edycja, usuwanie wycieczek.
-- Lista wycieczek przypisanych do użytkownika.
-- Prosty system kont użytkowników pozwalający przypisać wyczieczkę do użytkownika.
-- Strona profilu z możliwością edycji danych użytkownika.
-- Komentarze do wycieczki 
-- System lajków i dislajków pozwalający ocenić propozycję.
-- Dark mode
+The application solves the problem of groups of friends arranging trips. It allows them to establish a common goal and travel plan, and to exchange thoughts and opinions about the trip.
 
+### Minimum Viable Product (MVP) Functionality
 
-### Co nie wchodzi w zakres
-- Dodawanie pośrednich punktów wyczieczki.
-- Lajki i dislajki dla punktów wycieczki.
-- Dodawanie znajomych do konta.
-- Link do zapraszania znajomych
-- System notyfikacji
+- Create, edit, delete tours.
+- List of tours assigned to the user.
+- A simple user account system to assign a tour to a user.
+- A profile page with the ability to edit user data.
+- Comments for a tour.
+- A system of likes and dislikes to rate a proposal.
+- Dark mode.
 
-### Kryteria sukcesu
-- Udany wyjazd zaplanowany przy pomocy aplikacji
+### What is Out of Scope
+
+- Adding intermediate points to the tour.
+- Likes and dislikes for tour points.
+- Adding friends to an account.
+- Invitation link for friends.
+- Notification system.
+
+### Success Criteria
+
+- A successful trip planned using the application.

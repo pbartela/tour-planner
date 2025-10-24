@@ -1,0 +1,32 @@
+---
+alwaysApply: false
+---
+# Supabase Client Usage
+
+This project utilizes two distinct Supabase clients to interact with the database, each with a specific purpose and security context. It is crucial to use the correct client for the appropriate environment (client-side vs. server-side) to maintain security.
+
+## 1. Client-Side Client
+
+-   **File Location:** `src/db/supabase.client.ts`
+-   **Environment Variables:**
+    -   `PUBLIC_SUPABASE_URL`
+    -   `PUBLIC_SUPABASE_ANON_KEY`
+-   **Usage:** This client is intended for use in browser-facing code, such as **Astro components (`.astro`)** and **React components (`.tsx`)**.
+-   **Security:** It is initialized with the public "anonymous" key and all operations are subject to your **Row Level Security (RLS)** policies. This is the client that acts on behalf of the end-user.
+
+## 2. Server-Side (Admin) Client
+
+-   **File Location:** `src/db/supabase.admin.client.ts`
+-   **Function:** `createSupabaseAdminClient()`
+-   **Environment Variables:**
+    -   `PUBLIC_SUPABASE_URL`
+    -   `SUPABASE_SERVICE_ROLE_KEY` (Secret)
+-   **Usage:** This client is exclusively for **server-side code**, such as **API routes (`src/pages/api/**/*.ts`)**.
+-   **Security:** It is initialized with the secret **Service Role Key**, which bypasses all RLS policies. This client has full administrative access to your database and **must never be exposed to the client-side**. Use it for administrative tasks like listing all users, performing sensitive data operations, or interacting with Supabase services that require elevated privileges.
+
+### Summary
+
+| Client                   | Location                             | Key Used                         | Environment | Security Context       |
+| ------------------------ | ------------------------------------ | -------------------------------- | ----------- | ---------------------- |
+| **Client-Side**          | `src/db/supabase.client.ts`          | `PUBLIC_SUPABASE_ANON_KEY`       | Browser     | Obeys RLS policies     |
+| **Server-Side (Admin)**  | `src/db/supabase.admin.client.ts`    | `SUPABASE_SERVICE_ROLE_KEY`      | Server      | Bypasses RLS policies  |# Supabase 

@@ -1,0 +1,14 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import TourDashboard from "@/components/TourDashboard";
+
+const { user } = Astro.locals;
+
+// User is guaranteed to exist here because of middleware protection.
+// Default to true only as a fallback, though it shouldn't be needed.
+const onboardingCompleted = user?.profile.onboarding_completed ?? true;
+---
+
+<Layout title="Dashboard">
+  <TourDashboard client:load onboardingCompleted={onboardingCompleted} />
+</Layout>

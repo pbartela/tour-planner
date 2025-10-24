@@ -1,0 +1,50 @@
+{
+  "tourList": {
+    "loadingError": "Failed to load tours",
+    "retry": "Retry",
+    "noTours": "No tours found.",
+    "newActivity": "New Activity"
+  },
+  "emptyState": {
+    "title": "You have no active tours",
+    "description": "Get started by creating a new one.",
+    "createTour": "Create a Tour"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "heading": "Your Tours"
+  },
+  "createTour": {
+    "title": "Create a New Tour",
+    "description": "Fill out the details below to start planning your next adventure.",
+    "tourNameLabel": "Tour Name",
+    "tourNamePlaceholder": "e.g., Summer Trip to Italy",
+    "destinationLabel": "Destination",
+    "destinationPlaceholder": "e.g., Rome, Italy",
+    "startDateLabel": "Start Date",
+    "endDateLabel": "End Date",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Describe your tour...",
+    "submit": "Create Tour",
+    "success": "Tour created successfully!",
+    "error": "Failed to create tour. Please try again."
+  },
+  "onboarding": {
+    "step1": {
+      "title": "Welcome to Tour Planner!",
+      "description": "Let's get you started with a quick tour of the app."
+    },
+    "step2": {
+      "title": "Create & Invite",
+      "description": "Easily create new tour plans and invite your friends to collaborate."
+    },
+    "step3": {
+      "title": "Vote & Discuss",
+      "description": "Vote on tour proposals and use comments to finalize your plans together."
+    },
+    "skip": "Skip",
+    "next": "Next",
+    "finish": "Finish",
+    "error": "Something went wrong. Please try again."
+  }
+}

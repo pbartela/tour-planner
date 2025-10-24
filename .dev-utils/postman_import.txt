@@ -1,0 +1,84 @@
+# ==============================================================================
+# Postman Curl Import File for Tour Planner API
+# ==============================================================================
+#
+# How to use this file in Postman:
+# 1. In Postman, click on "Import" -> "Raw text".
+# 2. Copy and paste the contents of this file into the text area.
+# 3. Postman will automatically generate a collection with all the requests.
+#
+# How to set up the environment in Postman:
+# 1. Create a new Postman environment.
+# 2. Add the following variables:
+#    - BASE_URL: http://localhost:4321/api
+#    - ACCESS_TOKEN: (Leave this empty initially)
+#
+# Authentication Workflow:
+# 1. Run the "Sign In" request. Check your email and click the magic link.
+# 2. In your browser, open developer tools, go to Application -> Cookies,
+#    and copy the value of the 'sb-access-token' cookie.
+# 3. Paste this token into the `ACCESS_TOKEN` environment variable in Postman.
+# 4. Now you can run all the other authenticated requests.
+#
+# ==============================================================================
+
+# --- Authentication ---
+
+# Request Magic Link (Sign In)
+curl --location '{{BASE_URL}}/auth/signin' \
+--header 'Content-Type: application/json' \
+--data '{
+    "email": "your-email@example.com"
+}'
+
+# --- Profiles ---
+
+# Get My Profile
+curl --location '{{BASE_URL}}/profiles/me' \
+--header 'Cookie: sb-access-token={{ACCESS_TOKEN}}'
+
+# Update My Profile
+curl --location --request PATCH '{{BASE_URL}}/profiles/me' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: sb-access-token={{ACCESS_TOKEN}}' \
+--data '{
+    "display_name": "Alex The Postman Tester",
+    "theme": "light"
+}'
+
+# --- Tours ---
+
+# Get My Tours
+curl --location '{{BASE_URL}}/tours?status=active&page=1&limit=10' \
+--header 'Cookie: sb-access-token={{ACCESS_TOKEN}}'
+
+# Create a New Tour
+# Note: You may want to save the `id` from the response to a `TOUR_ID` variable
+# in your Postman environment to use in the requests below.
+curl --location '{{BASE_URL}}/tours' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: sb-access-token={{ACCESS_TOKEN}}' \
+--data '{
+    "title": "Postman Test Tour",
+    "destination": "API-land",
+    "description": "A tour created from Postman.",
+    "start_date": "2027-01-01T10:00:00Z",
+    "end_date": "2027-01-05T20:00:00Z"
+}'
+
+# Get Tour Details
+curl --location '{{BASE_URL}}/tours/{{TOUR_ID}}' \
+--header 'Cookie: sb-access-token={{ACCESS_TOKEN}}'
+
+# Update a Tour
+curl --location --request PATCH '{{BASE_URL}}/tours/{{TOUR_ID}}' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: sb-access-token={{ACCESS_TOKEN}}' \
+--data '{
+    "description": "This tour description has been updated from Postman.",
+    "are_votes_hidden": false
+}'
+
+# Delete a Tour
+curl --location --request DELETE '{{BASE_URL}}/tours/{{TOUR_ID}}' \
+--header 'Cookie: sb-access-token={{ACCESS_TOKEN}}'

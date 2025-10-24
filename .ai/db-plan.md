@@ -9,16 +9,15 @@ This document outlines the PostgreSQL database schema for the Tour Planner appli
 This table is managed by Supabase Aut
 Stores user profile information, extending the `auth.users` table.
 
-| Column | Type | Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `id` | `uuid` | Primary Key, Foreign Key to `auth.users.id` | References the user in Supabase's auth system. |
-| `username` | `text` | Not Null, Unique, CHECK `(length(username) >= 3 AND length(username) <= 20 AND username ~ '^[a-zA-Z0-9_]+$')` | Unique username (3-20 characters, alphanumeric and underscores). |
-| `display_name` | `text` | | Optional display name (full name). |
-| `language` | `text` | Not Null, Default `'en'` | User's preferred language. |
-| `theme` | `text` | Not Null, Default `'system'` | User's preferred theme (e.g., 'light', 'dark', 'system'). |
-| `onboarding_completed` | `boolean`| Not Null, Default `false` | Tracks if the user has completed the initial onboarding. |
-| `created_at` | `timestamptz` | Not Null, Default `now()` | Timestamp of profile creation. |
-| `updated_at` | `timestamptz` | Not Null, Default `now()` | Timestamp of the last profile update. |
+| Column                 | Type          | Constraints                                                                                         | Description                                                      |
+| :--------------------- | :------------ | :-------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
+| `id`                   | `uuid`        | Primary Key, Foreign Key to `auth.users.id`                                                         | References the user in Supabase's auth system.                   |
+| `display_name`         | `text`        |                                                                                                     | Optional display name (full name).                               |
+| `language`             | `text`        | Not Null, Default `'en'`                                                                            | User's preferred language.                                       |
+| `theme`                | `text`        | Not Null, Default `'system'`                                                                        | User's preferred theme (e.g., 'light', 'dark', 'system').        |
+| `onboarding_completed` | `boolean`     | Not Null, Default `false`                                                                           | Tracks if the user has completed the initial onboarding.         |
+| `created_at`           | `timestamptz` | Not Null, Default `now()`                                                                           | Timestamp of profile creation.                                   |
+| `updated_at`           | `timestamptz` | Not Null, Default `now()`                                                                           | Timestamp of the last profile update.                            |
 
 ---
 
@@ -26,21 +25,21 @@ Stores user profile information, extending the `auth.users` table.
 
 Contains all information about a tour.
 
-| Column | Type | Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `id` | `uuid` | Primary Key, Default `gen_random_uuid()` | Unique identifier for the tour. |
-| `owner_id` | `uuid` | Not Null, Foreign Key to `public.profiles.id` | The user who owns/created the tour. |
-| `title` | `text` | Not Null, CHECK `(length(title) > 0)` | The title of the tour. |
-| `destination` | `text` | Not Null, CHECK `(length(destination) > 0)` | The destination of the tour (can be a URL). |
-| `description` | `text` | | A detailed description of the tour. |
-| `start_date` | `timestamptz` | Not Null | The start date and time of the tour. |
-| `end_date` | `timestamptz` | Not Null | The end date and time of the tour. |
-| `participant_limit`| `integer`| CHECK `(participant_limit > 0)` | Optional limit on the number of participants. |
-| `like_threshold` | `integer`| CHECK `(like_threshold > 0)` | Optional number of "likes" to confirm the tour. |
-| `are_votes_hidden` | `boolean` | Not Null, Default `false` | If true, voting is disabled by the owner. |
-| `status` | `tour_status` | Not Null, Default `'active'` | The status of the tour. `ENUM ('active', 'archived')`. |
-| `created_at` | `timestamptz` | Not Null, Default `now()` | Timestamp of tour creation. |
-| `updated_at` | `timestamptz` | Not Null, Default `now()` | Timestamp of the last tour update. |
+| Column              | Type          | Constraints                                   | Description                                            |
+| :------------------ | :------------ | :-------------------------------------------- | :----------------------------------------------------- |
+| `id`                | `uuid`        | Primary Key, Default `gen_random_uuid()`      | Unique identifier for the tour.                        |
+| `owner_id`          | `uuid`        | Not Null, Foreign Key to `public.profiles.id` | The user who owns/created the tour.                    |
+| `title`             | `text`        | Not Null, CHECK `(length(title) > 0)`         | The title of the tour.                                 |
+| `destination`       | `text`        | Not Null, CHECK `(length(destination) > 0)`   | The destination of the tour (can be a URL).            |
+| `description`       | `text`        |                                               | A detailed description of the tour.                    |
+| `start_date`        | `timestamptz` | Not Null                                      | The start date and time of the tour.                   |
+| `end_date`          | `timestamptz` | Not Null                                      | The end date and time of the tour.                     |
+| `participant_limit` | `integer`     | CHECK `(participant_limit > 0)`               | Optional limit on the number of participants.          |
+| `like_threshold`    | `integer`     | CHECK `(like_threshold > 0)`                  | Optional number of "likes" to confirm the tour.        |
+| `are_votes_hidden`  | `boolean`     | Not Null, Default `false`                     | If true, voting is disabled by the owner.              |
+| `status`            | `tour_status` | Not Null, Default `'active'`                  | The status of the tour. `ENUM ('active', 'archived')`. |
+| `created_at`        | `timestamptz` | Not Null, Default `now()`                     | Timestamp of tour creation.                            |
+| `updated_at`        | `timestamptz` | Not Null, Default `now()`                     | Timestamp of the last tour update.                     |
 
 ---
 
@@ -48,11 +47,11 @@ Contains all information about a tour.
 
 A joining table for the many-to-many relationship between `profiles` and `tours`.
 
-| Column | Type | Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `tour_id` | `uuid` | Primary Key, Foreign Key to `public.tours.id` ON DELETE CASCADE | The tour the user is participating in. |
-| `user_id` | `uuid` | Primary Key, Foreign Key to `public.profiles.id` ON DELETE CASCADE | The user participating in the tour. |
-| `joined_at` | `timestamptz` | Not Null, Default `now()` | Timestamp when the user joined the tour. |
+| Column      | Type          | Constraints                                                        | Description                              |
+| :---------- | :------------ | :----------------------------------------------------------------- | :--------------------------------------- |
+| `tour_id`   | `uuid`        | Primary Key, Foreign Key to `public.tours.id` ON DELETE CASCADE    | The tour the user is participating in.   |
+| `user_id`   | `uuid`        | Primary Key, Foreign Key to `public.profiles.id` ON DELETE CASCADE | The user participating in the tour.      |
+| `joined_at` | `timestamptz` | Not Null, Default `now()`                                          | Timestamp when the user joined the tour. |
 
 ---
 
@@ -60,14 +59,14 @@ A joining table for the many-to-many relationship between `profiles` and `tours`
 
 Stores comments made by users on tours.
 
-| Column | Type | Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `id` | `uuid` | Primary Key, Default `gen_random_uuid()` | Unique identifier for the comment. |
-| `tour_id` | `uuid` | Not Null, Foreign Key to `public.tours.id` ON DELETE CASCADE | The tour the comment belongs to. |
-| `user_id` | `uuid` | Not Null, Foreign Key to `public.profiles.id` ON DELETE SET DEFAULT, Default `'00000000-0000-0000-0000-000000000000'` | The user who wrote the comment. Defaults to the anonymized user on deletion. |
-| `content` | `text` | Not Null, CHECK `(length(content) > 0)` | The text content of the comment. |
-| `created_at` | `timestamptz` | Not Null, Default `now()` | Timestamp of comment creation. |
-| `updated_at` | `timestamptz` | Not Null, Default `now()` | Timestamp of the last comment update. |
+| Column       | Type          | Constraints                                                                                                           | Description                                                                  |
+| :----------- | :------------ | :-------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------- |
+| `id`         | `uuid`        | Primary Key, Default `gen_random_uuid()`                                                                              | Unique identifier for the comment.                                           |
+| `tour_id`    | `uuid`        | Not Null, Foreign Key to `public.tours.id` ON DELETE CASCADE                                                          | The tour the comment belongs to.                                             |
+| `user_id`    | `uuid`        | Not Null, Foreign Key to `public.profiles.id` ON DELETE SET DEFAULT, Default `'00000000-0000-0000-0000-000000000000'` | The user who wrote the comment. Defaults to the anonymized user on deletion. |
+| `content`    | `text`        | Not Null, CHECK `(length(content) > 0)`                                                                               | The text content of the comment.                                             |
+| `created_at` | `timestamptz` | Not Null, Default `now()`                                                                                             | Timestamp of comment creation.                                               |
+| `updated_at` | `timestamptz` | Not Null, Default `now()`                                                                                             | Timestamp of the last comment update.                                        |
 
 ---
 
@@ -75,11 +74,11 @@ Stores comments made by users on tours.
 
 Stores "likes" from users for a specific tour.
 
-| Column | Type | Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `tour_id` | `uuid` | Primary Key, Foreign Key to `public.tours.id` ON DELETE CASCADE | The tour being voted on. |
-| `user_id` | `uuid` | Primary Key, Foreign Key to `public.profiles.id` ON DELETE CASCADE | The user who voted. |
-| `created_at` | `timestamptz` | Not Null, Default `now()` | Timestamp of the vote. |
+| Column       | Type          | Constraints                                                        | Description              |
+| :----------- | :------------ | :----------------------------------------------------------------- | :----------------------- |
+| `tour_id`    | `uuid`        | Primary Key, Foreign Key to `public.tours.id` ON DELETE CASCADE    | The tour being voted on. |
+| `user_id`    | `uuid`        | Primary Key, Foreign Key to `public.profiles.id` ON DELETE CASCADE | The user who voted.      |
+| `created_at` | `timestamptz` | Not Null, Default `now()`                                          | Timestamp of the vote.   |
 
 ---
 
@@ -87,14 +86,14 @@ Stores "likes" from users for a specific tour.
 
 Tracks invitations sent to users to join a tour.
 
-| Column | Type | Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `id` | `uuid` | Primary Key, Default `gen_random_uuid()` | Unique identifier for the invitation. |
-| `tour_id` | `uuid` | Not Null, Foreign Key to `public.tours.id` ON DELETE CASCADE | The tour the invitation is for. |
-| `inviter_id` | `uuid` | Not Null, Foreign Key to `public.profiles.id` ON DELETE CASCADE | The user who sent the invitation. |
-| `email` | `text` | Not Null | The email address of the invited person. |
-| `status` | `invitation_status` | Not Null, Default `'pending'` | The status of the invitation. `ENUM ('pending', 'accepted', 'declined')`. |
-| `created_at` | `timestamptz` | Not Null, Default `now()` | Timestamp of invitation creation. |
+| Column       | Type                | Constraints                                                     | Description                                                               |
+| :----------- | :------------------ | :-------------------------------------------------------------- | :------------------------------------------------------------------------ |
+| `id`         | `uuid`              | Primary Key, Default `gen_random_uuid()`                        | Unique identifier for the invitation.                                     |
+| `tour_id`    | `uuid`              | Not Null, Foreign Key to `public.tours.id` ON DELETE CASCADE    | The tour the invitation is for.                                           |
+| `inviter_id` | `uuid`              | Not Null, Foreign Key to `public.profiles.id` ON DELETE CASCADE | The user who sent the invitation.                                         |
+| `email`      | `text`              | Not Null                                                        | The email address of the invited person.                                  |
+| `status`     | `invitation_status` | Not Null, Default `'pending'`                                   | The status of the invitation. `ENUM ('pending', 'accepted', 'declined')`. |
+| `created_at` | `timestamptz`       | Not Null, Default `now()`                                       | Timestamp of invitation creation.                                         |
 
 ---
 
@@ -102,10 +101,10 @@ Tracks invitations sent to users to join a tour.
 
 Stores unique tags for categorizing archived tours.
 
-| Column | Type | Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `id` | `bigint` | Primary Key (generated) | Unique identifier for the tag. |
-| `name` | `text` | Not Null, Unique, CHECK `(length(name) > 0)` | The unique tag name. |
+| Column | Type     | Constraints                                  | Description                    |
+| :----- | :------- | :------------------------------------------- | :----------------------------- |
+| `id`   | `bigint` | Primary Key (generated)                      | Unique identifier for the tag. |
+| `name` | `text`   | Not Null, Unique, CHECK `(length(name) > 0)` | The unique tag name.           |
 
 ---
 
@@ -113,10 +112,10 @@ Stores unique tags for categorizing archived tours.
 
 A joining table for the many-to-many relationship between `tours` and `tags`.
 
-| Column | Type | Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `tour_id` | `uuid` | Primary Key, Foreign Key to `public.tours.id` ON DELETE CASCADE | The tour being tagged. |
-| `tag_id` | `bigint` | Primary Key, Foreign Key to `public.tags.id` ON DELETE CASCADE | The tag being applied. |
+| Column    | Type     | Constraints                                                     | Description            |
+| :-------- | :------- | :-------------------------------------------------------------- | :--------------------- |
+| `tour_id` | `uuid`   | Primary Key, Foreign Key to `public.tours.id` ON DELETE CASCADE | The tour being tagged. |
+| `tag_id`  | `bigint` | Primary Key, Foreign Key to `public.tags.id` ON DELETE CASCADE  | The tag being applied. |
 
 ## 2. Relationships
 

@@ -1,0 +1,267 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Supabase Auth Integration with Astro (Magic Link Version)
+
+Use this guide to introduce authentication in your Astro applications with server-side rendering (SSR) support, using passwordless magic links.
+
+## Before we start
+
+**VERY IMPORTANT**: Ask me which pages or components should behave differently after introducing authentication. Adjust further steps accordingly.
+
+## Core Requirements
+
+1.  Use the `@supabase/ssr` package (NOT auth-helpers).
+2.  Use ONLY `getAll` and `setAll` for cookie management.
+3.  NEVER use individual `get`, `set`, or `remove` cookie methods.
+4.  Implement proper session management with middleware based on JWT (Supabase Auth).
+
+## Installation
+
+```bash
+npm install @supabase/ssr @supabase/supabase-js
+```
+
+## Environment Variables
+
+Create a `.env` file with your Supabase credentials.
+
+```env
+PUBLIC_SUPABASE_URL=your_project_url
+SUPABASE_KEY=your_anon_key
+```
+
+For improved TypeScript support, create or update `src/env.d.ts`:
+
+```typescript
+/// <reference types="astro/client" />
+interface ImportMetaEnv {
+  readonly PUBLIC_SUPABASE_URL: string;
+  readonly SUPABASE_KEY: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+```
+
+Ensure that `.env.example` is updated with the necessary environment variables.
+
+## Implementation Steps
+
+### 1. Create OR Extend Supabase Server Instance
+
+Update your existing Supabase client or create a new one in `src/db/supabase.client.ts`:
+
+```typescript
+import type { AstroCookies } from 'astro';
+import { createServerClient, type CookieOptionsWithName } from '@supabase/ssr';
+import type { Database } from '../db/database.types.ts';
+
+export const cookieOptions: CookieOptionsWithName = {
+  path: '/',
+  secure: true,
+  httpOnly: true,
+  sameSite: 'lax',
+};
+
+function parseCookieHeader(cookieHeader: string): { name: string; value: string }[] {
+  return cookieHeader.split(';').map((cookie) => {
+    const [name, ...rest] = cookie.trim().split('=');
+    return { name, value: rest.join('=') };
+  });
+}
+
+export const createSupabaseServerInstance = (context: {
+  headers: Headers;
+  cookies: AstroCookies;
+}) => {
+  const supabase = createServerClient<Database>(
+    import.meta.env.PUBLIC_SUPABASE_URL,
+    import.meta.env.SUPABASE_KEY,
+    {
+      cookieOptions,
+      cookies: {
+        getAll() {
+          return parseCookieHeader(context.headers.get('Cookie') ?? '');
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            context.cookies.set(name, value, options),
+          );
+        },
+      },
+    },
+  );
+
+  return supabase;
+};
+```
+
+### 2. Implement OR Extend Authentication Middleware
+
+Update the existing authentication middleware or create a new one in `src/middleware/index.ts`:
+
+```typescript
+import { createSupabaseServerInstance } from '../db/supabase.client.ts';
+import { defineMiddleware } from 'astro:middleware';
+
+// Public paths - Auth API endpoints & Server-Rendered Astro Pages
+const PUBLIC_PATHS = [
+  // Server-Rendered Astro Pages
+  "/auth/login",
+  // Auth API endpoints
+  "/api/auth/login",
+  "/api/auth/callback", // Add the callback route
+];
+
+export const onRequest = defineMiddleware(
+  async ({ locals, cookies, url, request, redirect }, next) => {
+    // Skip auth check for public paths
+    if (PUBLIC_PATHS.includes(url.pathname)) {
+      return next();
+    }
+
+    const supabase = createSupabaseServerInstance({
+      cookies,
+      headers: request.headers,
+    });
+
+    // IMPORTANT: Always get user session first before any other operations
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      locals.user = {
+        email: user.email,
+        id: user.id,
+      };
+    } else if (!PUBLIC_PATHS.includes(url.pathname)) {
+      // Redirect to login for protected routes
+      return redirect('/auth/login');
+    }
+
+    return next();
+  },
+);
+```
+
+### 3. Create Auth API Endpoints
+
+Create the following endpoints in `src/pages/api/auth/`:
+
+To initiate the magic link process, the `login.ts` endpoint will use Supabase's `signInWithOtp` method. This method sends an email to the user containing a link to sign in.
+
+```typescript
+// src/pages/api/auth/login.ts
+import type { APIRoute } from 'astro';
+import { createSupabaseServerInstance } from '../../db/supabase.client.ts';
+
+export const POST: APIRoute = async ({ request, cookies, url }) => {
+  const { email } = await request.json();
+
+  const supabase = createSupabaseServerInstance({ cookies, headers: request.headers });
+
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      // shouldCreateUser: false, // Set to false if you don't want to automatically create new users
+      emailRedirectTo: `${url.origin}/api/auth/callback`,
+    },
+  });
+
+  if (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 400,
+    });
+  }
+
+  return new Response(JSON.stringify({ message: 'Check your email for a login link.' }), {
+    status: 200,
+  });
+};
+```
+
+After the user clicks the magic link, they are redirected to a callback route. This route exchanges the code from the URL for a user session.
+
+```typescript
+// src/pages/api/auth/callback.ts
+import type { APIRoute } from 'astro';
+import { createSupabaseServerInstance } from '../../db/supabase.client.ts';
+
+export const GET: APIRoute = async ({ url, cookies, redirect }) => {
+  const authCode = url.searchParams.get('code');
+
+  if (authCode) {
+    const supabase = createSupabaseServerInstance({ cookies, headers: new Headers() });
+    const { error } = await supabase.auth.exchangeCodeForSession(authCode);
+
+    if (!error) {
+      return redirect('/dashboard'); // Redirect to a protected page
+    }
+  }
+
+  // Redirect to an error page or home page if something goes wrong
+  return redirect('/auth/login');
+};
+```
+
+```typescript
+// src/pages/api/auth/logout.ts
+import type { APIRoute } from 'astro';
+import { createSupabaseServerInstance } from '../../db/supabase.client.ts';
+
+export const POST: APIRoute = async ({ request, cookies }) => {
+  const supabase = createSupabaseServerInstance({ cookies, headers: request.headers });
+
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 400,
+    });
+  }
+
+  return new Response(null, { status: 200 });
+};
+```
+
+### 4. Protect Routes
+
+In your protected Astro pages, you can check for the user's session:
+
+```astro
+---
+// pages/protected.astro
+const { user } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect('/auth/login');
+}
+---
+
+<h1>Protected Page</h1>
+<p>Welcome {user.email}!</p>
+```
+
+### 5. Verify SSR Configuration
+
+Ensure that your authentication pages are rendered on the server. You can achieve this by either exporting `prerender = false` in your page or setting `output: "server"` in your `astro.config.mjs` file.
+
+## Security Best Practices
+
+*   Set appropriate cookie options (`httpOnly`, `secure`, `sameSite`).
+*   Never expose Supabase integration details and keys in client-side components.
+*   Validate all user input on the server side.
+*   Implement proper error handling and logging mechanisms.
+
+## Common Pitfalls
+
+1.  **DO NOT** use individual cookie methods (`get`/`set`/`remove`).
+2.  **DO NOT** import from `@supabase/auth-helpers-nextjs`.
+3.  **DO NOT** skip the `auth.getUser()` call in the middleware.
+4.  **DO NOT** modify the provided cookie handling logic.
+5.  Always handle authentication state changes correctly.

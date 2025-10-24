@@ -1,0 +1,50 @@
+{
+  "tourList": {
+    "loadingError": "Nie udało się załadować wycieczek",
+    "retry": "Spróbuj ponownie",
+    "noTours": "Nie znaleziono wycieczek.",
+    "newActivity": "Nowa aktywność"
+  },
+  "emptyState": {
+    "title": "Nie masz aktywnych wycieczek",
+    "description": "Zacznij od utworzenia nowej.",
+    "createTour": "Utwórz wycieczkę"
+  },
+  "dashboard": {
+    "title": "Panel główny",
+    "heading": "Twoje wycieczki"
+  },
+  "createTour": {
+    "title": "Utwórz nową wycieczkę",
+    "description": "Wypełnij poniższe szczegóły, aby rozpocząć planowanie swojej następnej przygody.",
+    "tourNameLabel": "Nazwa wycieczki",
+    "tourNamePlaceholder": "np. Letnia wycieczka do Włoch",
+    "destinationLabel": "Cel podróży",
+    "destinationPlaceholder": "np. Rzym, Włochy",
+    "startDateLabel": "Data rozpoczęcia",
+    "endDateLabel": "Data zakończenia",
+    "descriptionLabel": "Opis",
+    "descriptionPlaceholder": "Opisz swoją wycieczkę...",
+    "submit": "Utwórz wycieczkę",
+    "success": "Wycieczka utworzona pomyślnie!",
+    "error": "Nie udało się utworzyć wycieczki. Proszę spróbować ponownie."
+  },
+  "onboarding": {
+    "step1": {
+      "title": "Witaj w Tour Planner!",
+      "description": "Zacznijmy od szybkiego przewodnika po aplikacji."
+    },
+    "step2": {
+      "title": "Twórz i zapraszaj",
+      "description": "Łatwo twórz nowe plany wycieczek i zapraszaj znajomych do współpracy."
+    },
+    "step3": {
+      "title": "Głosuj i dyskutuj",
+      "description": "Głosuj na propozycje wycieczek i używaj komentarzy, aby wspólnie finalizować plany."
+    },
+    "skip": "Pomiń",
+    "next": "Dalej",
+    "finish": "Zakończ",
+    "error": "Coś poszło nie tak. Proszę spróbować ponownie."
+  }
+}

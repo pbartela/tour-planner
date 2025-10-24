@@ -1,32 +1,59 @@
 ---
-import "../styles/global.css";
+import { ClientRouter } from "astro:transitions";
+import { Toaster } from "react-hot-toast";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { ThemeController } from "@/components/ThemeController";
+import "@/styles/global.css";
 
 interface Props {
-  title?: string;
+  title: string;
 }
 
-const { title = "10x Astro Starter" } = Astro.props;
+const { title } = Astro.props;
+const { user } = Astro.locals;
 ---
 
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="description" content="Astro description" />
     <meta name="viewport" content="width=device-width" />
-    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
+    <ClientRouter />
   </head>
   <body>
-    <slot />
+    <ThemeProvider userTheme={user?.profile?.theme} client:load>
+      <header class="bg-base-100 border-b border-base-300">
+        <nav class="container mx-auto flex justify-between items-center p-4">
+          <a href="/" class="text-xl font-bold text-base-content">Tour Planner</a>
+          <div class="flex items-center gap-4">
+            <ThemeController client:load />
+            {
+              user ? (
+                <div class="flex items-center gap-4">
+                  <span class="text-base-content">Welcome, {user.profile.display_name || user.email}</span>
+                  <form action="/api/auth/signout" method="post">
+                    <button type="submit" class="btn btn-error btn-sm">
+                      Logout
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                <a href="/login" class="btn btn-primary btn-sm">
+                  Login
+                </a>
+              )
+            }
+          </div>
+        </nav>
+      </header>
+      <main class="container mx-auto p-4">
+        <Toaster />
+        <slot />
+      </main>
+    </ThemeProvider>
   </body>
 </html>
-
-<style>
-  html,
-  body {
-    margin: 0;
-    width: 100%;
-    height: 100%;
-  }
-</style>
