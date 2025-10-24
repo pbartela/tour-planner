@@ -48,7 +48,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
       return new Response(JSON.stringify(validation.error.flatten()), { status: 400 });
     }
 
-    const { data: tour, error } = await tourService.createTour(supabase, session.user.id, validation.data);
+    const { data: tour, error } = await tourService.createTour(supabase, session.user.id, {
+      ...validation.data,
+      start_date: validation.data.start_date.toISOString(),
+      end_date: validation.data.end_date.toISOString(),
+    });
 
     if (error) {
       return new Response(JSON.stringify({ message: "Internal Server Error" }), { status: 500 });

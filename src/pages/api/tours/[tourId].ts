@@ -62,7 +62,15 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
       return new Response(JSON.stringify(bodyValidation.error.flatten()), { status: 400 });
     }
 
-    const { data: tour, error } = await tourService.updateTour(supabase, tourId, bodyValidation.data);
+    const updateData: Record<string, unknown> = { ...bodyValidation.data };
+    if (updateData.start_date && updateData.start_date instanceof Date) {
+      updateData.start_date = updateData.start_date.toISOString();
+    }
+    if (updateData.end_date && updateData.end_date instanceof Date) {
+      updateData.end_date = updateData.end_date.toISOString();
+    }
+
+    const { data: tour, error } = await tourService.updateTour(supabase, tourId, updateData);
 
     if (error) {
       // RLS prevents unauthorized access or updates to non-existent tours.

@@ -42,7 +42,9 @@ const inputVariants = cva("input w-full", {
   },
 });
 
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement>, VariantProps<typeof inputVariants> {}
+export interface InputProps
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "size">,
+    VariantProps<typeof inputVariants> {}
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className, variant, size, type, ...props }, ref) => {
   return <input type={type} className={cn(inputVariants({ variant, size, className }))} ref={ref} {...props} />;

@@ -51,7 +51,7 @@ export const OnboardingModal = ({ isOpen, onClose }: OnboardingModalProps) => {
         body: JSON.stringify({ onboarding_completed: true }),
       });
       onClose();
-    } catch (error) {
+    } catch {
       toast.error(t("onboarding.error"));
     }
   };

@@ -73,10 +73,7 @@ export function ThemeController() {
           ></path>
         </svg>
       </div>
-      <ul
-        tabIndex={0}
-        className="dropdown-content bg-base-300 rounded-box z-[1] w-52 p-2 shadow-2xl"
-      >
+      <ul className="dropdown-content bg-base-300 rounded-box z-[1] w-52 p-2 shadow-2xl">
         {themes.map((theme) => (
           <li key={theme.value}>
             <input

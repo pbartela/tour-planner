@@ -10,3 +10,7 @@ export const updateProfileCommandSchema: z.ZodType<UpdateProfileCommand> = z
     onboarding_completed: z.boolean().optional(),
   })
   .partial();
+
+export const completedProfileSchema = z.object({
+  onboarding_completed: z.boolean(),
+});

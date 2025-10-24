@@ -25,11 +25,11 @@ export interface PaginatedResponse<T> {
  * Represents the authenticated user object, combining Supabase user data
  * with the application-specific profile. This is the shape of `Astro.locals.user`.
  */
-export type User = {
+export interface User {
   id: string;
   email: string;
   profile: ProfileDto;
-};
+}
 
 // ============================================================================
 // Profiles

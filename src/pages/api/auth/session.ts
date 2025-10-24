@@ -32,23 +32,21 @@ export const POST: APIRoute = async (context) => {
     // Check if this is a new user (no profile exists)
     let isNewUser = false;
     if (data.user?.id) {
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("id", data.user.id)
-        .single();
+      const { error: profileError } = await supabase.from("profiles").select("id").eq("id", data.user.id).single();
       isNewUser = profileError?.code === "PGRST116"; // No rows returned
     }
 
-    return new Response(JSON.stringify({
-      success: true,
-      needsRegistration: false, // We removed username logic, so no additional registration needed
-      isNewUser,
-    }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-
+    return new Response(
+      JSON.stringify({
+        success: true,
+        needsRegistration: false, // We removed username logic, so no additional registration needed
+        isNewUser,
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   } catch (error) {
     console.error("Session API error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {

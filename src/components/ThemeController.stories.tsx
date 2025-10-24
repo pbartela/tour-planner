@@ -31,9 +31,7 @@ export const Default: Story = {
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">
             <h2 className="card-title text-base-content">Sample Card</h2>
-            <p className="text-base-content/70">
-              This card shows how the theme affects different elements.
-            </p>
+            <p className="text-base-content/70">This card shows how the theme affects different elements.</p>
             <div className="card-actions justify-end">
               <button className="btn btn-primary">Primary Button</button>
               <button className="btn btn-secondary">Secondary Button</button>
@@ -44,9 +42,7 @@ export const Default: Story = {
         <div className="card bg-base-200 shadow-xl">
           <div className="card-body">
             <h2 className="card-title text-base-content">Another Card</h2>
-            <p className="text-base-content/70">
-              Different background colors and content styling.
-            </p>
+            <p className="text-base-content/70">Different background colors and content styling.</p>
             <div className="card-actions justify-end">
               <button className="btn btn-accent">Accent Button</button>
               <button className="btn btn-ghost">Ghost Button</button>
@@ -57,9 +53,7 @@ export const Default: Story = {
         <div className="card bg-base-300 shadow-xl">
           <div className="card-body">
             <h2 className="card-title text-base-content">Third Card</h2>
-            <p className="text-base-content/70">
-              More variations to demonstrate theme consistency.
-            </p>
+            <p className="text-base-content/70">More variations to demonstrate theme consistency.</p>
             <div className="card-actions justify-end">
               <button className="btn btn-success">Success</button>
               <button className="btn btn-warning">Warning</button>
@@ -73,29 +67,31 @@ export const Default: Story = {
         <h3 className="text-lg font-semibold text-base-content mb-4">Form Elements</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="form-control">
-              <div className="label">
+            <div className="form-control">
+              <label htmlFor="theme-email-input" className="label">
                 <span className="label-text text-base-content">Email</span>
-              </div>
+              </label>
               <input
+                id="theme-email-input"
                 type="email"
                 placeholder="your@email.com"
                 className="input input-bordered input-primary"
               />
-            </label>
+            </div>
           </div>
 
           <div>
-            <label className="form-control">
-              <div className="label">
+            <div className="form-control">
+              <label htmlFor="theme-password-input" className="label">
                 <span className="label-text text-base-content">Password</span>
-              </div>
+              </label>
               <input
+                id="theme-password-input"
                 type="password"
                 placeholder="••••••••"
                 className="input input-bordered input-secondary"
               />
-            </label>
+            </div>
           </div>
         </div>
 
@@ -120,8 +116,8 @@ export const Default: Story = {
           ></path>
         </svg>
         <span className="text-base-content">
-          Try different themes using the theme controller dropdown above!
-          Available themes include: Default, Light, Dark, Cupcake, Synthwave, Retro, and many more.
+          Try different themes using the theme controller dropdown above! Available themes include: Default, Light,
+          Dark, Cupcake, Synthwave, Retro, and many more.
         </span>
       </div>
     </div>

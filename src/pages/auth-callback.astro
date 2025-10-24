@@ -9,63 +9,61 @@ export const prerender = false;
     <meta charset="utf-8" />
     <title>Authenticating...</title>
     <script>
+      /* eslint-disable */
       // Handle authentication callback with tokens in URL fragment
-      const handleAuthCallback = async () => {
-        const fragment = window.location.hash.substring(1);
-        const params = new URLSearchParams(fragment);
+      function handleAuthCallback() {
+        var fragment = window.location.hash.substring(1);
+        var params = new URLSearchParams(fragment);
 
-        const accessToken = params.get("access_token");
-        const refreshToken = params.get("refresh_token");
-        const error = params.get("error");
-        const errorDescription = params.get("error_description");
+        var accessToken = params.get("access_token");
+        var refreshToken = params.get("refresh_token");
+        var error = params.get("error");
+        var errorDescription = params.get("error_description");
 
         // Get the intended destination from query params
-        const urlParams = new URLSearchParams(window.location.search);
-        const next = urlParams.get("next") || "/en-US/";
+        var urlParams = new URLSearchParams(window.location.search);
+        var next = urlParams.get("next") || "/en-US/";
 
         if (error) {
-          // eslint-disable-next-line no-console
           console.error("Auth error:", error, errorDescription);
           window.location.href = "/en-US/login?error=" + encodeURIComponent(error);
           return;
         }
 
         if (accessToken && refreshToken) {
-          try {
-            // Send tokens to server to establish session
-            const response = await fetch("/api/auth/session", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                access_token: accessToken,
-                refresh_token: refreshToken,
-              }),
+          fetch("/api/auth/session", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            }),
+          })
+            .then(function (response) {
+              if (response.ok) {
+                // Since we removed username logic, all users go to dashboard/welcome page
+                // New users will see the onboarding modal automatically
+                window.location.href = next;
+              } else {
+                console.error("Failed to establish session");
+                window.location.href = "/en-US/login?error=session_failed";
+              }
+            })
+            .catch(function (err) {
+              console.error("Session establishment error:", err);
+              window.location.href = "/en-US/login?error=unexpected_error";
             });
-
-            if (response.ok) {
-              // Since we removed username logic, all users go to dashboard/welcome page
-              // New users will see the onboarding modal automatically
-              window.location.href = next;
-            } else {
-              // eslint-disable-next-line no-console
-              console.error("Failed to establish session");
-              window.location.href = "/en-US/login?error=session_failed";
-            }
-          } catch (err) {
-            // eslint-disable-next-line no-console
-            console.error("Session establishment error:", err);
-            window.location.href = "/en-US/login?error=unexpected_error";
-          }
         } else {
           // No tokens found
           window.location.href = "/en-US/login?error=no_tokens";
         }
-      };
+      }
 
       // Run when page loads
-      window.addEventListener("load", () => handleAuthCallback());
+      window.addEventListener("load", handleAuthCallback);
+      /* eslint-enable */
     </script>
   </head>
   <body>

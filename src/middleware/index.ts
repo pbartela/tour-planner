@@ -1,5 +1,4 @@
 import { defineMiddleware } from "astro:middleware";
-import { CompletedProfileSchema } from "@/lib/validators/profile.validators";
 import type { User } from "src/types";
 import { createSupabaseServerClient } from "@/db/supabase.client";
 
@@ -34,7 +33,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     if (profile) {
       const user: User = {
         id: sessionUser.id,
-        email: sessionUser.email!,
+        email: sessionUser.email || "",
         profile,
       };
       context.locals.user = user;

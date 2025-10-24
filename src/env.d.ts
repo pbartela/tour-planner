@@ -11,10 +11,7 @@ declare global {
       session: Session | null;
       user: User | undefined;
       cookies: {
-        delete(
-          name: "sb-access-token" | "sb-refresh-token",
-          options?: import("astro").CookieDeleteOptions,
-        ): void;
+        delete(name: "sb-access-token" | "sb-refresh-token", options?: import("astro").CookieDeleteOptions): void;
       };
     }
   }

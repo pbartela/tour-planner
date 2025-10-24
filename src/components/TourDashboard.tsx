@@ -8,7 +8,7 @@ interface TourDashboardProps {
 
 const TourDashboard = ({ onboardingCompleted }: TourDashboardProps) => {
   if (!onboardingCompleted) {
-    return <OnboardingModal isOpen={true} />;
+    return <OnboardingModal isOpen={true} onClose={() => undefined} />;
   }
 
   return (
@@ -19,7 +19,7 @@ const TourDashboard = ({ onboardingCompleted }: TourDashboardProps) => {
         </CardHeader>
         <CardContent>
           <div className="text-center">
-            <p className="mb-4">You don't have any active tours yet.</p>
+            <p className="mb-4">You don&apos;t have any active tours yet.</p>
             <Button>Create Your First Tour</Button>
           </div>
         </CardContent>

@@ -1,7 +1,7 @@
 import type { z } from "zod";
 
 import type { SupabaseClient } from "@/db/supabase.client";
-import type { getToursQuerySchema, createTourCommandSchema } from "@/lib/validators/tour.validators";
+import type { getToursQuerySchema } from "@/lib/validators/tour.validators";
 import type { CreateTourCommand, PaginatedToursDto, TourDetailsDto, TourSummaryDto, UpdateTourCommand } from "@/types";
 
 class TourService {
@@ -50,7 +50,7 @@ class TourService {
       }
 
       const paginatedData: PaginatedToursDto = {
-        data: tours.map((p) => p.tour),
+        data: tours.map((p: { tour: TourSummaryDto }) => p.tour),
         pagination: {
           page,
           limit,

@@ -5,7 +5,7 @@ import { updateProfileCommandSchema } from "@/lib/validators/profile.validators"
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ locals, cookies }) => {
+export const GET: APIRoute = async ({ locals }) => {
   const { supabase } = locals;
 
   // Get session from Supabase since middleware doesn't run for API routes
@@ -36,7 +36,7 @@ export const GET: APIRoute = async ({ locals, cookies }) => {
   }
 };
 
-export const PATCH: APIRoute = async ({ request, locals, cookies }) => {
+export const PATCH: APIRoute = async ({ request, locals }) => {
   const { supabase } = locals;
 
   // Get session from Supabase since middleware doesn't run for API routes

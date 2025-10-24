@@ -55,7 +55,7 @@ type Story = StoryObj<typeof Input>;
 // Basic variants
 export const Default: Story = {
   args: {
-    variant: "default",
+    variant: "neutral",
     placeholder: "Default input",
   },
 };
@@ -120,7 +120,7 @@ export const InputTypes: Story = {
 export const Disabled: Story = {
   render: () => (
     <div className="flex flex-col gap-4 w-full max-w-md">
-      <Input variant="default" placeholder="Disabled default" disabled />
+      <Input variant="neutral" placeholder="Disabled default" disabled />
       <Input variant="primary" placeholder="Disabled primary" disabled />
       <Input variant="ghost" placeholder="Disabled ghost" disabled />
     </div>
@@ -132,18 +132,18 @@ export const WithIcons: Story = {
   render: () => (
     <div className="flex flex-col gap-4 w-full max-w-md">
       {/* Search input with icon */}
-      <label className="input input-bordered flex items-center gap-2">
+      <label htmlFor="search-input" className="input input-bordered flex items-center gap-2">
         <svg className="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
           <g strokeLinejoin="round" strokeLinecap="round" strokeWidth="2.5" fill="none" stroke="currentColor">
             <circle cx="11" cy="11" r="8"></circle>
             <path d="m21 21-4.3-4.3"></path>
           </g>
         </svg>
-        <Input variant="ghost" placeholder="Search..." className="grow" />
+        <Input id="search-input" variant="ghost" placeholder="Search..." className="grow" />
       </label>
 
       {/* Email input with icon */}
-      <label className="input input-bordered flex items-center gap-2">
+      <label htmlFor="email-input" className="input input-bordered flex items-center gap-2">
         <svg className="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
           <g strokeLinejoin="round" strokeLinecap="round" strokeWidth="2.5" fill="none" stroke="currentColor">
             <rect width="20" height="16" x="2" y="4" rx="2"></rect>
@@ -161,24 +161,24 @@ export const FormExample: Story = {
   render: () => (
     <form className="flex flex-col gap-4 w-full max-w-md">
       <div className="form-control">
-        <label className="label">
+        <label htmlFor="username-input" className="label">
           <span className="label-text">Username</span>
         </label>
-        <Input variant="primary" placeholder="Enter username" />
+        <Input id="username-input" variant="primary" placeholder="Enter username" />
       </div>
 
       <div className="form-control">
-        <label className="label">
+        <label htmlFor="email-form-input" className="label">
           <span className="label-text">Email</span>
         </label>
-        <Input type="email" variant="primary" placeholder="Enter email" />
+        <Input id="email-form-input" type="email" variant="primary" placeholder="Enter email" />
       </div>
 
       <div className="form-control">
-        <label className="label">
+        <label htmlFor="password-input" className="label">
           <span className="label-text">Password</span>
         </label>
-        <Input type="password" variant="primary" placeholder="Enter password" />
+        <Input id="password-input" type="password" variant="primary" placeholder="Enter password" />
       </div>
 
       <button className="btn btn-primary" type="submit">
