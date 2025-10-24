@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -7,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-hot-toast";
 
@@ -31,11 +31,11 @@ const ONBOARDING_STEPS = [
   },
 ];
 
-export const OnboardingModal = ({ isOpen, onClose }: OnboardingModalProps) => {
+export const OnboardingModal = ({ isOpen, onClose }: OnboardingModalProps): React.JSX.Element => {
   const { t } = useTranslation("tours");
   const [currentStep, setCurrentStep] = useState(0);
 
-  const handleNext = () => {
+  const handleNext = (): void => {
     if (currentStep < ONBOARDING_STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
@@ -43,7 +43,7 @@ export const OnboardingModal = ({ isOpen, onClose }: OnboardingModalProps) => {
     }
   };
 
-  const handleFinish = async () => {
+  const handleFinish = async (): Promise<void> => {
     try {
       await fetch("/api/profiles/me", {
         method: "PATCH",

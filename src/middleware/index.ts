@@ -13,11 +13,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   const lang = context.params.locale || import.meta.env.PUBLIC_DEFAULT_LOCALE || "en-US";
 
-  // Set locale cookie
-  context.cookies.set("locale", lang, {
-    path: "/",
-    maxAge: 365 * 24 * 60 * 60, // 1 year
-  });
+  // Only set locale cookie if it has changed to avoid unnecessary cookie writes
+  const currentLocale = context.cookies.get("locale")?.value;
+  if (currentLocale !== lang) {
+    context.cookies.set("locale", lang, {
+      path: "/",
+      maxAge: 365 * 24 * 60 * 60, // 1 year
+    });
+  }
 
   const pathWithoutLocale = context.params.locale
     ? context.url.pathname.replace(new RegExp(`^/${context.params.locale}`), "") || "/"

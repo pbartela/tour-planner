@@ -35,7 +35,9 @@ export const POST: APIRoute = async ({ request }) => {
   });
 
   if (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    // Log the actual error for debugging, but don't expose internal details to the client
+    console.error("Magic link generation error:", error);
+    return new Response(JSON.stringify({ error: "Failed to send magic link. Please try again later." }), {
       status: 500,
     });
   }

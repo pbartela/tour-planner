@@ -1,3 +1,4 @@
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OnboardingModal } from "@/components/OnboardingModal";
@@ -6,7 +7,7 @@ interface TourDashboardProps {
   onboardingCompleted: boolean;
 }
 
-const TourDashboard = ({ onboardingCompleted }: TourDashboardProps) => {
+const TourDashboard = ({ onboardingCompleted }: TourDashboardProps): React.JSX.Element => {
   if (!onboardingCompleted) {
     return <OnboardingModal isOpen={true} onClose={() => undefined} />;
   }

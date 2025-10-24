@@ -26,6 +26,13 @@ export const prerender = false;
         document.cookie = "locale=" + locale + ";path=/;max-age=31536000;samesite=lax"; // 1 year
         var next = urlParams.get("next") || "/" + locale + "/";
 
+        // Defense in depth: Validate redirect URL on client-side
+        // Prevent open redirect attacks by ensuring it's a relative path
+        if (next.startsWith('//') || next.includes(':') || !next.startsWith('/')) {
+          console.warn('Invalid redirect detected, using default');
+          next = "/" + locale + "/";
+        }
+
         if (error) {
           console.error("Auth error:", error, errorDescription);
           // Redirect to dedicated error page with error details

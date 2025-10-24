@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 const themes = [
   { name: "Default", value: "default" },
@@ -35,7 +35,7 @@ const themes = [
   { name: "Winter", value: "winter" },
 ];
 
-export function ThemeController() {
+export function ThemeController(): React.JSX.Element {
   const [currentTheme, setCurrentTheme] = useState<string>("default");
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export function ThemeController() {
     }
   }, []);
 
-  const handleThemeChange = (themeValue: string) => {
+  const handleThemeChange = (themeValue: string): void => {
     setCurrentTheme(themeValue);
     localStorage.setItem("theme", themeValue);
 

@@ -7,6 +7,7 @@ export function createSupabaseAdminClient() {
   // This key grants admin privileges and must never be exposed to the client
   const supabaseKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
 
+  // Defense in depth: Runtime check (also validated at build time via astro.config.mjs)
   if (!supabaseUrl || !supabaseKey) {
     throw new Error("Supabase URL or Service Role Key is not configured.");
   }

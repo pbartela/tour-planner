@@ -20,52 +20,18 @@ export async function validateSession(supabase: SupabaseClient): Promise<User | 
       return null;
     }
 
-    // Get user profile from database with retry for new users
-    let profile = null;
-    let profileError = null;
-
-    // Retry up to 3 times for new user profile creation
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const result = await supabase.from("profiles").select("*").eq("id", serverUser.id).single();
-
-      profile = result.data;
-      profileError = result.error;
-
-      if (profile) {
-        break; // Profile found, exit retry loop
-      }
-
-      // If it's a "not found" error and this is a new user, wait and retry
-      if (profileError?.code === "PGRST116" && attempt < 2) {
-        await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1))); // 100ms, 200ms delays
-        continue;
-      }
-
-      break; // Exit retry loop for other errors or final attempt
-    }
+    // Get user profile from database
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", serverUser.id)
+      .single();
 
     if (profileError || !profile) {
-      // If profile still doesn't exist after retries, try to create it manually
-      // This handles cases where the database trigger failed
-      if (profileError?.code === "PGRST116") {
-        try {
-          const { data: newProfile, error: createError } = await supabase
-            .from("profiles")
-            .insert({ id: serverUser.id })
-            .select("*")
-            .single();
-
-          if (createError || !newProfile) {
-            return null;
-          }
-
-          profile = newProfile;
-        } catch {
-          return null;
-        }
-      } else {
-        return null;
-      }
+      // Profile should exist - it's created via webhook on user signup
+      // If missing, log error and return null to trigger re-authentication
+      console.error(`Profile not found for user ${serverUser.id}. Webhook may have failed.`, profileError);
+      return null;
     }
 
     return {

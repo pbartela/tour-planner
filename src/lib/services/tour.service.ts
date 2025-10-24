@@ -14,7 +14,8 @@ class TourService {
     const offset = (page - 1) * limit;
 
     try {
-      const { data: tours, error: toursError } = await supabase
+      // Combine data and count into a single query to avoid N+1 issue
+      const { data: tours, error: toursError, count } = await supabase
         .from("participants")
         .select(
           `
@@ -26,7 +27,8 @@ class TourService {
                         end_date,
                         status
                     )
-                `
+                `,
+          { count: "exact" } // Get count in the same query
         )
         .eq("user_id", userId)
         .eq("tour.status", status)
@@ -36,17 +38,6 @@ class TourService {
       if (toursError) {
         console.error("Error fetching user tours:", toursError);
         throw new Error("Failed to fetch tours from the database.");
-      }
-
-      const { count, error: countError } = await supabase
-        .from("participants")
-        .select("tour_id", { count: "exact", head: true })
-        .eq("user_id", userId)
-        .eq("tours.status", status);
-
-      if (countError) {
-        console.error("Error counting user tours:", countError);
-        throw new Error("Failed to count tours in the database.");
       }
 
       const paginatedData: PaginatedToursDto = {
@@ -88,7 +79,17 @@ class TourService {
 
       if (participantError) {
         console.error("Error adding participant:", participantError);
-        // TODO: Implement transaction rollback or cleanup
+
+        // Rollback: Delete the tour if participant creation fails to prevent orphaned tours
+        const { error: deleteError } = await supabase
+          .from("tours")
+          .delete()
+          .eq("id", tour.id);
+
+        if (deleteError) {
+          console.error("Error during rollback - failed to delete orphaned tour:", deleteError);
+        }
+
         throw new Error("Failed to add participant to the new tour.");
       }
 
