@@ -4,6 +4,7 @@ import { z } from "zod";
 import { tourService } from "@/lib/services/tour.service";
 import { updateTourCommandSchema } from "@/lib/validators/tour.validators";
 import { checkCsrfProtection } from "@/lib/server/csrf.service";
+import { secureError } from "@/lib/server/logger.service";
 
 export const prerender = false;
 
@@ -39,7 +40,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
 
     return new Response(JSON.stringify(tour), { status: 200 });
   } catch (error) {
-    console.error(`Unexpected error in GET /api/tours/${tourId}:`, error);
+    secureError(`Unexpected error in GET /api/tours/${tourId}`, error);
     return new Response(JSON.stringify({ message: "Internal Server Error" }), { status: 500 });
   }
 };
@@ -97,7 +98,7 @@ export const PATCH: APIRoute = async ({ params, request, locals, cookies }) => {
 
     return new Response(JSON.stringify(tour), { status: 200 });
   } catch (error) {
-    console.error(`Unexpected error in PATCH /api/tours/${tourId}:`, error);
+    secureError(`Unexpected error in PATCH /api/tours/${tourId}`, error);
     return new Response(JSON.stringify({ message: "Internal Server Error" }), { status: 500 });
   }
 };
@@ -139,7 +140,7 @@ export const DELETE: APIRoute = async ({ params, locals, cookies, request }) => 
 
     return new Response(null, { status: 204 });
   } catch (error) {
-    console.error(`Unexpected error in DELETE /api/tours/${tourId}:`, error);
+    secureError(`Unexpected error in DELETE /api/tours/${tourId}`, error);
     return new Response(JSON.stringify({ message: "Internal Server Error" }), { status: 500 });
   }
 };

@@ -4,7 +4,7 @@
  */
 
 import { minutes } from "@/lib/constants/time";
-import { isDevelopment as isDev } from "@/lib/server/env-validation.service";
+import { isDevelopment as isDev, isProduction } from "@/lib/server/env-validation.service";
 
 interface RateLimitEntry {
   count: number;
@@ -20,6 +20,18 @@ class RateLimitStore {
   private cleanupInterval: NodeJS.Timeout | null = null;
 
   constructor() {
+    // Warn if using in-memory rate limiting in production
+    if (isProduction()) {
+      console.warn(
+        '⚠️  WARNING: In-memory rate limiting is not suitable for multi-instance deployments.\n' +
+        '   Each instance maintains its own rate limit counters, which means:\n' +
+        '   - Rate limits are NOT shared across instances\n' +
+        '   - Users can bypass limits by hitting different instances\n' +
+        '   - Consider implementing Redis-based storage for production use.\n' +
+        '   See: https://redis.io/docs/manual/patterns/rate-limiter/'
+      );
+    }
+
     // Clean up expired entries every minute
     this.cleanupInterval = setInterval(() => {
       this.cleanup();
@@ -212,7 +224,7 @@ export const RATE_LIMIT_CONFIGS = {
 
 /**
  * Extracts a client identifier from the request for rate limiting.
- * Uses a combination of IP address and User-Agent for better accuracy.
+ * Uses IP address with sanitization to prevent header injection.
  *
  * SECURITY CONSIDERATIONS:
  * This implementation provides basic rate limiting but has known limitations:
@@ -249,22 +261,35 @@ export const RATE_LIMIT_CONFIGS = {
  *   instance deployments and persistent rate limit tracking.
  *
  * @param request - The incoming request
- * @returns A unique identifier for the client (IP:UserAgent combination)
+ * @param userId - Optional authenticated user ID for more accurate rate limiting
+ * @returns A unique identifier for the client
  */
-export function getClientIdentifier(request: Request): string {
+export function getClientIdentifier(request: Request, userId?: string): string {
+  // For authenticated users, use their user ID for accurate rate limiting
+  if (userId) {
+    return `user:${userId}`;
+  }
+
   // Try to get the real IP from common proxy headers
   const forwardedFor = request.headers.get("x-forwarded-for");
   const realIp = request.headers.get("x-real-ip");
   const cfConnectingIp = request.headers.get("cf-connecting-ip"); // Cloudflare
 
-  const ip = forwardedFor?.split(",")[0].trim() || realIp || cfConnectingIp || "unknown";
+  let ip = forwardedFor?.split(",")[0].trim() || realIp || cfConnectingIp || "unknown";
 
-  // Include User-Agent for additional uniqueness (helps with shared IPs)
-  // Note: User-Agent can be spoofed - see security considerations above
-  const userAgent = request.headers.get("user-agent") || "unknown";
+  // Sanitize IP address to prevent header injection attacks
+  // Allow only valid IPv4 and IPv6 characters
+  ip = ip.replace(/[^0-9a-f.:]/gi, '');
 
-  // Create a simple hash of the combination
-  return `${ip}:${userAgent.substring(0, 50)}`;
+  // Validate that it looks like a valid IP address
+  const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+  const ipv6Pattern = /^([0-9a-f]{0,4}:){2,7}[0-9a-f]{0,4}$/i;
+
+  if (!ipv4Pattern.test(ip) && !ipv6Pattern.test(ip) && ip !== '') {
+    ip = "unknown";
+  }
+
+  return `ip:${ip}`;
 }
 
 /**

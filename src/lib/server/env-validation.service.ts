@@ -1,6 +1,21 @@
 /**
  * Environment variable validation service.
  * Validates required environment variables at application startup.
+ *
+ * DEFENSE-IN-DEPTH APPROACH:
+ * This service provides runtime validation using Zod, which complements
+ * Astro's build-time validation defined in astro.config.mjs.
+ *
+ * Why both validations exist:
+ * 1. Build-time (astro.config.mjs): Catches configuration errors early during build
+ * 2. Runtime (this service): Ensures the application doesn't start with invalid config
+ *    in production, even if build-time checks are bypassed
+ *
+ * Benefits:
+ * - Additional validation patterns (e.g., JWT regex, locale format)
+ * - Runtime flexibility for dynamic environment changes
+ * - Better error messages during application startup
+ * - Defense-in-depth security approach
  */
 
 import { z } from "zod";

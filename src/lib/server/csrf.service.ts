@@ -4,6 +4,7 @@
  */
 
 import type { AstroCookies } from "astro";
+import { timingSafeEqual as cryptoTimingSafeEqual } from "crypto";
 import { isProduction } from "@/lib/server/env-validation.service";
 import { daysInSeconds } from "@/lib/constants/time";
 
@@ -90,6 +91,8 @@ export async function validateCsrfToken(request: Request, cookies: AstroCookies)
 
 /**
  * Timing-safe string comparison to prevent timing attacks.
+ * Uses Node's crypto.timingSafeEqual which operates on buffers to prevent
+ * JavaScript engine optimizations that could leak timing information.
  *
  * @param a - First string
  * @param b - Second string
@@ -100,12 +103,10 @@ function timingSafeEqual(a: string, b: string): boolean {
     return false;
   }
 
-  let result = 0;
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
+  const bufferA = Buffer.from(a, "utf-8");
+  const bufferB = Buffer.from(b, "utf-8");
 
-  return result === 0;
+  return cryptoTimingSafeEqual(bufferA, bufferB);
 }
 
 /**
@@ -154,9 +155,7 @@ export async function checkCsrfProtection(request: Request, cookies: AstroCookie
   const url = new URL(request.url);
 
   // Check if this specific auth endpoint is exempt from CSRF protection
-  const isExemptAuthEndpoint = CSRF_EXEMPT_AUTH_ENDPOINTS.some(
-    (exemptPath) => url.pathname === exemptPath
-  );
+  const isExemptAuthEndpoint = CSRF_EXEMPT_AUTH_ENDPOINTS.some((exemptPath) => url.pathname === exemptPath);
 
   if (isExemptAuthEndpoint) {
     return null;

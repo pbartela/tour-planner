@@ -4,9 +4,11 @@
  */
 
 let csrfToken: string | null = null;
+let csrfTokenPromise: Promise<string> | null = null;
 
 /**
  * Fetches and caches the CSRF token from the server.
+ * Prevents race conditions by reusing in-flight requests.
  *
  * @returns The CSRF token
  */
@@ -15,14 +17,25 @@ async function getCsrfToken(): Promise<string> {
     return csrfToken;
   }
 
-  const response = await fetch("/api/csrf-token");
-  if (!response.ok) {
-    throw new Error("Failed to fetch CSRF token");
+  // If a fetch is already in progress, reuse it to prevent race conditions
+  if (csrfTokenPromise) {
+    return csrfTokenPromise;
   }
 
-  const data: { token: string } = await response.json();
-  csrfToken = data.token;
-  return data.token;
+  csrfTokenPromise = fetch("/api/csrf-token")
+    .then(async (response) => {
+      if (!response.ok) {
+        throw new Error("Failed to fetch CSRF token");
+      }
+      const data: { token: string } = await response.json();
+      csrfToken = data.token;
+      return data.token;
+    })
+    .finally(() => {
+      csrfTokenPromise = null;
+    });
+
+  return csrfTokenPromise;
 }
 
 /**
@@ -31,6 +44,7 @@ async function getCsrfToken(): Promise<string> {
  */
 export function clearCsrfToken(): void {
   csrfToken = null;
+  csrfTokenPromise = null;
 }
 
 /**
@@ -82,6 +96,7 @@ export async function apiRequest(url: string, options: RequestInit = {}): Promis
   });
 
   // Clear cached CSRF token on 403 to force refresh on retry
+  // The next request will automatically fetch a new token
   if (response.status === 403) {
     clearCsrfToken();
   }

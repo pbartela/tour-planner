@@ -3,6 +3,7 @@ import type { APIRoute } from "astro";
 import { tourService } from "@/lib/services/tour.service";
 import { getToursQuerySchema, createTourCommandSchema } from "@/lib/validators/tour.validators";
 import { checkCsrfProtection } from "@/lib/server/csrf.service";
+import { secureError } from "@/lib/server/logger.service";
 
 export const prerender = false;
 
@@ -33,7 +34,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
 
     return new Response(JSON.stringify(tours), { status: 200 });
   } catch (error) {
-    console.error("Unexpected error in GET /api/tours:", error);
+    secureError("Unexpected error in GET /api/tours", error);
     return new Response(JSON.stringify({ message: "Internal Server Error" }), { status: 500 });
   }
 };
@@ -75,7 +76,7 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
 
     return new Response(JSON.stringify(tour), { status: 201 });
   } catch (error) {
-    console.error("Unexpected error in POST /api/tours:", error);
+    secureError("Unexpected error in POST /api/tours", error);
     return new Response(JSON.stringify({ message: "Internal Server Error" }), { status: 500 });
   }
 };

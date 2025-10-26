@@ -1,18 +1,24 @@
 import { defineMiddleware } from "astro:middleware";
 import { createSupabaseServerClient } from "@/db/supabase.client";
 import { validateSession } from "@/lib/server/session-validation.service";
-import { getOrCreateCsrfToken } from "@/lib/server/csrf.service";
+import { getOrCreateCsrfToken, checkCsrfProtection } from "@/lib/server/csrf.service";
 import { yearsInSeconds } from "@/lib/constants/time";
 
 const protectedRoutes = ["/", "/profile", "/tours"];
 // Routes that authenticated users should be redirected away from.
 const authRoutes = ["/login"];
+// Allowed locales - must match those defined in astro.config.mjs
+const allowedLocales = ["en-US", "pl-PL"] as const;
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const supabase = createSupabaseServerClient(context.request, context.cookies);
   context.locals.supabase = supabase;
 
-  const lang = context.params.locale || import.meta.env.PUBLIC_DEFAULT_LOCALE || "en-US";
+  // Validate locale against allowed values to prevent injection
+  const requestedLocale = context.params.locale;
+  const lang = (requestedLocale && allowedLocales.includes(requestedLocale as typeof allowedLocales[number]))
+    ? requestedLocale
+    : import.meta.env.PUBLIC_DEFAULT_LOCALE || "en-US";
 
   // Only set locale cookie if it has changed to avoid unnecessary cookie writes
   const currentLocale = context.cookies.get("locale")?.value;
@@ -30,8 +36,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // Generate CSRF token for all requests (will be reused if already exists)
   getOrCreateCsrfToken(context.cookies);
 
-  // API routes are not handled by this page-level redirect middleware.
+  // CSRF protection for API routes (with exemptions defined in csrf.service.ts)
   if (pathWithoutLocale.startsWith("/api/")) {
+    const csrfError = await checkCsrfProtection(context.request, context.cookies);
+    if (csrfError) {
+      return csrfError;
+    }
     return next();
   }
 
