@@ -8,6 +8,7 @@ import { z } from "zod";
 import { Loader2 } from "lucide-react";
 
 import { AuthHeader } from "./AuthHeader";
+import { post } from "@/lib/client/api-client";
 
 const createMagicLinkSchema = (t: (key: string) => string) =>
   z.object({
@@ -36,12 +37,10 @@ export const LoginForm = ({ redirectTo }: { redirectTo?: string | null }) => {
     setMessage("");
 
     try {
-      const response = await fetch("/api/auth/magic-link", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ ...data, redirectTo, locale: i18n.language }),
+      const response = await post("/api/auth/magic-link", {
+        ...data,
+        redirectTo,
+        locale: i18n.language,
       });
 
       if (!response.ok) {

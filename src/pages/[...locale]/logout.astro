@@ -1,0 +1,9 @@
+---
+import AuthLayout from "@/layouts/AuthLayout.astro";
+import LogoutContent from "@/components/auth/LogoutContent";
+import i18next from "i18next";
+---
+
+<AuthLayout title={i18next.t("logoutPage.title")}>
+  <LogoutContent client:load />
+</AuthLayout>

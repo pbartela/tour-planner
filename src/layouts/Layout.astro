@@ -3,6 +3,7 @@ import { ClientRouter } from "astro:transitions";
 import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeController } from "@/components/ThemeController";
+import { getOrCreateCsrfToken } from "@/lib/server/csrf.service";
 import "@/styles/global.css";
 
 interface Props {
@@ -11,6 +12,9 @@ interface Props {
 
 const { title } = Astro.props;
 const { user } = Astro.locals;
+
+// Get CSRF token for forms (only needed if user is authenticated)
+const csrfToken = user ? getOrCreateCsrfToken(Astro.cookies) : null;
 ---
 
 <!doctype html>
@@ -35,7 +39,8 @@ const { user } = Astro.locals;
               user ? (
                 <div class="flex items-center gap-4">
                   <span class="text-base-content">Welcome, {user.profile.display_name || user.email}</span>
-                  <form action="/api/auth/signout" method="post">
+                  <form action="/api/auth/signout" method="post" data-astro-reload>
+                    <input type="hidden" name="csrf_token" value={csrfToken} />
                     <button type="submit" class="btn btn-error btn-sm">
                       Logout
                     </button>

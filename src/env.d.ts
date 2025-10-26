@@ -22,8 +22,8 @@ interface ImportMetaEnv {
   readonly PUBLIC_SUPABASE_ANON_KEY: string;
   readonly SUPABASE_URL: string;
   readonly SUPABASE_SERVICE_ROLE_KEY: string;
-  readonly SUPABASE_WEBHOOK_SECRET: string;
   readonly OPENROUTER_API_KEY: string;
+  readonly TEST_MODE?: string; // Set to "true" to enable production-like rate limits in testing
   // more env variables...
 }
 

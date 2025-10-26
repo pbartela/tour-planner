@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@/db/supabase.client";
 import type { User } from "@/types";
+import { secureError } from "@/lib/server/logger.service";
 
 /**
  * Validates a user session securely by verifying with Supabase server
@@ -25,12 +26,15 @@ export async function validateSession(supabase: SupabaseClient): Promise<User | 
       .from("profiles")
       .select("*")
       .eq("id", serverUser.id)
-      .single();
+      .maybeSingle();
 
     if (profileError || !profile) {
-      // Profile should exist - it's created via webhook on user signup
+      // Profile should exist - it's created via database trigger on user signup
       // If missing, log error and return null to trigger re-authentication
-      console.error(`Profile not found for user ${serverUser.id}. Webhook may have failed.`, profileError);
+      secureError("Profile not found for authenticated user - database trigger may have failed", {
+        userId: serverUser.id,
+        error: profileError,
+      });
       return null;
     }
 

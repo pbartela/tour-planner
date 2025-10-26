@@ -1,24 +1,31 @@
 import { defineMiddleware } from "astro:middleware";
-import type { User } from "src/types";
 import { createSupabaseServerClient } from "@/db/supabase.client";
 import { validateSession } from "@/lib/server/session-validation.service";
+import { getOrCreateCsrfToken, checkCsrfProtection } from "@/lib/server/csrf.service";
+import { yearsInSeconds } from "@/lib/constants/time";
 
 const protectedRoutes = ["/", "/profile", "/tours"];
 // Routes that authenticated users should be redirected away from.
 const authRoutes = ["/login"];
+// Allowed locales - must match those defined in astro.config.mjs
+const allowedLocales = ["en-US", "pl-PL"] as const;
 
 export const onRequest = defineMiddleware(async (context, next) => {
-  const supabase = createSupabaseServerClient(context.cookies);
+  const supabase = createSupabaseServerClient(context.request, context.cookies);
   context.locals.supabase = supabase;
 
-  const lang = context.params.locale || import.meta.env.PUBLIC_DEFAULT_LOCALE || "en-US";
+  // Validate locale against allowed values to prevent injection
+  const requestedLocale = context.params.locale;
+  const lang = (requestedLocale && allowedLocales.includes(requestedLocale as typeof allowedLocales[number]))
+    ? requestedLocale
+    : import.meta.env.PUBLIC_DEFAULT_LOCALE || "en-US";
 
   // Only set locale cookie if it has changed to avoid unnecessary cookie writes
   const currentLocale = context.cookies.get("locale")?.value;
   if (currentLocale !== lang) {
     context.cookies.set("locale", lang, {
       path: "/",
-      maxAge: 365 * 24 * 60 * 60, // 1 year
+      maxAge: yearsInSeconds(1),
     });
   }
 
@@ -26,8 +33,15 @@ export const onRequest = defineMiddleware(async (context, next) => {
     ? context.url.pathname.replace(new RegExp(`^/${context.params.locale}`), "") || "/"
     : context.url.pathname;
 
-  // API routes are not handled by this page-level redirect middleware.
+  // Generate CSRF token for all requests (will be reused if already exists)
+  getOrCreateCsrfToken(context.cookies);
+
+  // CSRF protection for API routes (with exemptions defined in csrf.service.ts)
   if (pathWithoutLocale.startsWith("/api/")) {
+    const csrfError = await checkCsrfProtection(context.request, context.cookies);
+    if (csrfError) {
+      return csrfError;
+    }
     return next();
   }
 
