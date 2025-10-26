@@ -20,8 +20,11 @@ export const POST: APIRoute = async ({ request, locals, cookies, redirect }) => 
 
   // Clear cookies by setting them with an expired date
   // Note: Astro's `cookies.delete` should handle this, but being explicit can help
-  locals.cookies.delete("sb-access-token", { path: "/" });
-  locals.cookies.delete("sb-refresh-token", { path: "/" });
+  cookies.delete("sb-access-token", { path: "/" });
+  cookies.delete("sb-refresh-token", { path: "/" });
 
-  return redirect("/", 303);
+  // Get the user's locale preference from the cookie, fallback to default locale
+  const locale = cookies.get("locale")?.value || import.meta.env.PUBLIC_DEFAULT_LOCALE || "en-US";
+
+  return redirect(`/${locale}/logout`, 303);
 };

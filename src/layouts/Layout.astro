@@ -39,7 +39,7 @@ const csrfToken = user ? getOrCreateCsrfToken(Astro.cookies) : null;
               user ? (
                 <div class="flex items-center gap-4">
                   <span class="text-base-content">Welcome, {user.profile.display_name || user.email}</span>
-                  <form action="/api/auth/signout" method="post">
+                  <form action="/api/auth/signout" method="post" data-astro-reload>
                     <input type="hidden" name="csrf_token" value={csrfToken} />
                     <button type="submit" class="btn btn-error btn-sm">
                       Logout
