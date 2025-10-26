@@ -1,4 +1,4 @@
-import { createBrowserClient, createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createBrowserClient, createServerClient, parseCookieHeader, type CookieOptions } from "@supabase/ssr";
 import type { AstroCookies } from "astro";
 import type { Database } from "../db/database.types.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -16,9 +16,14 @@ export const supabaseBrowserClient = createBrowserClient<Database>(
 /**
  * For use in server-side code (middleware, API routes).
  * Creates a new client for each request with secure cookie options.
+ * @param request - The incoming request object (used to read cookies)
+ * @param cookies - The Astro cookies object (used to set cookies)
  */
-export const createSupabaseServerClient = (cookies: AstroCookies): SupabaseClient<Database> => {
-  const cookieOptions: CookieOptions = {
+export const createSupabaseServerClient = (
+  request: Request,
+  cookies: AstroCookies
+): SupabaseClient<Database> => {
+  const defaultCookieOptions: CookieOptions = {
     httpOnly: true,
     secure: import.meta.env.PROD,
     sameSite: "lax",
@@ -28,16 +33,17 @@ export const createSupabaseServerClient = (cookies: AstroCookies): SupabaseClien
 
   return createServerClient<Database>(import.meta.env.PUBLIC_SUPABASE_URL, import.meta.env.PUBLIC_SUPABASE_ANON_KEY, {
     cookies: {
-      get(key: string) {
-        return cookies.get(key)?.value;
+      getAll() {
+        return parseCookieHeader(request.headers.get("Cookie") ?? "").map(({ name, value }) => ({
+          name,
+          value: value ?? "",
+        }));
       },
-      set(key: string, value: string, options: CookieOptions) {
-        cookies.set(key, value, { ...cookieOptions, ...options });
-      },
-      remove(key: string, options: CookieOptions) {
-        cookies.delete(key, { ...cookieOptions, ...options });
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          cookies.set(name, value, { ...defaultCookieOptions, ...options });
+        });
       },
     },
-    cookieOptions,
   });
 };

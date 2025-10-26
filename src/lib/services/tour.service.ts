@@ -41,7 +41,10 @@ class TourService {
       }
 
       const paginatedData: PaginatedToursDto = {
-        data: tours.map((p: { tour: TourSummaryDto }) => p.tour),
+        data: tours.map((p: { tour: Omit<TourSummaryDto, "has_new_activity"> }) => ({
+          ...p.tour,
+          has_new_activity: false, // TODO: Implement activity tracking logic
+        })),
         pagination: {
           page,
           limit,

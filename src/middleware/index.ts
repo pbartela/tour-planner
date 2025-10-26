@@ -1,14 +1,14 @@
 import { defineMiddleware } from "astro:middleware";
-import type { User } from "src/types";
 import { createSupabaseServerClient } from "@/db/supabase.client";
 import { validateSession } from "@/lib/server/session-validation.service";
+import { getOrCreateCsrfToken } from "@/lib/server/csrf.service";
 
 const protectedRoutes = ["/", "/profile", "/tours"];
 // Routes that authenticated users should be redirected away from.
 const authRoutes = ["/login"];
 
 export const onRequest = defineMiddleware(async (context, next) => {
-  const supabase = createSupabaseServerClient(context.cookies);
+  const supabase = createSupabaseServerClient(context.request, context.cookies);
   context.locals.supabase = supabase;
 
   const lang = context.params.locale || import.meta.env.PUBLIC_DEFAULT_LOCALE || "en-US";
@@ -25,6 +25,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const pathWithoutLocale = context.params.locale
     ? context.url.pathname.replace(new RegExp(`^/${context.params.locale}`), "") || "/"
     : context.url.pathname;
+
+  // Generate CSRF token for all requests (will be reused if already exists)
+  getOrCreateCsrfToken(context.cookies);
 
   // API routes are not handled by this page-level redirect middleware.
   if (pathWithoutLocale.startsWith("/api/")) {

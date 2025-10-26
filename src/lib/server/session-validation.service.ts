@@ -25,12 +25,12 @@ export async function validateSession(supabase: SupabaseClient): Promise<User | 
       .from("profiles")
       .select("*")
       .eq("id", serverUser.id)
-      .single();
+      .maybeSingle();
 
     if (profileError || !profile) {
-      // Profile should exist - it's created via webhook on user signup
+      // Profile should exist - it's created via database trigger on user signup
       // If missing, log error and return null to trigger re-authentication
-      console.error(`Profile not found for user ${serverUser.id}. Webhook may have failed.`, profileError);
+      console.error(`Profile not found for user ${serverUser.id}. Database trigger may have failed.`, profileError);
       return null;
     }
 

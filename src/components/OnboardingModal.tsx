@@ -14,6 +14,8 @@ import { toast } from "react-hot-toast";
 interface OnboardingModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSkipOnboardign: () => void;
+  onCompleteOnboarding: () => Promise<void>;
 }
 
 const ONBOARDING_STEPS = [
@@ -31,27 +33,28 @@ const ONBOARDING_STEPS = [
   },
 ];
 
-export const OnboardingModal = ({ isOpen, onClose }: OnboardingModalProps): React.JSX.Element => {
+export const OnboardingModal = ({
+  isOpen,
+  onClose,
+  onSkipOnboardign,
+  onCompleteOnboarding,
+}: OnboardingModalProps): React.JSX.Element => {
   const { t } = useTranslation("tours");
   const [currentStep, setCurrentStep] = useState(0);
 
-  const handleNext = (): void => {
+  const handleNext = async (): Promise<void> => {
     if (currentStep < ONBOARDING_STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      handleFinish();
+      await handleFinish();
     }
   };
 
   const handleFinish = async (): Promise<void> => {
     try {
-      await fetch("/api/profiles/me", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ onboarding_completed: true }),
-      });
+      await onCompleteOnboarding();
       onClose();
-    } catch {
+    } catch (error) {
       toast.error(t("onboarding.error"));
     }
   };
@@ -77,7 +80,7 @@ export const OnboardingModal = ({ isOpen, onClose }: OnboardingModalProps): Reac
         </div>
 
         <DialogFooter className="sm:justify-between">
-          <Button type="button" variant="ghost" onClick={handleFinish}>
+          <Button type="button" variant="ghost" onClick={onSkipOnboardign}>
             {t("onboarding.skip")}
           </Button>
           <Button type="button" onClick={handleNext}>

@@ -11,17 +11,19 @@ import reactI18next from "astro-react-i18next";
 // https://astro.build/config
 export default defineConfig({
   output: "server",
-  // Environment variable validation - validates at build time
+  // Environment variable validation - validates at build time and runtime
   env: {
     schema: {
       // Public environment variables (accessible on client)
       PUBLIC_SUPABASE_URL: envField.string({
         context: "client",
         access: "public",
+        url: true, // Validates that it's a valid URL
       }),
       PUBLIC_SUPABASE_ANON_KEY: envField.string({
         context: "client",
         access: "public",
+        min: 1, // Ensures non-empty
       }),
       PUBLIC_DEFAULT_LOCALE: envField.string({
         context: "client",
@@ -29,13 +31,15 @@ export default defineConfig({
         default: "en-US",
       }),
       // Server-only environment variables (never exposed to client)
+      SUPABASE_URL: envField.string({
+        context: "server",
+        access: "secret",
+        url: true, // Validates that it's a valid URL
+      }),
       SUPABASE_SERVICE_ROLE_KEY: envField.string({
         context: "server",
         access: "secret",
-      }),
-      SUPABASE_WEBHOOK_SECRET: envField.string({
-        context: "server",
-        access: "secret",
+        min: 1, // Ensures non-empty
       }),
       OPENROUTER_API_KEY: envField.string({
         context: "server",
@@ -43,6 +47,8 @@ export default defineConfig({
         optional: true, // Mark as optional if not always needed
       }),
     },
+    // Validate environment variables at both build time and runtime
+    validateSecrets: true,
   },
   integrations: [
     react(),

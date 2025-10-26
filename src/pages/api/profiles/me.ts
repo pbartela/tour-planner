@@ -3,6 +3,7 @@ import type { APIRoute } from "astro";
 import { profileService } from "@/lib/services/profile.service";
 import { updateProfileCommandSchema } from "@/lib/validators/profile.validators";
 import { handleDatabaseError } from "@/lib/utils/error-handler";
+import { checkCsrfProtection } from "@/lib/server/csrf.service";
 
 export const prerender = false;
 
@@ -37,7 +38,13 @@ export const GET: APIRoute = async ({ locals }) => {
   }
 };
 
-export const PATCH: APIRoute = async ({ request, locals }) => {
+export const PATCH: APIRoute = async ({ request, locals, cookies }) => {
+  // CSRF protection
+  const csrfError = checkCsrfProtection(request, cookies);
+  if (csrfError) {
+    return csrfError;
+  }
+
   const { supabase } = locals;
 
   // Get user from Supabase since middleware doesn't run for API routes

@@ -14,7 +14,7 @@ export const POST: APIRoute = async (context) => {
     const { access_token, refresh_token } = sessionSchema.parse(body);
 
     // Create Supabase client
-    const supabase = createSupabaseServerClient(context.cookies);
+    const supabase = createSupabaseServerClient(context.request, context.cookies);
 
     // Set the session using the tokens
     const { error } = await supabase.auth.setSession({

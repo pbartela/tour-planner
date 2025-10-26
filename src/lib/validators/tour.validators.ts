@@ -6,7 +6,7 @@ export const getToursQuerySchema = z.object({
   limit: z.coerce.number().int().positive().default(20),
 });
 
-export const createTourCommandSchema = z.object({
+const baseTourSchema = z.object({
   title: z.string().min(1, "Title cannot be empty."),
   destination: z.string().min(1, "Destination cannot be empty."),
   description: z.string().optional(),
@@ -16,6 +16,26 @@ export const createTourCommandSchema = z.object({
   like_threshold: z.number().int().positive().optional(),
 });
 
-export const updateTourCommandSchema = createTourCommandSchema.partial().extend({
-  are_votes_hidden: z.boolean().optional(),
+export const createTourCommandSchema = baseTourSchema.refine((data) => data.end_date > data.start_date, {
+  message: "End date must be after start date.",
+  path: ["end_date"],
 });
+
+export const updateTourCommandSchema = baseTourSchema
+  .partial()
+  .extend({
+    are_votes_hidden: z.boolean().optional(),
+  })
+  .refine(
+    (data) => {
+      // Only validate date relationship if both dates are provided
+      if (data.start_date && data.end_date) {
+        return data.end_date > data.start_date;
+      }
+      return true;
+    },
+    {
+      message: "End date must be after start date.",
+      path: ["end_date"],
+    }
+  );

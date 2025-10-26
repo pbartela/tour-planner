@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { tourService } from "@/lib/services/tour.service";
 import { updateTourCommandSchema } from "@/lib/validators/tour.validators";
+import { checkCsrfProtection } from "@/lib/server/csrf.service";
 
 export const prerender = false;
 
@@ -43,7 +44,13 @@ export const GET: APIRoute = async ({ params, locals }) => {
   }
 };
 
-export const PATCH: APIRoute = async ({ params, request, locals }) => {
+export const PATCH: APIRoute = async ({ params, request, locals, cookies }) => {
+  // CSRF protection
+  const csrfError = checkCsrfProtection(request, cookies);
+  if (csrfError) {
+    return csrfError;
+  }
+
   const { supabase } = locals;
 
   const {
@@ -95,7 +102,13 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
   }
 };
 
-export const DELETE: APIRoute = async ({ params, locals }) => {
+export const DELETE: APIRoute = async ({ params, locals, cookies, request }) => {
+  // CSRF protection
+  const csrfError = checkCsrfProtection(request, cookies);
+  if (csrfError) {
+    return csrfError;
+  }
+
   const { supabase } = locals;
 
   const {

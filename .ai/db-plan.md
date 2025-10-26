@@ -135,10 +135,12 @@ A joining table for the many-to-many relationship between `tours` and `tags`.
 - `CREATE INDEX ON public.comments (tour_id, created_at DESC);` - To efficiently retrieve comments for a tour in reverse chronological order.
 - `CREATE INDEX ON public.tour_tags (tag_id);` - To quickly find all tours associated with a specific tag.
 - `CREATE INDEX ON public.invitations (tour_id, email);` - To check for existing invitations for a specific tour and email.
+- `CREATE INDEX idx_tours_status ON public.tours (status);` - To optimize filtering by tour status (active/archived).
+- `CREATE INDEX idx_tours_owner_id ON public.tours (owner_id);` - To improve RLS policy checks and owner lookups.
 
 ## 4. Row-Level Security (RLS) Policies
 
-RLS will be enabled on all tables to ensure data privacy and security.
+RLS is enabled on all tables to ensure data privacy and security.
 
 - **`profiles`**:
   - `SELECT`: Users can view their own profile.
@@ -150,6 +152,7 @@ RLS will be enabled on all tables to ensure data privacy and security.
   - `DELETE`: Only the owner of the tour can delete it.
 - **`participants`**:
   - `SELECT`: Users can view the participant list for tours they are also a participant in.
+    - **Implementation Note**: Uses a helper function `public.is_participant(tour_id, user_id)` with `SECURITY DEFINER` to avoid RLS recursion issues.
   - `INSERT`: Only the tour owner can add new participants.
   - `DELETE`: Users can remove themselves from a tour. The tour owner can remove any other participant.
 - **`comments`**:
@@ -161,18 +164,73 @@ RLS will be enabled on all tables to ensure data privacy and security.
   - `SELECT`: Users can view votes on tours they are a participant in.
   - `INSERT`: Users can vote on tours they participate in, provided voting is not hidden.
   - `DELETE`: Users can remove their own vote, provided voting is not hidden.
+- **`invitations`**:
+  - `SELECT`: Users can see invitations for tours they own.
+  - `INSERT`: Users can invite others to tours they own.
+  - `DELETE`: Users can delete invitations for tours they own.
 - **`tags` & `tour_tags`**:
-  - `SELECT`: Users can view tags for any tour they were a participant in.
+  - `SELECT`: Authenticated users can view tags. Users can view tour_tags for tours they participated in.
   - `INSERT`: Users can add tags to archived tours they were a participant in.
 
 ## 5. Additional Considerations & Automation
 
-- **Anonymized User**: A special, protected record will be created in the `profiles` table with a fixed UUID (`00000000-0000-0000-0000-000000000000`) to represent a deleted user. This allows for the anonymization of comments while maintaining data integrity.
-- **Automatic Profile Creation**: A database trigger will automatically create a new record in `public.profiles` whenever a new user signs up and is added to `auth.users`.
-- **User Deletion Logic**: A trigger function on user deletion will handle complex cleanup:
-  - If the user is a tour owner, ownership will be transferred to the next participant based on the `joined_at` timestamp.
-  - If the user is the sole participant, the tour will be deleted.
-  - User's comments will be reassigned to the "Anonymized User".
-  - Participation and vote records will be deleted.
-- **Automatic Archiving**: A `pg_cron` job will run daily to scan for tours where `end_date` has passed and update their `status` to `'archived'`.
-- **Invitation Cleanup**: A `pg_cron` job will run periodically to delete old, `pending` invitations to keep the `invitations` table clean.
+### Implemented Features
+
+- **Anonymized User**: A special, protected record is created in the `profiles` table with a fixed UUID (`00000000-0000-0000-0000-000000000000`) to represent a deleted user. This allows for the anonymization of comments while maintaining data integrity.
+  - **Implementation Note**: The foreign key constraint from `public.profiles.id` to `auth.users.id` has been omitted to allow for this special record. Data integrity for regular users is maintained by the profile creation mechanism.
+
+- **Automatic Profile Creation via Webhook**: Profile creation is now handled by a Supabase Database Webhook instead of a database trigger for improved reliability and error handling.
+  - **Webhook Endpoint**: `/api/webhooks/profile-creation`
+  - **Security**: Protected by `SUPABASE_WEBHOOK_SECRET` (minimum 32 characters)
+  - **Trigger**: Activated on INSERT events in `auth.users` table
+  - **Benefits**: Better error handling, logging, and can handle duplicate profile creation gracefully
+  - **Migration**: The original database trigger (`on_auth_user_created`) has been removed in migration `20251024000000_remove_profile_creation_trigger.sql`
+
+- **User Deletion Logic**: A database trigger function on user deletion handles complex cleanup:
+  - If the user is a tour owner, ownership is transferred to the next participant based on the `joined_at` timestamp.
+  - If the user is the sole participant, the tour is deleted.
+  - User's comments are reassigned to the "Anonymized User" (via `ON DELETE SET DEFAULT`).
+  - Participation and vote records are deleted automatically (via `ON DELETE CASCADE`).
+  - Invitations are deleted automatically (via `ON DELETE CASCADE`).
+
+- **RLS Helper Functions**:
+  - `public.is_participant(tour_id, user_id)`: A `SECURITY DEFINER` function to check participant status without causing RLS recursion issues.
+
+### Planned Features (Not Yet Implemented)
+
+- **Automatic Archiving**: A `pg_cron` job to run daily and scan for tours where `end_date` has passed, updating their `status` to `'archived'`.
+- **Invitation Cleanup**: A `pg_cron` job to run periodically and delete old, `pending` invitations to keep the `invitations` table clean.
+
+## 6. Implementation Status
+
+### Completed Migrations
+
+1. **`20251014100000_initial_schema.sql`**:
+   - Created all tables with RLS enabled
+   - Set up initial RLS policies
+   - Created basic indexes
+   - Implemented user deletion trigger
+   - Created anonymized user profile
+   - ~~Created profile creation trigger~~ (later removed)
+
+2. **`20251021204500_fix_participants_rls.sql`**:
+   - Added `public.is_participant()` helper function
+   - Fixed participants table RLS policy to prevent recursion
+
+3. **`20251024000000_remove_profile_creation_trigger.sql`**:
+   - Removed database trigger for profile creation
+   - Profile creation now handled by Supabase Database Webhook
+
+4. **`20251024000001_add_performance_indexes.sql`**:
+   - Added index on `tours.status` for filtering
+   - Added index on `tours.owner_id` for RLS policies
+
+### Environment Configuration
+
+The following environment variables are required:
+
+- `SUPABASE_URL`: Supabase project URL (server-side)
+- `SUPABASE_SERVICE_ROLE_KEY`: Admin key for webhook operations (server-side, secret)
+- `SUPABASE_WEBHOOK_SECRET`: Secret for webhook authentication (minimum 32 characters, server-side, secret)
+- `PUBLIC_SUPABASE_URL`: Supabase project URL (client-side)
+- `PUBLIC_SUPABASE_ANON_KEY`: Anonymous key for client operations (client-side)

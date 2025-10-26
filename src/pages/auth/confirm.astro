@@ -1,0 +1,64 @@
+---
+/**
+ * PKCE Flow: Server-side magic link verification endpoint
+ * This endpoint handles the access_token from the magic link email
+ * and exchanges it for a session server-side (more secure than implicit flow)
+ */
+import { createSupabaseServerClient } from "@/db/supabase.client";
+
+export const prerender = false;
+
+// Get query parameters
+const url = new URL(Astro.request.url);
+const tokenHash = url.searchParams.get("access_token");
+const type = url.searchParams.get("type");
+const next = url.searchParams.get("next");
+
+// Get locale from cookie or use default
+const locale = Astro.cookies.get("locale")?.value || import.meta.env.PUBLIC_DEFAULT_LOCALE || "en-US";
+
+// Determine redirect destination
+let redirectPath = next || `/${locale}/`;
+
+// Defense in depth: Validate redirect URL to prevent open redirect attacks
+if (redirectPath.startsWith('//') || redirectPath.includes(':') || !redirectPath.startsWith('/')) {
+  console.warn('Invalid redirect detected, using default');
+  redirectPath = `/${locale}/`;
+}
+
+// Validate required parameters
+if (!tokenHash || !type) {
+  console.error("Missing required parameters (access_token or type)");
+  return Astro.redirect(`/${locale}/auth/error?error=invalid_link`);
+}
+
+// Create Supabase client
+const supabase = createSupabaseServerClient(Astro.request, Astro.cookies);
+
+try {
+  // Exchange the token hash for a session (magic link flow)
+  // This validates the token server-side and creates a session
+  const { data, error } = await supabase.auth.verifyOtp({
+    token_hash: tokenHash,
+    type: type as "signup" | "invite" | "magiclink" | "recovery" | "email_change" | "email",
+  });
+
+  if (error) {
+    console.error("Token verification error:", error);
+    return Astro.redirect(`/${locale}/auth/error?error=verification_failed&message=${encodeURIComponent(error.message)}`);
+  }
+
+  if (!data.session) {
+    console.error("No session created after token verification");
+    return Astro.redirect(`/${locale}/auth/error?error=session_failed`);
+  }
+
+  // Session is now established via cookies automatically by Supabase client
+  // Redirect to the intended destination
+  return Astro.redirect(redirectPath);
+
+} catch (err) {
+  console.error("Unexpected error during token verification:", err);
+  return Astro.redirect(`/${locale}/auth/error?error=unexpected_error`);
+}
+---

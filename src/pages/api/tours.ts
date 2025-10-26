@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 
 import { tourService } from "@/lib/services/tour.service";
 import { getToursQuerySchema, createTourCommandSchema } from "@/lib/validators/tour.validators";
+import { checkCsrfProtection } from "@/lib/server/csrf.service";
 
 export const prerender = false;
 
@@ -37,7 +38,13 @@ export const GET: APIRoute = async ({ url, locals }) => {
   }
 };
 
-export const POST: APIRoute = async ({ request, locals }) => {
+export const POST: APIRoute = async ({ request, locals, cookies }) => {
+  // CSRF protection
+  const csrfError = checkCsrfProtection(request, cookies);
+  if (csrfError) {
+    return csrfError;
+  }
+
   const { supabase } = locals;
 
   const {
