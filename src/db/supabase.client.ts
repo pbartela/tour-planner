@@ -2,6 +2,8 @@ import { createBrowserClient, createServerClient, parseCookieHeader, type Cookie
 import type { AstroCookies } from "astro";
 import type { Database } from "../db/database.types.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isProduction } from "@/lib/server/env-validation.service";
+import { weeksInSeconds } from "@/lib/constants/time";
 
 export type { SupabaseClient };
 
@@ -25,10 +27,10 @@ export const createSupabaseServerClient = (
 ): SupabaseClient<Database> => {
   const defaultCookieOptions: CookieOptions = {
     httpOnly: true,
-    secure: import.meta.env.PROD,
+    secure: isProduction(),
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 7, // 7 days
+    maxAge: weeksInSeconds(1),
   };
 
   return createServerClient<Database>(import.meta.env.PUBLIC_SUPABASE_URL, import.meta.env.PUBLIC_SUPABASE_ANON_KEY, {

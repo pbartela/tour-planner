@@ -46,7 +46,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
 
 export const PATCH: APIRoute = async ({ params, request, locals, cookies }) => {
   // CSRF protection
-  const csrfError = checkCsrfProtection(request, cookies);
+  const csrfError = await checkCsrfProtection(request, cookies);
   if (csrfError) {
     return csrfError;
   }
@@ -104,7 +104,7 @@ export const PATCH: APIRoute = async ({ params, request, locals, cookies }) => {
 
 export const DELETE: APIRoute = async ({ params, locals, cookies, request }) => {
   // CSRF protection
-  const csrfError = checkCsrfProtection(request, cookies);
+  const csrfError = await checkCsrfProtection(request, cookies);
   if (csrfError) {
     return csrfError;
   }

@@ -3,20 +3,27 @@
  * Uses an in-memory store with automatic cleanup of expired entries.
  */
 
+import { minutes } from "@/lib/constants/time";
+import { isDevelopment as isDev } from "@/lib/server/env-validation.service";
+
 interface RateLimitEntry {
   count: number;
   resetAt: number;
 }
 
+/**
+ * WARNING: This in-memory store is not suitable for multi-instance deployments.
+ * For production use with multiple instances, implement a Redis-based store.
+ */
 class RateLimitStore {
-  private store: Map<string, RateLimitEntry> = new Map();
+  private store = new Map<string, RateLimitEntry>();
   private cleanupInterval: NodeJS.Timeout | null = null;
 
   constructor() {
     // Clean up expired entries every minute
     this.cleanupInterval = setInterval(() => {
       this.cleanup();
-    }, 60000);
+    }, minutes(1));
   }
 
   private cleanup(): void {
@@ -121,27 +128,85 @@ export function resetRateLimit(identifier: string): void {
 
 /**
  * Common rate limit configurations
+ *
+ * DEVELOPMENT vs TEST vs PRODUCTION:
+ *
+ * Development Mode (default in dev):
+ *   - Relaxed limits (7-10x higher than production)
+ *   - Fast iteration and testing without hitting limits
+ *   - May hide rate limit issues that appear in production
+ *
+ * Test Mode (enable with TEST_MODE=true):
+ *   - Production-like limits for realistic testing
+ *   - Use in CI/CD pipelines and integration tests
+ *   - Catches rate limit issues before deployment
+ *   - Can be enabled in development for testing edge cases
+ *
+ * Production Mode (automatic in production builds):
+ *   - Strict limits to prevent abuse
+ *   - Protects against DoS and brute force attacks
+ *
+ * USAGE:
+ *   - Development: No configuration needed (default)
+ *   - Test Mode: Set TEST_MODE=true in .env or environment
+ *   - Production: Automatic (import.meta.env.PROD === true)
+ *
+ * EXAMPLES:
+ *   # Run tests with production-like limits
+ *   TEST_MODE=true npm run test
+ *
+ *   # Test rate limiting behavior in development
+ *   TEST_MODE=true npm run dev
  */
-const isDevelopment = import.meta.env.MODE === 'development' || import.meta.env.DEV;
+
+// Test mode can be enabled to use production-like limits during testing
+const testMode = import.meta.env.TEST_MODE === "true";
+
+// Development mode: relaxed limits unless test mode is enabled
+const isDevelopment = !testMode && isDev();
+
+/**
+ * Gets the current rate limiting mode for debugging purposes.
+ *
+ * @returns Object with mode information
+ */
+export function getRateLimitMode(): { mode: "production" | "test" | "development"; testModeEnabled: boolean; isDevelopment: boolean } {
+  return {
+    mode: testMode ? "test" : isDevelopment ? "development" : "production",
+    testModeEnabled: testMode,
+    isDevelopment,
+  };
+}
 
 export const RATE_LIMIT_CONFIGS = {
-  // 3 requests per 15 minutes for magic link (production)
-  // 20 requests per 15 minutes for magic link (development)
+  /**
+   * Magic link rate limits
+   * - Production/Test: 3 requests per 15 minutes
+   * - Development: 20 requests per 15 minutes
+   */
   MAGIC_LINK: {
     maxRequests: isDevelopment ? 20 : 3,
-    windowMs: 15 * 60 * 1000, // 15 minutes
+    windowMs: minutes(15),
   },
-  // 5 requests per minute for general authentication (production)
-  // 50 requests per minute for general authentication (development)
+
+  /**
+   * General authentication rate limits
+   * - Production/Test: 5 requests per minute
+   * - Development: 50 requests per minute
+   */
   AUTH: {
     maxRequests: isDevelopment ? 50 : 5,
-    windowMs: 60 * 1000, // 1 minute
+    windowMs: minutes(1),
   },
-  // 100 requests per minute for general API (production)
-  // 1000 requests per minute for general API (development)
+
+  /**
+   * General API rate limits
+   * - Production/Test: 100 requests per minute
+   * - Development: 1000 requests per minute
+   */
   API: {
     maxRequests: isDevelopment ? 1000 : 100,
-    windowMs: 60 * 1000, // 1 minute
+    windowMs: minutes(1),
   },
 } as const;
 
@@ -149,8 +214,42 @@ export const RATE_LIMIT_CONFIGS = {
  * Extracts a client identifier from the request for rate limiting.
  * Uses a combination of IP address and User-Agent for better accuracy.
  *
+ * SECURITY CONSIDERATIONS:
+ * This implementation provides basic rate limiting but has known limitations:
+ *
+ * 1. User-Agent Spoofing: User-Agent headers can be easily spoofed by attackers,
+ *    allowing them to bypass rate limits by changing their User-Agent string.
+ *
+ * 2. Shared IP Addresses: Users behind NAT/proxy may share the same IP address,
+ *    potentially affecting legitimate users when one user hits the rate limit.
+ *
+ * 3. IP Header Spoofing: While we check multiple headers (X-Forwarded-For, X-Real-IP,
+ *    CF-Connecting-IP), these can be spoofed if not properly validated by a trusted
+ *    reverse proxy/CDN.
+ *
+ * RECOMMENDED IMPROVEMENTS FOR PRODUCTION:
+ *
+ * - Browser Fingerprinting: Use techniques like canvas fingerprinting, WebGL
+ *   fingerprinting, or libraries like FingerprintJS for more accurate client
+ *   identification.
+ *
+ * - CAPTCHA Integration: Implement CAPTCHA (reCAPTCHA, hCaptcha, Turnstile) after
+ *   repeated failures or when suspicious behavior is detected.
+ *
+ * - Session-Based Limiting: For authenticated users, use session IDs or user IDs
+ *   for more accurate and reliable rate limiting.
+ *
+ * - Device Fingerprinting: Consider using device-specific identifiers (with user
+ *   consent and privacy compliance).
+ *
+ * - Progressive Penalties: Implement escalating penalties (e.g., temporary bans,
+ *   longer cooldown periods) for repeated violations.
+ *
+ * - Distributed Store: Replace in-memory store with Redis/Memcached for multi-
+ *   instance deployments and persistent rate limit tracking.
+ *
  * @param request - The incoming request
- * @returns A unique identifier for the client
+ * @returns A unique identifier for the client (IP:UserAgent combination)
  */
 export function getClientIdentifier(request: Request): string {
   // Try to get the real IP from common proxy headers
@@ -161,6 +260,7 @@ export function getClientIdentifier(request: Request): string {
   const ip = forwardedFor?.split(",")[0].trim() || realIp || cfConnectingIp || "unknown";
 
   // Include User-Agent for additional uniqueness (helps with shared IPs)
+  // Note: User-Agent can be spoofed - see security considerations above
   const userAgent = request.headers.get("user-agent") || "unknown";
 
   // Create a simple hash of the combination

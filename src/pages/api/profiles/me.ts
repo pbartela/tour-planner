@@ -4,6 +4,7 @@ import { profileService } from "@/lib/services/profile.service";
 import { updateProfileCommandSchema } from "@/lib/validators/profile.validators";
 import { handleDatabaseError } from "@/lib/utils/error-handler";
 import { checkCsrfProtection } from "@/lib/server/csrf.service";
+import { secureError } from "@/lib/server/logger.service";
 
 export const prerender = false;
 
@@ -33,14 +34,14 @@ export const GET: APIRoute = async ({ locals }) => {
 
     return new Response(JSON.stringify(profile), { status: 200 });
   } catch (error) {
-    console.error("Unexpected error in GET /api/profiles/me:", error);
+    secureError("Unexpected error in GET /api/profiles/me", error);
     return new Response(JSON.stringify({ message: "Internal Server Error" }), { status: 500 });
   }
 };
 
 export const PATCH: APIRoute = async ({ request, locals, cookies }) => {
   // CSRF protection
-  const csrfError = checkCsrfProtection(request, cookies);
+  const csrfError = await checkCsrfProtection(request, cookies);
   if (csrfError) {
     return csrfError;
   }
@@ -73,7 +74,7 @@ export const PATCH: APIRoute = async ({ request, locals, cookies }) => {
 
     return new Response(JSON.stringify(updatedProfile), { status: 200 });
   } catch (error) {
-    console.error("Unexpected error in PATCH /api/profiles/me:", error);
+    secureError("Unexpected error in PATCH /api/profiles/me", error);
     return new Response(JSON.stringify({ message: "Internal Server Error" }), { status: 500 });
   }
 };

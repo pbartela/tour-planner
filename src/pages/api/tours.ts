@@ -40,7 +40,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
 
 export const POST: APIRoute = async ({ request, locals, cookies }) => {
   // CSRF protection
-  const csrfError = checkCsrfProtection(request, cookies);
+  const csrfError = await checkCsrfProtection(request, cookies);
   if (csrfError) {
     return csrfError;
   }

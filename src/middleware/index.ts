@@ -2,6 +2,7 @@ import { defineMiddleware } from "astro:middleware";
 import { createSupabaseServerClient } from "@/db/supabase.client";
 import { validateSession } from "@/lib/server/session-validation.service";
 import { getOrCreateCsrfToken } from "@/lib/server/csrf.service";
+import { yearsInSeconds } from "@/lib/constants/time";
 
 const protectedRoutes = ["/", "/profile", "/tours"];
 // Routes that authenticated users should be redirected away from.
@@ -18,7 +19,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   if (currentLocale !== lang) {
     context.cookies.set("locale", lang, {
       path: "/",
-      maxAge: 365 * 24 * 60 * 60, // 1 year
+      maxAge: yearsInSeconds(1),
     });
   }
 

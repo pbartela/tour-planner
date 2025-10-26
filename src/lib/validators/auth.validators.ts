@@ -26,6 +26,10 @@ export const MagicLinkSchema = z.object({
         // Must not be a protocol-relative URL (starts with //)
         if (url.startsWith('//')) return false;
 
+        // Prevent protocol-based attacks (javascript:, data:, etc.)
+        // This regex matches URLs like /javascript:, /data:, /vbscript:, etc.
+        if (url.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:/)) return false;
+
         // Extract the path part (before query params)
         const path = url.split('?')[0];
 

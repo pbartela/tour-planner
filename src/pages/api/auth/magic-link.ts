@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { MagicLinkSchema } from "src/lib/validators/auth.validators";
 import { createSupabaseAdminClient } from "src/db/supabase.admin.client";
 import { checkRateLimit, getClientIdentifier, RATE_LIMIT_CONFIGS } from "@/lib/server/rate-limit.service";
+import { secureError } from "@/lib/server/logger.service";
 
 export const POST: APIRoute = async ({ request }) => {
   // Rate limiting: 3 requests per 15 minutes per client
@@ -59,7 +60,8 @@ export const POST: APIRoute = async ({ request }) => {
 
   if (error) {
     // Log the actual error for debugging, but don't expose internal details to the client
-    console.error("Magic link generation error:", error);
+    // Uses secure logging to sanitize sensitive information in production
+    secureError("Magic link generation failed", error);
     return new Response(JSON.stringify({ error: "Failed to send magic link. Please try again later." }), {
       status: 500,
     });

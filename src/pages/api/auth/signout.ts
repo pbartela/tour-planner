@@ -1,12 +1,20 @@
 import type { APIRoute } from "astro";
+import { checkCsrfProtection } from "@/lib/server/csrf.service";
+import { secureError } from "@/lib/server/logger.service";
 
-export const POST: APIRoute = async ({ locals, redirect }) => {
+export const POST: APIRoute = async ({ request, locals, cookies, redirect }) => {
+  // CSRF protection - signout is a state-changing operation that requires protection
+  const csrfError = await checkCsrfProtection(request, cookies);
+  if (csrfError) {
+    return csrfError;
+  }
+
   const { supabase } = locals;
 
   const { error } = await supabase.auth.signOut();
 
   if (error) {
-    console.error("Error signing out:", error);
+    secureError("Error signing out", error);
     // Even if there's an error, we should try to redirect
   }
 

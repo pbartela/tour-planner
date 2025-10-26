@@ -4,6 +4,8 @@
  */
 
 import type { AstroCookies } from "astro";
+import { isProduction } from "@/lib/server/env-validation.service";
+import { daysInSeconds } from "@/lib/constants/time";
 
 const CSRF_TOKEN_LENGTH = 32;
 const CSRF_COOKIE_NAME = "csrf-token";
@@ -29,17 +31,18 @@ function generateToken(): string {
 export function getOrCreateCsrfToken(cookies: AstroCookies): string {
   const existingToken = cookies.get(CSRF_COOKIE_NAME)?.value;
 
-  if (existingToken && existingToken.length === CSRF_TOKEN_LENGTH * 2) {
+  // Validate token length and format (must be valid hex string)
+  if (existingToken && existingToken.length === CSRF_TOKEN_LENGTH * 2 && /^[0-9a-f]+$/.test(existingToken)) {
     return existingToken;
   }
 
   const newToken = generateToken();
   cookies.set(CSRF_COOKIE_NAME, newToken, {
     httpOnly: true,
-    secure: import.meta.env.PROD,
+    secure: isProduction(),
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24, // 24 hours
+    maxAge: daysInSeconds(1),
   });
 
   return newToken;
@@ -48,15 +51,36 @@ export function getOrCreateCsrfToken(cookies: AstroCookies): string {
 /**
  * Validates a CSRF token from the request against the stored token.
  *
+ * Supports two methods of token transmission:
+ * 1. Header: X-CSRF-Token (for AJAX/fetch requests)
+ * 2. Form field: csrf_token (for traditional form submissions)
+ *
  * @param request - The incoming request
  * @param cookies - Astro cookies object
  * @returns True if the token is valid, false otherwise
  */
-export function validateCsrfToken(request: Request, cookies: AstroCookies): boolean {
+export async function validateCsrfToken(request: Request, cookies: AstroCookies): Promise<boolean> {
   const storedToken = cookies.get(CSRF_COOKIE_NAME)?.value;
-  const requestToken = request.headers.get(CSRF_HEADER_NAME);
 
-  if (!storedToken || !requestToken) {
+  if (!storedToken) {
+    return false;
+  }
+
+  // Try to get token from header (AJAX/fetch requests)
+  let requestToken = request.headers.get(CSRF_HEADER_NAME);
+
+  // If no header, try to get from form data (traditional form submissions)
+  if (!requestToken && request.headers.get("content-type")?.includes("application/x-www-form-urlencoded")) {
+    try {
+      const formData = await request.clone().formData();
+      requestToken = formData.get("csrf_token") as string | null;
+    } catch {
+      // If we can't parse form data, continue without token
+      requestToken = null;
+    }
+  }
+
+  if (!requestToken) {
     return false;
   }
 
@@ -85,13 +109,41 @@ function timingSafeEqual(a: string, b: string): boolean {
 }
 
 /**
+ * Authentication endpoints that should be exempt from CSRF protection.
+ *
+ * SECURITY RATIONALE:
+ *
+ * - /api/auth/magic-link (POST):
+ *   - Unauthenticated endpoint - no session to hijack
+ *   - Protected by rate limiting (3 requests per 15 minutes)
+ *   - Sends email to user-provided address (attacker gains nothing)
+ *   - CSRF doesn't apply without an existing authenticated session
+ *
+ * - /api/auth/session (POST):
+ *   - Part of OAuth/PKCE callback flow
+ *   - Called programmatically during authentication, not user action
+ *   - Currently deprecated (see auth-callback.astro.deprecated)
+ *   - TODO: Remove this endpoint when fully migrated to PKCE flow
+ *
+ * IMPORTANT: /api/auth/signout is NOT in this list and REQUIRES CSRF protection
+ * because it's a state-changing operation on an authenticated session.
+ */
+const CSRF_EXEMPT_AUTH_ENDPOINTS = [
+  "/api/auth/magic-link",
+  "/api/auth/session", // TODO: Remove when deprecated endpoint is deleted
+] as const;
+
+/**
  * Middleware helper to check CSRF token for state-changing methods (POST, PUT, PATCH, DELETE).
+ *
+ * Implements defense-in-depth by protecting all state-changing operations unless
+ * explicitly exempted for documented security reasons.
  *
  * @param request - The incoming request
  * @param cookies - Astro cookies object
  * @returns Response with 403 status if CSRF validation fails, null otherwise
  */
-export function checkCsrfProtection(request: Request, cookies: AstroCookies): Response | null {
+export async function checkCsrfProtection(request: Request, cookies: AstroCookies): Promise<Response | null> {
   const method = request.method.toUpperCase();
 
   // Only check CSRF for state-changing methods
@@ -99,13 +151,20 @@ export function checkCsrfProtection(request: Request, cookies: AstroCookies): Re
     return null;
   }
 
-  // Skip CSRF check for authentication endpoints (they use other security measures)
   const url = new URL(request.url);
-  if (url.pathname.startsWith("/api/auth/")) {
+
+  // Check if this specific auth endpoint is exempt from CSRF protection
+  const isExemptAuthEndpoint = CSRF_EXEMPT_AUTH_ENDPOINTS.some(
+    (exemptPath) => url.pathname === exemptPath
+  );
+
+  if (isExemptAuthEndpoint) {
     return null;
   }
 
-  if (!validateCsrfToken(request, cookies)) {
+  const isValid = await validateCsrfToken(request, cookies);
+
+  if (!isValid) {
     return new Response(
       JSON.stringify({
         error: "Invalid or missing CSRF token. Please refresh the page and try again.",
