@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # Development server for the app
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.playwright
+    command: npm run dev
+    ports:
+      - "4321:4321"
+    environment:
+      - NODE_ENV=development
+      - HOST=0.0.0.0
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - playwright-network
+
+  # Playwright test runner
+  playwright:
+    build:
+      context: .
+      dockerfile: Dockerfile.playwright
+    command: npm run test:e2e
+    depends_on:
+      - app
+    environment:
+      - BASE_URL=http://app:4321
+      - CI=true
+      - NODE_ENV=test
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./test-results:/app/test-results
+      - ./playwright-report:/app/playwright-report
+    networks:
+      - playwright-network
+    # Use host network to access Mailpit on localhost
+    network_mode: host
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  playwright-network:
+    driver: bridge

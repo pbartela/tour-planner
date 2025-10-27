@@ -1,0 +1,30 @@
+# Playwright Test Runner
+# Based on official Playwright image with all browser dependencies
+FROM mcr.microsoft.com/playwright:v1.48.0-jammy
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy test files and configuration
+COPY playwright.config.ts ./
+COPY tests ./tests
+COPY tsconfig.json ./
+
+# Copy source files needed for tests
+COPY src ./src
+COPY public ./public
+COPY astro.config.mjs ./
+COPY tailwind.config.ts ./
+
+# Set environment variables
+ENV CI=true
+ENV NODE_ENV=test
+
+# Default command runs all tests
+CMD ["npm", "run", "test:e2e"]

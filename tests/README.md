@@ -4,9 +4,20 @@ This directory contains end-to-end tests for the Tour Planner application using 
 
 ## Setup
 
-### 1. Install Playwright
+### Option 1: Docker (Recommended for Arch Linux / Unsupported OS)
 
-First, install Playwright and its dependencies:
+If you're on an unsupported OS like Arch Linux, or encounter browser installation issues, use Docker:
+
+**Prerequisites:**
+- Docker installed and running
+- Supabase running locally (`supabase start`)
+- Dev server running (`npm run dev`)
+
+**No additional setup needed** - Docker image includes all browser dependencies.
+
+### Option 2: Local Installation
+
+Install Playwright and its dependencies:
 
 ```bash
 npm install -D @playwright/test
@@ -20,6 +31,8 @@ npx playwright install chromium
 npx playwright install firefox
 npx playwright install webkit
 ```
+
+**Note:** Playwright officially supports Ubuntu/Debian. On other systems (Arch, Fedora, etc.), you may need to install system dependencies manually or use Docker.
 
 ### 2. Start Local Supabase (Required for Email Testing)
 
@@ -53,43 +66,53 @@ Or, let Playwright start it automatically (configured in `playwright.config.ts`)
 
 ## Running Tests
 
-### Run all tests
+### With Docker (Recommended for Arch Linux)
+
+**Prerequisites:**
+1. Start Supabase: `supabase start`
+2. Start dev server: `npm run dev` (in another terminal)
+
+Then run tests:
 
 ```bash
+# Run all tests in Docker
+npm run test:e2e:docker
+
+# Run with headed mode (visible browser)
+npm run test:e2e:docker:headed
+
+# Run specific test file
+npm run test:e2e:docker -- tests/e2e/auth/login.spec.ts
+
+# Run specific test by name
+npm run test:e2e:docker -- -g "should display login page"
+```
+
+**Note:** Test results and reports are saved to your local filesystem even when running in Docker.
+
+### Without Docker (Local Installation)
+
+```bash
+# Run all tests
 npm run test:e2e
-```
 
-### Run tests in UI mode (recommended for development)
-
-```bash
+# Run tests in UI mode (recommended for development)
 npm run test:e2e:ui
-```
 
-### Run tests in headed mode (see browser)
-
-```bash
+# Run tests in headed mode (see browser)
 npm run test:e2e:headed
-```
 
-### Run tests in debug mode
-
-```bash
+# Run tests in debug mode
 npm run test:e2e:debug
-```
 
-### Run specific test file
-
-```bash
+# Run specific test file
 npx playwright test tests/e2e/auth/login.spec.ts
-```
 
-### Run specific test by name
-
-```bash
+# Run specific test by name
 npx playwright test -g "should display login page"
 ```
 
-### View test report
+### View test report (both methods)
 
 ```bash
 npm run test:e2e:report
@@ -294,7 +317,46 @@ Tests are configured to run in CI environments with:
 - GitHub Actions reporter
 - Screenshots and videos on failure
 
-Example GitHub Actions workflow:
+### Using Docker in CI (Recommended)
+
+```yaml
+name: E2E Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Supabase CLI
+        run: |
+          curl -fsSL https://supabase.com/install.sh | sh
+          supabase start
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start dev server
+        run: npm run dev &
+
+      - name: Wait for dev server
+        run: npx wait-on http://localhost:4321
+
+      - name: Run Playwright tests in Docker
+        run: npm run test:e2e:docker
+
+      - name: Upload test report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+```
+
+### Using Local Installation in CI
 
 ```yaml
 - name: Install dependencies
@@ -336,7 +398,56 @@ Tests run on:
 - Chrome Mobile (Pixel 5)
 - Safari Mobile (iPhone 12)
 
+## Docker Architecture
+
+When running tests with Docker:
+
+```
+┌─────────────────────┐
+│   Docker Container  │
+│   (Playwright)      │
+│   - Chromium        │
+│   - Firefox         │
+│   - WebKit          │
+└──────────┬──────────┘
+           │
+           │ Uses host network
+           │
+           ├──> localhost:4321 (Dev Server)
+           └──> localhost:54324 (Mailpit)
+```
+
+The Docker container uses `--network host` to access:
+- Your dev server at `localhost:4321`
+- Mailpit at `localhost:54324`
+- All tests run as if they were on your host machine
+
+**Files persisted to host:**
+- `test-results/` - Test artifacts, screenshots, videos
+- `playwright-report/` - HTML test reports
+
 ## Troubleshooting
+
+### Docker-specific issues
+
+**"Cannot connect to localhost:4321"**
+- Ensure dev server is running: `npm run dev`
+- Verify port 4321 is accessible: `curl http://localhost:4321`
+- Docker uses host networking, so the container sees your local services
+
+**"Cannot connect to Mailpit"**
+- Ensure Supabase is running: `supabase start`
+- Verify Mailpit is accessible: `curl http://127.0.0.1:54324`
+- Check Supabase status: `supabase status`
+
+**Docker build fails**
+- Ensure you have sufficient disk space
+- Try: `docker system prune` to clean up
+- Check Docker daemon is running
+
+**Permission errors on test results**
+- Files created in Docker may have different permissions
+- Fix: `sudo chown -R $USER:$USER test-results playwright-report`
 
 ### Mailpit connection errors
 
