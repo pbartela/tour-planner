@@ -38,9 +38,7 @@ const MASKABLE_FIELDS = ["email", "phone", "phoneNumber", "phone_number"] as con
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
-interface LogContext {
-  [key: string]: unknown;
-}
+type LogContext = Record<string, unknown>;
 
 /**
  * Sanitizes an object by redacting sensitive fields and masking PII.
@@ -239,14 +237,15 @@ export function secureError(message: string, error?: Error | unknown): void {
     console.error(`[${new Date().toISOString()}] ERROR ${message}`, error);
   } else {
     // In production, sanitize the error
-    const context: LogContext = error instanceof Error
-      ? {
-          errorType: error.name,
-          errorMessage: error.message,
-          // Stack traces can leak file paths and internal structure
-          stack: "[REDACTED]",
-        }
-      : { error: sanitizeObject(error) };
+    const context: LogContext =
+      error instanceof Error
+        ? {
+            errorType: error.name,
+            errorMessage: error.message,
+            // Stack traces can leak file paths and internal structure
+            stack: "[REDACTED]",
+          }
+        : { error: sanitizeObject(error) };
 
     console.error(formatLogMessage("error", message, context));
   }

@@ -23,12 +23,12 @@ class RateLimitStore {
     // Warn if using in-memory rate limiting in production
     if (isProduction()) {
       console.warn(
-        '⚠️  WARNING: In-memory rate limiting is not suitable for multi-instance deployments.\n' +
-        '   Each instance maintains its own rate limit counters, which means:\n' +
-        '   - Rate limits are NOT shared across instances\n' +
-        '   - Users can bypass limits by hitting different instances\n' +
-        '   - Consider implementing Redis-based storage for production use.\n' +
-        '   See: https://redis.io/docs/manual/patterns/rate-limiter/'
+        "⚠️  WARNING: In-memory rate limiting is not suitable for multi-instance deployments.\n" +
+          "   Each instance maintains its own rate limit counters, which means:\n" +
+          "   - Rate limits are NOT shared across instances\n" +
+          "   - Users can bypass limits by hitting different instances\n" +
+          "   - Consider implementing Redis-based storage for production use.\n" +
+          "   See: https://redis.io/docs/manual/patterns/rate-limiter/"
       );
     }
 
@@ -182,7 +182,11 @@ const isDevelopment = !testMode && isDev();
  *
  * @returns Object with mode information
  */
-export function getRateLimitMode(): { mode: "production" | "test" | "development"; testModeEnabled: boolean; isDevelopment: boolean } {
+export function getRateLimitMode(): {
+  mode: "production" | "test" | "development";
+  testModeEnabled: boolean;
+  isDevelopment: boolean;
+} {
   return {
     mode: testMode ? "test" : isDevelopment ? "development" : "production",
     testModeEnabled: testMode,
@@ -279,13 +283,13 @@ export function getClientIdentifier(request: Request, userId?: string): string {
 
   // Sanitize IP address to prevent header injection attacks
   // Allow only valid IPv4 and IPv6 characters
-  ip = ip.replace(/[^0-9a-f.:]/gi, '');
+  ip = ip.replace(/[^0-9a-f.:]/gi, "");
 
   // Validate that it looks like a valid IP address
   const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/;
   const ipv6Pattern = /^([0-9a-f]{0,4}:){2,7}[0-9a-f]{0,4}$/i;
 
-  if (!ipv4Pattern.test(ip) && !ipv6Pattern.test(ip) && ip !== '') {
+  if (!ipv4Pattern.test(ip) && !ipv6Pattern.test(ip) && ip !== "") {
     ip = "unknown";
   }
 

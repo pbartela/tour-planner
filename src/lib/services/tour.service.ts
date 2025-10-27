@@ -15,7 +15,11 @@ class TourService {
 
     try {
       // Combine data and count into a single query to avoid N+1 issue
-      const { data: tours, error: toursError, count } = await supabase
+      const {
+        data: tours,
+        error: toursError,
+        count,
+      } = await supabase
         .from("participants")
         .select(
           `
@@ -84,10 +88,7 @@ class TourService {
         console.error("Error adding participant:", participantError);
 
         // Rollback: Delete the tour if participant creation fails to prevent orphaned tours
-        const { error: deleteError } = await supabase
-          .from("tours")
-          .delete()
-          .eq("id", tour.id);
+        const { error: deleteError } = await supabase.from("tours").delete().eq("id", tour.id);
 
         if (deleteError) {
           console.error("Error during rollback - failed to delete orphaned tour:", deleteError);

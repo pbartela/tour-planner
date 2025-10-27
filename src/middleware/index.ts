@@ -16,9 +16,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // Validate locale against allowed values to prevent injection
   const requestedLocale = context.params.locale;
-  const lang = (requestedLocale && allowedLocales.includes(requestedLocale as typeof allowedLocales[number]))
-    ? requestedLocale
-    : import.meta.env.PUBLIC_DEFAULT_LOCALE || "en-US";
+  const lang =
+    requestedLocale && allowedLocales.includes(requestedLocale as (typeof allowedLocales)[number])
+      ? requestedLocale
+      : import.meta.env.PUBLIC_DEFAULT_LOCALE || "en-US";
 
   // Only set locale cookie if it has changed to avoid unnecessary cookie writes
   const currentLocale = context.cookies.get("locale")?.value;

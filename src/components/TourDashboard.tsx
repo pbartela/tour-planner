@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OnboardingModal } from "@/components/OnboardingModal";
-import { patch } from "@/lib/client/api-client";
+import { AddTripModal } from "@/components/tours/AddTripModal";
+import { patch, post, handleApiResponse } from "@/lib/client/api-client";
 
 interface TourDashboardProps {
   onboardingCompleted: boolean;
@@ -10,6 +11,7 @@ interface TourDashboardProps {
 
 const TourDashboard = ({ onboardingCompleted }: TourDashboardProps): React.JSX.Element => {
   const [isOnboardingDismissed, setIsOnboardingDismissed] = useState(onboardingCompleted);
+  const [isAddTripModalOpen, setIsAddTripModalOpen] = useState(false);
 
   const handleCompleteOnboarding = async (): Promise<void> => {
     try {
@@ -34,6 +36,28 @@ const TourDashboard = ({ onboardingCompleted }: TourDashboardProps): React.JSX.E
     setIsOnboardingDismissed(true);
   };
 
+  const handleCreateTour = async (data: {
+    title: string;
+    destination: string;
+    description?: string;
+    start_date: string;
+    end_date: string;
+  }): Promise<void> => {
+    const response = await post("/api/tours", data);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to create tour");
+    }
+
+    handleApiResponse(response);
+
+    // Reload page to show the new tour
+    if (typeof window !== "undefined") {
+      window.location.reload();
+    }
+  };
+
   return (
     <>
       <OnboardingModal
@@ -41,6 +65,11 @@ const TourDashboard = ({ onboardingCompleted }: TourDashboardProps): React.JSX.E
         onClose={handleClose}
         onCompleteOnboarding={handleCompleteOnboarding}
         onSkipOnboardign={handleSkipOnboarding}
+      />
+      <AddTripModal
+        isOpen={isAddTripModalOpen}
+        onClose={() => setIsAddTripModalOpen(false)}
+        onSubmit={handleCreateTour}
       />
       <div className="container mx-auto py-10">
         <Card>
@@ -50,7 +79,7 @@ const TourDashboard = ({ onboardingCompleted }: TourDashboardProps): React.JSX.E
           <CardContent>
             <div className="text-center">
               <p className="mb-4">You don&apos;t have any active tours yet.</p>
-              <Button>Create Your First Tour</Button>
+              <Button onClick={() => setIsAddTripModalOpen(true)}>Create Your First Tour</Button>
             </div>
           </CardContent>
         </Card>

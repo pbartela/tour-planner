@@ -21,10 +21,7 @@ export const supabaseBrowserClient = createBrowserClient<Database>(
  * @param request - The incoming request object (used to read cookies)
  * @param cookies - The Astro cookies object (used to set cookies)
  */
-export const createSupabaseServerClient = (
-  request: Request,
-  cookies: AstroCookies
-): SupabaseClient<Database> => {
+export const createSupabaseServerClient = (request: Request, cookies: AstroCookies): SupabaseClient<Database> => {
   const defaultCookieOptions: CookieOptions = {
     httpOnly: true,
     secure: isProduction(),

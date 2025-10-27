@@ -1,6 +1,7 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import TourDashboard from "@/components/TourDashboard";
+import QueryProvider from "@/components/QueryProvider";
 
 const { user } = Astro.locals;
 
@@ -10,5 +11,7 @@ const onboardingCompleted = user?.profile.onboarding_completed ?? true;
 ---
 
 <Layout title="Dashboard">
-  <TourDashboard client:load onboardingCompleted={onboardingCompleted} />
+  <QueryProvider client:load>
+    <TourDashboard client:load onboardingCompleted={onboardingCompleted} />
+  </QueryProvider>
 </Layout>
