@@ -14,13 +14,13 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests/e2e',
   /* Run tests in files in parallel */
-  fullyParallel: true,
+  fullyParallel: false, // Run tests serially to ensure proper order (registration first)
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
   /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1, // Single worker to maintain test order
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ['html'],
@@ -77,13 +77,10 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  /* Skip if SKIP_WEBSERVER is set (e.g., when running in Docker with external server) */
-  webServer: process.env.SKIP_WEBSERVER
-    ? undefined
-    : {
-        command: 'npm run dev',
-        url: 'http://localhost:3000',
-        reuseExistingServer: !process.env.CI,
-        timeout: 120000,
-      },
+  webServer: {
+    command: 'npm run dev',
+    url: 'http://localhost:3000',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120000,
+  },
 });
