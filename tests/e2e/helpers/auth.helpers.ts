@@ -1,4 +1,5 @@
-import { Page, expect } from '@playwright/test';
+import { Page, expect, BrowserContext } from '@playwright/test';
+import { mailpit } from './mailpit.client';
 
 /**
  * Helper functions for authentication flows in e2e tests
@@ -28,21 +29,24 @@ export async function requestMagicLink(page: Page, email: string) {
 }
 
 /**
- * Extract magic link from email (mock implementation)
- * In a real scenario, you would integrate with your email service or use a test email service
+ * Get magic link from email using Mailpit
  * @param email - Email address to check
+ * @param timeoutMs - Maximum time to wait for email
  * @returns The magic link URL
  */
-export async function getMagicLinkFromEmail(email: string): Promise<string> {
-  // This is a placeholder. In real tests, you would:
-  // 1. Use a test email service like Mailosaur, Mailtrap, or similar
-  // 2. Query the email inbox for the magic link
-  // 3. Extract the link from the email content
-
-  // For now, we'll throw an error to remind developers to implement this
-  throw new Error(
-    `getMagicLinkFromEmail not implemented. You need to integrate with your email service to retrieve the magic link for ${email}`
-  );
+export async function getMagicLinkFromEmail(
+  email: string,
+  timeoutMs = 30000
+): Promise<string> {
+  try {
+    // Wait for the magic link email to arrive
+    const magicLink = await mailpit.waitForMagicLink(email, timeoutMs);
+    return magicLink;
+  } catch (error) {
+    throw new Error(
+      `Failed to get magic link for ${email}: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
 }
 
 /**
@@ -142,21 +146,65 @@ export async function getCsrfToken(page: Page): Promise<string> {
 }
 
 /**
- * Create a test user session by mocking authentication
- * Use this for tests that don't need to test the full auth flow
+ * Create a test user session by completing the full auth flow
+ * Use this for tests that don't need to test the auth flow itself
  * @param page - Playwright page object
  * @param email - Email for the test user
+ * @param options - Additional options
  */
-export async function createTestUserSession(page: Page, email: string) {
-  // This would require setting up proper session cookies
-  // For now, this is a placeholder for future implementation
+export async function createTestUserSession(
+  page: Page,
+  email: string,
+  options: {
+    completeOnboarding?: boolean;
+    locale?: string;
+  } = {}
+) {
+  const { completeOnboarding: shouldCompleteOnboarding = true, locale = 'en-US' } = options;
 
-  // In a real implementation, you might:
-  // 1. Call a test-only API endpoint that creates a session
-  // 2. Set the session cookie directly
-  // 3. Use Supabase admin API to create a session token
+  // Clear any existing session
+  await clearSession(page);
 
-  console.log(`Creating test session for ${email} - Not yet implemented`);
+  // Clear Mailpit inbox to avoid getting old emails
+  try {
+    await mailpit.deleteAllMessages();
+  } catch (error) {
+    console.warn('Failed to clear Mailpit inbox:', error);
+  }
+
+  // Request magic link
+  await requestMagicLink(page, email);
+
+  // Get magic link from email
+  const magicLink = await getMagicLinkFromEmail(email);
+
+  // Complete magic link flow
+  await completeMagicLinkFlow(page, magicLink);
+
+  // Wait for redirect to dashboard
+  await page.waitForURL(new RegExp(`/${locale}/`), { timeout: 10000 });
+
+  // Handle onboarding if needed
+  if (shouldCompleteOnboarding) {
+    try {
+      // Check if onboarding modal appears
+      const dialog = page.locator('[role="dialog"]');
+      const isVisible = await dialog.isVisible({ timeout: 3000 });
+
+      if (isVisible) {
+        await completeOnboarding(page, false);
+      }
+    } catch {
+      // Onboarding modal didn't appear, which is fine
+      // (user might already have completed it)
+    }
+  }
+
+  // Verify we're authenticated
+  const authenticated = await isAuthenticated(page);
+  if (!authenticated) {
+    throw new Error(`Failed to create authenticated session for ${email}`);
+  }
 }
 
 /**

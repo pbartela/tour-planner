@@ -21,7 +21,17 @@ npx playwright install firefox
 npx playwright install webkit
 ```
 
-### 2. Environment Configuration
+### 2. Start Local Supabase (Required for Email Testing)
+
+The tests use Mailpit for email verification. Start your local Supabase instance:
+
+```bash
+supabase start
+```
+
+This will start Mailpit at `http://127.0.0.1:54324/` for email testing.
+
+### 3. Environment Configuration
 
 The tests use the base URL defined in `playwright.config.ts`. By default, it uses `http://localhost:4321`.
 
@@ -31,7 +41,7 @@ You can override this with an environment variable:
 export BASE_URL=http://localhost:4321
 ```
 
-### 3. Start the Development Server
+### 4. Start the Development Server
 
 Before running tests, ensure your development server is running:
 
@@ -91,13 +101,15 @@ npm run test:e2e:report
 tests/
 ├── e2e/
 │   ├── auth/
-│   │   ├── login.spec.ts        # Login flow tests
-│   │   ├── register.spec.ts     # Registration flow tests
-│   │   ├── logout.spec.ts       # Logout flow tests
-│   │   └── onboarding.spec.ts   # Onboarding flow tests
+│   │   ├── login.spec.ts          # Login flow tests
+│   │   ├── register.spec.ts       # Registration flow tests
+│   │   ├── logout.spec.ts         # Logout flow tests
+│   │   ├── onboarding.spec.ts     # Onboarding flow tests
+│   │   └── integration.spec.ts    # Full user journey integration tests
 │   └── helpers/
-│       └── auth.helpers.ts      # Helper functions for auth flows
-└── README.md                     # This file
+│       ├── auth.helpers.ts        # Helper functions for auth flows
+│       └── mailpit.client.ts      # Mailpit API client for email testing
+└── README.md                       # This file
 ```
 
 ## Test Coverage
@@ -137,28 +149,78 @@ tests/
 - Not show for returning users
 - Persist completion across sessions
 - API integration with CSRF protection
+- Focus trap and keyboard navigation
+- ARIA attributes for accessibility
 
-## Important Notes
+#### Integration Tests (`integration.spec.ts`)
+- Complete user journey: register → onboard → use app → logout
+- Returning user flow with onboarding already completed
+- Skipping onboarding flow
+- Session persistence across page navigations
+- Multiple tabs with same session
+- Error recovery (expired/invalid magic links)
+- Locale persistence through auth flow
+- Security tests (magic link reuse prevention, CSRF tokens)
 
-### Skipped Tests
+## Email Testing with Mailpit
 
-Many tests are marked with `test.skip()` because they require:
+The tests integrate with **Mailpit**, a local email testing service that runs as part of Supabase local development.
 
-1. **Email Service Integration**: Tests that verify the complete magic link flow need integration with a test email service (e.g., Mailosaur, Mailtrap).
+### How it Works
 
-2. **Test User Session Management**: Tests requiring authenticated sessions need a helper to create test user sessions programmatically.
+1. **Mailpit runs at**: `http://127.0.0.1:54324/` (started via `supabase start`)
+2. **Mailpit Client**: `tests/e2e/helpers/mailpit.client.ts` provides methods to:
+   - Fetch emails sent to specific addresses
+   - Extract magic links from email content
+   - Wait for emails to arrive
+   - Clean up test emails
 
-### To Enable Skipped Tests
+### Key Features
 
-1. **Set up email testing service**:
-   - Sign up for a test email service (Mailosaur, Mailtrap, etc.)
-   - Implement `getMagicLinkFromEmail()` in `auth.helpers.ts`
-   - Update tests to use real email verification
+- **Real email testing**: Tests send actual emails through Supabase/Mailpit
+- **Magic link extraction**: Automatically finds and extracts auth confirmation links
+- **Async waiting**: Polls for emails with configurable timeout
+- **Clean state**: Clears inbox between tests to avoid conflicts
 
-2. **Implement test session creation**:
-   - Create a test-only API endpoint or use Supabase Admin API
-   - Implement `createTestUserSession()` in `auth.helpers.ts`
-   - Update tests to use authenticated sessions
+### Mailpit Client Methods
+
+```typescript
+// Wait for and get magic link
+const magicLink = await mailpit.waitForMagicLink('user@example.com', 30000);
+
+// Get latest message for an email
+const message = await mailpit.getLatestMessageForEmail('user@example.com');
+
+// Clear all messages (useful in beforeEach)
+await mailpit.deleteAllMessages();
+
+// Search for messages
+const results = await mailpit.searchMessages('to:user@example.com');
+```
+
+## Test User Sessions
+
+The `createTestUserSession()` helper function creates authenticated sessions for tests:
+
+```typescript
+// Create session with onboarding completed
+await createTestUserSession(page, 'user@example.com', {
+  completeOnboarding: true,
+  locale: 'en-US'
+});
+
+// Create session without completing onboarding (to test onboarding flow)
+await createTestUserSession(page, 'user@example.com', {
+  completeOnboarding: false
+});
+```
+
+This function:
+1. Requests a magic link via the login form
+2. Retrieves the magic link from Mailpit
+3. Completes the authentication flow
+4. Optionally completes or skips onboarding
+5. Verifies the session is authenticated
 
 ## Writing New Tests
 
@@ -276,9 +338,23 @@ Tests run on:
 
 ## Troubleshooting
 
+### Mailpit connection errors
+
+- Ensure Supabase is running: `supabase start`
+- Check Mailpit is accessible at `http://127.0.0.1:54324/`
+- Verify Supabase configuration in `.env`
+
+### Email not received in tests
+
+- Check Mailpit inbox at `http://127.0.0.1:54324/`
+- Verify email was actually sent (check app logs)
+- Increase timeout in `waitForMagicLink()` if network is slow
+- Clear Mailpit inbox: `await mailpit.deleteAllMessages()`
+
 ### Tests fail with "Navigation timeout"
 
 - Ensure dev server is running: `npm run dev`
+- Ensure Supabase is running: `supabase start`
 - Check if the port is correct in `playwright.config.ts`
 - Increase timeout in test if needed
 
@@ -293,12 +369,20 @@ Tests run on:
 - Tests may hit rate limits if running too frequently
 - Set `TEST_MODE=true` in `.env` for higher limits
 - Add delays between requests if needed
+- Clear Mailpit inbox between test runs
 
 ### CSRF token errors
 
 - Ensure `getCsrfToken()` is called before state-changing requests
 - Check that CSRF middleware is properly configured
 - Verify cookies are being set and sent correctly
+
+### Magic link errors
+
+- Check magic link format in email
+- Verify token hasn't expired (usually valid for 1 hour)
+- Ensure link points to correct base URL
+- Check for any URL encoding issues
 
 ## Resources
 

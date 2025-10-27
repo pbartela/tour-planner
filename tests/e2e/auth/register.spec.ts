@@ -1,5 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { requestMagicLink, clearSession } from '../helpers/auth.helpers';
+import {
+  requestMagicLink,
+  clearSession,
+  getMagicLinkFromEmail,
+  completeMagicLinkFlow,
+  isAuthenticated,
+} from '../helpers/auth.helpers';
+import { mailpit } from '../helpers/mailpit.client';
 
 /**
  * Registration flow tests
@@ -12,6 +19,13 @@ test.describe('User Registration Flow', () => {
   test.beforeEach(async ({ page }) => {
     // Clear any existing session before each test
     await clearSession(page);
+
+    // Clear Mailpit inbox before each test
+    try {
+      await mailpit.deleteAllMessages();
+    } catch (error) {
+      console.warn('Failed to clear Mailpit inbox:', error);
+    }
   });
 
   test('should display registration page correctly', async ({ page }) => {
@@ -130,22 +144,23 @@ test.describe('User Registration Flow', () => {
     // This would be verified in the full flow test with email integration
   });
 
-  test.skip('should complete full registration flow with email verification', async ({ page }) => {
-    // This test requires email service integration
-    // Mark as skip until email testing infrastructure is set up
-
+  test('should complete full registration flow with email verification', async ({ page }) => {
     const testEmail = `playwright-test-${Date.now()}@example.com`;
 
     // Request magic link
     await requestMagicLink(page, testEmail);
 
-    // TODO: Implement email retrieval and magic link extraction
-    // const magicLink = await getMagicLinkFromEmail(testEmail);
-    // await completeMagicLinkFlow(page, magicLink);
+    // Get magic link from email
+    const magicLink = await getMagicLinkFromEmail(testEmail);
+    expect(magicLink).toBeTruthy();
+    expect(magicLink).toContain('/auth/confirm');
+
+    // Complete magic link flow
+    await completeMagicLinkFlow(page, magicLink);
 
     // Verify user is authenticated and redirected to dashboard
-    // await expect(page).toHaveURL(/\/(en-US|es-ES|de-DE)\//);
-    // await expect(await isAuthenticated(page)).toBe(true);
+    await expect(page).toHaveURL(/\/(en-US|es-ES|de-DE)\//);
+    expect(await isAuthenticated(page)).toBe(true);
   });
 });
 
