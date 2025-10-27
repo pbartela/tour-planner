@@ -10,10 +10,13 @@ If you're on an unsupported OS like Arch Linux, or encounter browser installatio
 
 **Prerequisites:**
 - Docker installed and running
+- `.env` file configured with Supabase credentials
 - Supabase running locally (`supabase start`)
 - Dev server running (`npm run dev`)
 
 **No additional setup needed** - Docker image includes all browser dependencies.
+
+**Important:** The Docker container mounts your `.env` file, so make sure it exists and contains valid Supabase credentials.
 
 ### Option 2: Local Installation
 
@@ -422,6 +425,17 @@ The Docker container uses `--network host` to access:
 - Mailpit at `localhost:54324`
 - All tests run as if they were on your host machine
 
+**Environment Variables:**
+The container mounts your `.env` file as a read-only volume:
+```bash
+-v "$(pwd)/.env:/app/.env:ro"
+```
+
+This means:
+- Changes to `.env` are picked up without rebuilding
+- Container uses your actual Supabase credentials
+- No environment variables are baked into the image
+
 **Files persisted to host:**
 - `test-results/` - Test artifacts, screenshots, videos
 - `playwright-report/` - HTML test reports
@@ -429,6 +443,18 @@ The Docker container uses `--network host` to access:
 ## Troubleshooting
 
 ### Docker-specific issues
+
+**"EnvInvalidVariables" or missing environment variables**
+- Ensure `.env` file exists in project root
+- Get Supabase credentials: `supabase status`
+- Required variables:
+  ```
+  PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+  PUBLIC_SUPABASE_ANON_KEY=<anon-key>
+  SUPABASE_URL=http://127.0.0.1:54321
+  SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
+  ```
+- Docker mounts `.env` at runtime (no rebuild needed after changes)
 
 **"Cannot connect to localhost:4321"**
 - Ensure dev server is running: `npm run dev`

@@ -34,6 +34,17 @@ fi
 echo -e "${GREEN}✓ Dev server is running${NC}"
 echo ""
 
+# Check if .env file exists
+echo -e "${YELLOW}Checking environment configuration...${NC}"
+if [ ! -f .env ]; then
+    echo -e "${RED}❌ .env file not found${NC}"
+    echo -e "${YELLOW}Please create a .env file with required variables${NC}"
+    echo -e "${YELLOW}You can copy from .env.example if available${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✓ .env file found${NC}"
+echo ""
+
 # Build Docker image
 echo -e "${YELLOW}Building Playwright Docker image...${NC}"
 docker build -f Dockerfile.playwright -t tour-planner-playwright .
@@ -49,6 +60,7 @@ docker run --rm \
   --ipc=host \
   -v "$(pwd)/test-results:/app/test-results" \
   -v "$(pwd)/playwright-report:/app/playwright-report" \
+  -v "$(pwd)/.env:/app/.env:ro" \
   -e BASE_URL=http://localhost:4321 \
   -e CI=true \
   tour-planner-playwright "$@"

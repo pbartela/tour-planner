@@ -6,8 +6,37 @@ This guide helps you run Playwright E2E tests in Docker (perfect for Arch Linux 
 
 - Docker installed and running
 - Git repository cloned
+- **`.env` file configured** with required Supabase variables
 
 ## Step-by-Step Guide
+
+### 0. Configure Environment Variables
+
+Ensure your `.env` file exists and has the required variables:
+
+```bash
+# Check if .env exists
+ls -la .env
+
+# If not, copy from example (if available)
+cp .env.example .env
+
+# Edit with your values
+nano .env
+```
+
+**Required variables for tests:**
+```env
+PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_URL=http://127.0.0.1:54321
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
+
+Get these values from:
+```bash
+supabase status
+```
 
 ### 1. Start Supabase (for email testing)
 
@@ -90,6 +119,43 @@ All artifacts are saved to your local filesystem:
 - `playwright-report/` - HTML reports
 
 ## Troubleshooting
+
+### ".env file not found"
+
+**Problem:** Docker script can't find environment configuration
+
+**Solution:**
+```bash
+# Check if .env exists
+ls -la .env
+
+# Create from Supabase status
+supabase status
+
+# Or copy from example
+cp .env.example .env
+```
+
+### "EnvInvalidVariables" or "Invalid environment variables"
+
+**Problem:** Missing or incorrect environment variables
+
+**Solution:**
+```bash
+# Get current Supabase values
+supabase status
+
+# Update .env with correct values
+nano .env
+
+# Required variables:
+# PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+# PUBLIC_SUPABASE_ANON_KEY=<from supabase status>
+# SUPABASE_URL=http://127.0.0.1:54321
+# SUPABASE_SERVICE_ROLE_KEY=<from supabase status>
+```
+
+**Note:** The Docker container mounts your `.env` file at runtime, so changes are picked up without rebuilding the image.
 
 ### "Cannot connect to localhost:4321"
 

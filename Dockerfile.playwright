@@ -16,11 +16,14 @@ COPY playwright.config.ts ./
 COPY tests ./tests
 COPY tsconfig.json ./
 
-# Copy source files needed for tests
+# Copy source files needed for tests (but not .env - will be mounted at runtime)
 COPY src ./src
 COPY public ./public
 COPY astro.config.mjs ./
 COPY tailwind.config.ts ./
+
+# Note: .env file is mounted at runtime via docker volume
+# This ensures latest env vars are used without rebuilding image
 
 # Set environment variables
 ENV CI=true
