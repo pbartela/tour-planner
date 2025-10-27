@@ -49,12 +49,12 @@ This will start Mailpit at `http://127.0.0.1:54324/` for email testing.
 
 ### 3. Environment Configuration
 
-The tests use the base URL defined in `playwright.config.ts`. By default, it uses `http://localhost:4321`.
+The tests use the base URL defined in `playwright.config.ts`. By default, it uses `http://localhost:3000`.
 
 You can override this with an environment variable:
 
 ```bash
-export BASE_URL=http://localhost:4321
+export BASE_URL=http://localhost:3000
 ```
 
 ### 4. Start the Development Server
@@ -348,7 +348,7 @@ jobs:
         run: npm run dev &
 
       - name: Wait for dev server
-        run: npx wait-on http://localhost:4321
+        run: npx wait-on http://localhost:3000
 
       - name: Run Playwright tests in Docker
         run: npm run test:e2e:docker
@@ -389,7 +389,7 @@ Test configuration is in `playwright.config.ts`. Key settings:
 - **fullyParallel**: `true` - Run tests in parallel
 - **retries**: `0` (local), `2` (CI)
 - **workers**: Automatic (local), `1` (CI)
-- **baseURL**: `http://localhost:4321`
+- **baseURL**: `http://localhost:3000`
 - **trace**: On first retry
 - **screenshot**: Only on failure
 - **video**: Retain on failure
@@ -418,12 +418,12 @@ When running tests with Docker:
            │
            │ Uses host network
            │
-           ├──> localhost:4321 (Dev Server)
+           ├──> localhost:3000 (Dev Server)
            └──> localhost:54324 (Mailpit)
 ```
 
 The Docker container uses `--network host` to access:
-- Your dev server at `localhost:4321`
+- Your dev server at `localhost:3000`
 - Mailpit at `localhost:54324`
 - All tests run as if they were on your host machine
 
@@ -458,10 +458,10 @@ This means:
   ```
 - Docker mounts `.env` at runtime (no rebuild needed after changes)
 
-**"Timed out waiting for webServer" or "Cannot connect to localhost:4321"**
+**"Timed out waiting for webServer" or "Cannot connect to localhost:3000"**
 - **Dev server must be running** before starting Docker tests
 - Start it manually: `npm run dev` (in separate terminal)
-- Verify it's accessible: `curl http://localhost:4321`
+- Verify it's accessible: `curl http://localhost:3000`
 - Docker sets `SKIP_WEBSERVER=true` - it won't start the server for you
 - Docker uses host networking, so the container sees your local services
 

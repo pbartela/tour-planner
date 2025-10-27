@@ -179,7 +179,7 @@ export class MailpitClient {
    */
   extractMagicLink(messageContent: string): string | null {
     // Pattern for Supabase confirmation links
-    // Example: http://localhost:4321/auth/confirm?token_hash=...&type=email
+    // Example: http://localhost:3000/auth/confirm?token_hash=...&type=email
     const patterns = [
       /https?:\/\/[^\s]+\/auth\/confirm\?[^\s"'<>]+/g,
       /https?:\/\/[^\s]+\/auth\/confirm[^\s"'<>]*/g,

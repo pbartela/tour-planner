@@ -26,8 +26,8 @@ echo ""
 
 # Check if dev server is running
 echo -e "${YELLOW}Checking dev server status...${NC}"
-if ! curl -s http://127.0.0.1:4321/ > /dev/null 2>&1; then
-    echo -e "${RED}❌ Dev server is not running at http://127.0.0.1:4321/${NC}"
+if ! curl -s http://127.0.0.1:3000/ > /dev/null 2>&1; then
+    echo -e "${RED}❌ Dev server is not running at http://127.0.0.1:3000/${NC}"
     echo -e "${YELLOW}Please start the dev server first: npm run dev${NC}"
     exit 1
 fi
@@ -61,7 +61,7 @@ docker run --rm \
   -v "$(pwd)/test-results:/app/test-results" \
   -v "$(pwd)/playwright-report:/app/playwright-report" \
   -v "$(pwd)/.env:/app/.env:ro" \
-  -e BASE_URL=http://localhost:4321 \
+  -e BASE_URL=http://localhost:3000 \
   -e SKIP_WEBSERVER=true \
   -e CI=true \
   tour-planner-playwright "$@"

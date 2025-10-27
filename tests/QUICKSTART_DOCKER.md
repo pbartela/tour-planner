@@ -65,7 +65,7 @@ npm run dev
 
 **Verify it's running:**
 ```bash
-curl http://localhost:4321/
+curl http://localhost:3000/
 ```
 
 You should see your application's HTML response.
@@ -161,14 +161,14 @@ nano .env
 
 **Note:** The Docker container mounts your `.env` file at runtime, so changes are picked up without rebuilding the image.
 
-### "Cannot connect to localhost:4321"
+### "Cannot connect to localhost:3000"
 
 **Problem:** Docker can't reach your dev server
 
 **Solution:**
 ```bash
 # Check dev server is running
-curl http://localhost:4321/
+curl http://localhost:3000/
 
 # Restart dev server if needed
 npm run dev
@@ -212,7 +212,7 @@ sudo chown -R $USER:$USER test-results playwright-report
 
 ```
 Your Machine (Host)
-├── Dev Server (localhost:4321)
+├── Dev Server (localhost:3000)
 ├── Supabase/Mailpit (localhost:54324)
 └── Docker Container (Playwright)
     ├── Chromium
@@ -233,5 +233,5 @@ The Docker container uses host networking, so it sees your local services as if 
 ## Need Help?
 
 - Check logs: `docker logs <container-id>`
-- Verify network: `docker run --rm --network host nicolaka/netshoot curl localhost:4321`
+- Verify network: `docker run --rm --network host nicolaka/netshoot curl localhost:3000`
 - See full docs: `tests/README.md`
