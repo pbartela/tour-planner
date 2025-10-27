@@ -55,6 +55,8 @@ You should see the Mailpit web interface.
 
 ### 2. Start the Dev Server
 
+**IMPORTANT:** You must start the dev server manually before running tests in Docker.
+
 In a separate terminal:
 
 ```bash
@@ -67,6 +69,8 @@ curl http://localhost:4321/
 ```
 
 You should see your application's HTML response.
+
+**Note:** Docker tests expect the dev server to be already running. The `SKIP_WEBSERVER=true` flag tells Playwright not to try starting it automatically.
 
 ### 3. Run Tests in Docker
 

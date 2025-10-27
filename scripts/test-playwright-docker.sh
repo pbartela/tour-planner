@@ -62,6 +62,7 @@ docker run --rm \
   -v "$(pwd)/playwright-report:/app/playwright-report" \
   -v "$(pwd)/.env:/app/.env:ro" \
   -e BASE_URL=http://localhost:4321 \
+  -e SKIP_WEBSERVER=true \
   -e CI=true \
   tour-planner-playwright "$@"
 

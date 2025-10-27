@@ -73,7 +73,9 @@ Or, let Playwright start it automatically (configured in `playwright.config.ts`)
 
 **Prerequisites:**
 1. Start Supabase: `supabase start`
-2. Start dev server: `npm run dev` (in another terminal)
+2. **Start dev server: `npm run dev` (in another terminal) - REQUIRED!**
+
+**Important:** Unlike local Playwright, Docker tests require the dev server to be running separately. Playwright won't start it for you.
 
 Then run tests:
 
@@ -456,9 +458,11 @@ This means:
   ```
 - Docker mounts `.env` at runtime (no rebuild needed after changes)
 
-**"Cannot connect to localhost:4321"**
-- Ensure dev server is running: `npm run dev`
-- Verify port 4321 is accessible: `curl http://localhost:4321`
+**"Timed out waiting for webServer" or "Cannot connect to localhost:4321"**
+- **Dev server must be running** before starting Docker tests
+- Start it manually: `npm run dev` (in separate terminal)
+- Verify it's accessible: `curl http://localhost:4321`
+- Docker sets `SKIP_WEBSERVER=true` - it won't start the server for you
 - Docker uses host networking, so the container sees your local services
 
 **"Cannot connect to Mailpit"**
