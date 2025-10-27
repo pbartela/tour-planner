@@ -1,5 +1,5 @@
-import { Page, expect, BrowserContext } from '@playwright/test';
-import { mailpit } from './mailpit.client';
+import { Page, expect, BrowserContext } from "@playwright/test";
+import { mailpit } from "./mailpit.client";
 
 /**
  * Helper functions for authentication flows in e2e tests
@@ -11,10 +11,10 @@ import { mailpit } from './mailpit.client';
  * @param email - Email address to send magic link to
  */
 export async function requestMagicLink(page: Page, email: string) {
-  await page.goto('/en-US/login');
+  await page.goto("/en-US/login");
 
   // Wait for the login form to be visible
-  await expect(page.locator('form')).toBeVisible();
+  await expect(page.locator("form")).toBeVisible();
 
   // Fill in the email
   const emailInput = page.locator('input[type="email"]');
@@ -34,17 +34,14 @@ export async function requestMagicLink(page: Page, email: string) {
  * @param timeoutMs - Maximum time to wait for email
  * @returns The magic link URL
  */
-export async function getMagicLinkFromEmail(
-  email: string,
-  timeoutMs = 30000
-): Promise<string> {
+export async function getMagicLinkFromEmail(email: string, timeoutMs = 30000): Promise<string> {
   try {
     // Wait for the magic link email to arrive
     const magicLink = await mailpit.waitForMagicLink(email, timeoutMs);
     return magicLink;
   } catch (error) {
     throw new Error(
-      `Failed to get magic link for ${email}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      `Failed to get magic link for ${email}: ${error instanceof Error ? error.message : "Unknown error"}`
     );
   }
 }
@@ -63,7 +60,7 @@ export async function completeMagicLinkFlow(page: Page, magicLinkUrl: string) {
 
   // Verify we're logged in by checking for authenticated content
   // This could be the dashboard or a profile indicator
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState("networkidle");
 }
 
 /**
@@ -73,7 +70,7 @@ export async function completeMagicLinkFlow(page: Page, magicLinkUrl: string) {
 export async function logout(page: Page) {
   // Navigate to logout page or click logout button
   // Adjust this based on your UI implementation
-  await page.goto('/en-US/logout');
+  await page.goto("/en-US/logout");
 
   // Wait for logout confirmation
   await expect(page.getByText(/signed out/i)).toBeVisible({ timeout: 5000 });
@@ -87,7 +84,7 @@ export async function logout(page: Page) {
 export async function isAuthenticated(page: Page): Promise<boolean> {
   try {
     // Try to access an authenticated endpoint
-    const response = await page.request.get('/api/profiles/me');
+    const response = await page.request.get("/api/profiles/me");
     return response.ok();
   } catch {
     return false;
@@ -114,19 +111,19 @@ export async function completeOnboarding(page: Page, skipOnboarding = false) {
 
   if (skipOnboarding) {
     // Click skip button
-    const skipButton = page.getByRole('button', { name: /skip/i });
+    const skipButton = page.getByRole("button", { name: /skip/i });
     await skipButton.click();
   } else {
     // Go through all onboarding steps
     // Assuming there are 3 steps based on the codebase analysis
     for (let i = 0; i < 2; i++) {
-      const nextButton = page.getByRole('button', { name: /next/i });
+      const nextButton = page.getByRole("button", { name: /next/i });
       await nextButton.click();
       await page.waitForTimeout(500); // Small delay between steps
     }
 
     // Click finish on the last step
-    const finishButton = page.getByRole('button', { name: /finish|get started/i });
+    const finishButton = page.getByRole("button", { name: /finish|get started/i });
     await finishButton.click();
   }
 
@@ -140,7 +137,7 @@ export async function completeOnboarding(page: Page, skipOnboarding = false) {
  * @returns CSRF token string
  */
 export async function getCsrfToken(page: Page): Promise<string> {
-  const response = await page.request.get('/api/csrf-token');
+  const response = await page.request.get("/api/csrf-token");
   const data = await response.json();
   return data.token;
 }
@@ -160,7 +157,7 @@ export async function createTestUserSession(
     locale?: string;
   } = {}
 ) {
-  const { completeOnboarding: shouldCompleteOnboarding = true, locale = 'en-US' } = options;
+  const { completeOnboarding: shouldCompleteOnboarding = true, locale = "en-US" } = options;
 
   // Clear any existing session
   await clearSession(page);
@@ -169,7 +166,7 @@ export async function createTestUserSession(
   try {
     await mailpit.deleteAllMessages();
   } catch (error) {
-    console.warn('Failed to clear Mailpit inbox:', error);
+    console.warn("Failed to clear Mailpit inbox:", error);
   }
 
   // Request magic link
@@ -212,9 +209,17 @@ export async function createTestUserSession(
  * @param page - Playwright page object
  */
 export async function clearSession(page: Page) {
+  // Clear cookies and local storage using Playwright's API
   await page.context().clearCookies();
-  await page.evaluate(() => {
-    localStorage.clear();
-    sessionStorage.clear();
-  });
+
+  // Try to clear local/session storage gracefully
+  try {
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+  } catch (error) {
+    // Ignore security errors for cross-origin or restricted pages
+    console.warn("Could not clear localStorage/sessionStorage:", error);
+  }
 }
