@@ -19,7 +19,7 @@
 # 6. Run the subsequent commands to test the endpoints.
 #
 
-BASE_URL="http://localhost:4321/api"
+BASE_URL="http://localhost:3000/api"
 
 # ==============================================================================
 # Step 1: Authentication - Sign In

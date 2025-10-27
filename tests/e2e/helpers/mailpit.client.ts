@@ -2,7 +2,7 @@
  * Mailpit API Client
  *
  * Interacts with local Mailpit instance for email testing.
- * Mailpit runs at http://127.0.0.1:54324/ (Supabase local setup)
+ * Mailpit runs at http://localhost:54324/ (Supabase local setup)
  */
 
 export interface MailpitMessage {
@@ -56,7 +56,7 @@ export interface MailpitSearchResponse {
 export class MailpitClient {
   private baseUrl: string;
 
-  constructor(baseUrl = 'http://127.0.0.1:54324/api/v1') {
+  constructor(baseUrl = 'http://localhost:54324/api/v1') {
     this.baseUrl = baseUrl;
   }
 

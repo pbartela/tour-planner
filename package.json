@@ -18,10 +18,7 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:report": "playwright show-report",
-    "test:e2e:codegen": "playwright codegen http://localhost:3000",
-    "test:e2e:docker": "./scripts/test-playwright-docker.sh",
-    "test:e2e:docker:headed": "./scripts/test-playwright-docker.sh --headed",
-    "test:e2e:docker:debug": "./scripts/test-playwright-docker.sh --debug"
+    "test:e2e:codegen": "playwright codegen http://localhost:3000"
   },
   "dependencies": {
     "@astrojs/node": "^9.4.3",
@@ -56,6 +53,7 @@
   "devDependencies": {
     "@eslint/compat": "1.2.7",
     "@eslint/js": "9.23.0",
+    "@playwright/test": "^1.56.1",
     "@storybook/addon-a11y": "^9.1.13",
     "@storybook/addon-docs": "^9.1.13",
     "@storybook/addon-onboarding": "^9.1.13",

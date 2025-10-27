@@ -10,7 +10,7 @@
 # How to set up the environment in Postman:
 # 1. Create a new Postman environment.
 # 2. Add the following variables:
-#    - BASE_URL: http://localhost:4321/api
+#    - BASE_URL: http://localhost:3000/api
 #    - ACCESS_TOKEN: (Leave this empty initially)
 #
 # Authentication Workflow:

@@ -69,34 +69,6 @@ Or, let Playwright start it automatically (configured in `playwright.config.ts`)
 
 ## Running Tests
 
-### With Docker (Recommended for Arch Linux)
-
-**Prerequisites:**
-1. Start Supabase: `supabase start`
-2. **Start dev server: `npm run dev` (in another terminal) - REQUIRED!**
-
-**Important:** Unlike local Playwright, Docker tests require the dev server to be running separately. Playwright won't start it for you.
-
-Then run tests:
-
-```bash
-# Run all tests in Docker
-npm run test:e2e:docker
-
-# Run with headed mode (visible browser)
-npm run test:e2e:docker:headed
-
-# Run specific test file
-npm run test:e2e:docker -- tests/e2e/auth/login.spec.ts
-
-# Run specific test by name
-npm run test:e2e:docker -- -g "should display login page"
-```
-
-**Note:** Test results and reports are saved to your local filesystem even when running in Docker.
-
-### Without Docker (Local Installation)
-
 ```bash
 # Run all tests
 npm run test:e2e
@@ -350,9 +322,6 @@ jobs:
       - name: Wait for dev server
         run: npx wait-on http://localhost:3000
 
-      - name: Run Playwright tests in Docker
-        run: npm run test:e2e:docker
-
       - name: Upload test report
         uses: actions/upload-artifact@v3
         if: always()
@@ -470,10 +439,6 @@ This means:
 - Verify Mailpit is accessible: `curl http://127.0.0.1:54324`
 - Check Supabase status: `supabase status`
 
-**Docker build fails**
-- Ensure you have sufficient disk space
-- Try: `docker system prune` to clean up
-- Check Docker daemon is running
 
 **Permission errors on test results**
 - Files created in Docker may have different permissions
