@@ -15,3 +15,18 @@ alwaysApply: false
 - Implement useId() for generating unique IDs for accessibility attributes
 - Consider using the new useOptimistic hook for optimistic UI updates in forms
 - Use useTransition for non-urgent state updates to keep the UI responsive
+
+### Components Reference
+
+Refer to `.cursor/rules/components/COMPONENTS_REFERENCE.md` for a complete catalog of all React components in the codebase. The reference includes:
+- All existing components organized by category (Auth, Tours, UI, Date, Theme, etc.)
+- Component locations, props, and usage patterns
+- Component relationships and dependencies
+- Development guidelines for consistency
+
+When creating new React components:
+1. Check if a similar component exists in the reference
+2. Follow existing component patterns (file structure, TypeScript types, styling approach)
+3. Use existing UI primitives from `src/components/ui` as building blocks
+4. Ensure proper internationalization support with react-i18next
+5. Include appropriate accessibility attributes and ARIA labels

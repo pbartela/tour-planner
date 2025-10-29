@@ -89,14 +89,6 @@ export const Default: Story = {
   },
 };
 
-export const Primary: Story = {
-  args: {
-    variant: "primary",
-    size: "lg",
-    children: "Primary Button",
-  },
-};
-
 // DaisyUI Color Variants
 export const DaisyUIColors: Story = {
   render: () => (

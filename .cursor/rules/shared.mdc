@@ -34,6 +34,22 @@ When introducing changes to the project, always follow the directory structure b
 
 When modifying the directory structure, always update this section.
 
+## Components Reference
+
+A comprehensive list of all existing components in the repository is documented in `.cursor/rules/components/COMPONENTS_REFERENCE.md`. 
+
+**Before creating new components:**
+1. Check the components reference to see if a similar component already exists
+2. Review existing component patterns and reuse when appropriate
+3. Follow the same structure and conventions as existing components
+
+**When working with components:**
+- Use existing UI components from `src/components/ui` when possible
+- Follow the styling patterns established by existing components (DaisyUI + Tailwind)
+- Ensure new components match the internationalization patterns (react-i18next)
+- Include proper TypeScript types for all props
+- Add Storybook stories for new UI components when applicable
+
 ## Coding practices
 
 ### Guidelines for clean code

@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/db/supabase.client";
 import { validateSession } from "@/lib/server/session-validation.service";
 import { getOrCreateCsrfToken, checkCsrfProtection } from "@/lib/server/csrf.service";
 import { yearsInSeconds } from "@/lib/constants/time";
+import i18next from "i18next";
 
 const protectedRoutes = ["/", "/profile", "/tours"];
 // Routes that authenticated users should be redirected away from.
@@ -14,17 +15,20 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const supabase = createSupabaseServerClient(context.request, context.cookies);
   context.locals.supabase = supabase;
 
-  // Validate locale against allowed values to prevent injection
+  // Determine locale from URL params
   const requestedLocale = context.params.locale;
   const lang =
     requestedLocale && allowedLocales.includes(requestedLocale as (typeof allowedLocales)[number])
       ? requestedLocale
       : import.meta.env.PUBLIC_DEFAULT_LOCALE || "en-US";
 
-  // Only set locale cookie if it has changed to avoid unnecessary cookie writes
-  const currentLocale = context.cookies.get("locale")?.value;
+  // Set i18next language for server-side rendering
+  await i18next.changeLanguage(lang);
+
+  // Set i18next cookie for client-side (used by React components)
+  const currentLocale = context.cookies.get("i18next")?.value;
   if (currentLocale !== lang) {
-    context.cookies.set("locale", lang, {
+    context.cookies.set("i18next", lang, {
       path: "/",
       maxAge: yearsInSeconds(1),
     });

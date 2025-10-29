@@ -12,7 +12,16 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "heading": "Your Tours"
+    "heading": "Your Tours",
+    "welcomeTitle": "Welcome to your Dashboard!",
+    "noToursMessage": "You don't have any active tours yet.",
+    "createFirstTour": "Create Your First Tour"
+  },
+  "layout": {
+    "siteName": "Tour Planner",
+    "welcome": "Welcome, {{name}}",
+    "logout": "Logout",
+    "login": "Login"
   },
   "createTour": {
     "title": "Create a New Tour",
@@ -46,5 +55,21 @@
     "next": "Next",
     "finish": "Finish",
     "error": "Something went wrong. Please try again."
+  },
+  "addTrip": {
+    "title": "Add Trip",
+    "tripUrl": "Trip URL",
+    "tripUrlPlaceholder": "e.g. airbnb.com/rooms/...",
+    "customTitle": "Custom Title",
+    "customTitlePlaceholder": "Weekend Getaway in the Mountains",
+    "description": "Description (optional)",
+    "descriptionPlaceholder": "A cozy cabin for our yearly friends trip.",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "dateFormatLabel": "Format",
+    "requiredFieldsError": "All fields are required",
+    "dateValidationError": "End date must be after start date",
+    "save": "Save Trip",
+    "saving": "Saving..."
   }
 }

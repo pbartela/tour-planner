@@ -4,12 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { AddTripModal } from "@/components/tours/AddTripModal";
 import { patch, post, handleApiResponse } from "@/lib/client/api-client";
+import { useTranslation } from "react-i18next";
 
 interface TourDashboardProps {
   onboardingCompleted: boolean;
 }
 
 const TourDashboard = ({ onboardingCompleted }: TourDashboardProps): React.JSX.Element => {
+  const { t } = useTranslation("tours");
   const [isOnboardingDismissed, setIsOnboardingDismissed] = useState(onboardingCompleted);
   const [isAddTripModalOpen, setIsAddTripModalOpen] = useState(false);
 
@@ -74,12 +76,12 @@ const TourDashboard = ({ onboardingCompleted }: TourDashboardProps): React.JSX.E
       <div className="container mx-auto py-10">
         <Card>
           <CardHeader>
-            <CardTitle>Welcome to your Dashboard!</CardTitle>
+            <CardTitle>{t("dashboard.welcomeTitle")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-center">
-              <p className="mb-4">You don&apos;t have any active tours yet.</p>
-              <Button onClick={() => setIsAddTripModalOpen(true)}>Create Your First Tour</Button>
+              <p className="mb-4">{t("dashboard.noToursMessage")}</p>
+              <Button onClick={() => setIsAddTripModalOpen(true)}>{t("dashboard.createFirstTour")}</Button>
             </div>
           </CardContent>
         </Card>

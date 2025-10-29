@@ -12,7 +12,16 @@
   },
   "dashboard": {
     "title": "Panel główny",
-    "heading": "Twoje wycieczki"
+    "heading": "Twoje wycieczki",
+    "welcomeTitle": "Witaj w swoim Panelu!",
+    "noToursMessage": "Nie masz jeszcze żadnych aktywnych wycieczek.",
+    "createFirstTour": "Utwórz swoją pierwszą wycieczkę"
+  },
+  "layout": {
+    "siteName": "Planer Wycieczek",
+    "welcome": "Witaj, {{name}}",
+    "logout": "Wyloguj",
+    "login": "Zaloguj"
   },
   "createTour": {
     "title": "Utwórz nową wycieczkę",
@@ -46,5 +55,21 @@
     "next": "Dalej",
     "finish": "Zakończ",
     "error": "Coś poszło nie tak. Proszę spróbować ponownie."
+  },
+  "addTrip": {
+    "title": "Dodaj wycieczkę",
+    "tripUrl": "URL wycieczki",
+    "tripUrlPlaceholder": "np. airbnb.com/rooms/...",
+    "customTitle": "Tytuł niestandardowy",
+    "customTitlePlaceholder": "Weekendowy wypad w góry",
+    "description": "Opis (opcjonalnie)",
+    "descriptionPlaceholder": "Przytulna chatka na naszą doroczną wycieczkę ze znajomymi.",
+    "startDate": "Data rozpoczęcia",
+    "endDate": "Data zakończenia",
+    "dateFormatLabel": "Format",
+    "requiredFieldsError": "Wszystkie pola są wymagane",
+    "dateValidationError": "Data zakończenia musi być po dacie rozpoczęcia",
+    "save": "Zapisz wycieczkę",
+    "saving": "Zapisywanie..."
   }
 }

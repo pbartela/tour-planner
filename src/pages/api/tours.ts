@@ -64,7 +64,7 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
       return new Response(JSON.stringify(validation.error.flatten()), { status: 400 });
     }
 
-    const { data: tour, error } = await tourService.createTour(supabase, user.id, {
+    const { data: tour, error } = await tourService.createTour(supabase, {
       ...validation.data,
       start_date: validation.data.start_date.toISOString(),
       end_date: validation.data.end_date.toISOString(),
