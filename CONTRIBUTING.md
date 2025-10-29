@@ -134,10 +134,10 @@ export function Button({ label, onClick, disabled = false }: ButtonProps): React
 - **Linting**: Ensure your code passes ESLint checks (`npm run lint`)
 - **Line Length**: Keep lines under 120 characters when possible
 - **Naming Conventions**:
-  - Components: PascalCase (e.g., `TourCard.tsx`)
+  - Components: PascalCase for component files (e.g., `TourCard.tsx`, `DatePicker.tsx`, `DatePicker.stories.tsx`)
   - Functions/Variables: camelCase (e.g., `getTourDetails`)
   - Constants: UPPER_SNAKE_CASE (e.g., `MAX_PARTICIPANTS`)
-  - Files: kebab-case for non-components (e.g., `tour.service.ts`)
+  - Files: kebab-case for non-component files (e.g., `tour.service.ts`, utility files)
 
 ### File Organization
 

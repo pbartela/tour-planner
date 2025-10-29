@@ -15,7 +15,11 @@ class TourService {
 
     try {
       // Combine data and count into a single query to avoid N+1 issue
-      const { data: tours, error: toursError, count } = await supabase
+      const {
+        data: tours,
+        error: toursError,
+        count,
+      } = await supabase
         .from("participants")
         .select(
           `
@@ -61,42 +65,36 @@ class TourService {
 
   public async createTour(
     supabase: SupabaseClient,
-    userId: string,
     command: CreateTourCommand
   ): Promise<{ data: TourDetailsDto | null; error: Error | null }> {
     try {
-      const { data: tour, error: tourError } = await supabase
-        .from("tours")
-        .insert({ ...command, owner_id: userId })
-        .select()
-        .single();
+      // Use the database function to create the tour
+      // This bypasses RLS policy evaluation issues that occur with server-side Supabase clients
+      // The function handles both tour creation and participant insertion in a single transaction
+      // Note: The user ID is retrieved from auth.uid() within the database function for security
+      const { data: tours, error: tourError } = await supabase.rpc("create_tour", {
+        p_title: command.title,
+        p_destination: command.destination,
+        p_description: command.description || null,
+        p_start_date: command.start_date,
+        p_end_date: command.end_date,
+        p_participant_limit: command.participant_limit || null,
+        p_like_threshold: command.like_threshold || null,
+      });
 
       if (tourError) {
         console.error("Error creating tour:", tourError);
         throw new Error("Failed to create tour in the database.");
       }
 
-      const { error: participantError } = await supabase
-        .from("participants")
-        .insert({ tour_id: tour.id, user_id: userId });
+      // The function returns an array, get the first (and only) result
+      const tour = Array.isArray(tours) && tours.length > 0 ? tours[0] : null;
 
-      if (participantError) {
-        console.error("Error adding participant:", participantError);
-
-        // Rollback: Delete the tour if participant creation fails to prevent orphaned tours
-        const { error: deleteError } = await supabase
-          .from("tours")
-          .delete()
-          .eq("id", tour.id);
-
-        if (deleteError) {
-          console.error("Error during rollback - failed to delete orphaned tour:", deleteError);
-        }
-
-        throw new Error("Failed to add participant to the new tour.");
+      if (!tour) {
+        throw new Error("Failed to retrieve created tour.");
       }
 
-      return { data: tour, error: null };
+      return { data: tour as TourDetailsDto, error: null };
     } catch (error) {
       console.error("Unexpected error in createTour:", error);
       return { data: null, error: error instanceof Error ? error : new Error("An unexpected error occurred.") };

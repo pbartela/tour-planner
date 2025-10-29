@@ -42,10 +42,7 @@ const envSchema = z.object({
     .regex(/^[a-z]{2}-[A-Z]{2}$/, "PUBLIC_DEFAULT_LOCALE must be in format 'en-US'"),
 
   // Server-only environment variables
-  SUPABASE_URL: z
-    .string()
-    .url("SUPABASE_URL must be a valid URL")
-    .min(1, "SUPABASE_URL is required"),
+  SUPABASE_URL: z.string().url("SUPABASE_URL must be a valid URL").min(1, "SUPABASE_URL is required"),
 
   SUPABASE_SERVICE_ROLE_KEY: z
     .string()

@@ -67,15 +67,12 @@ export const POST: APIRoute = async ({ request }) => {
     });
   }
 
-  return new Response(
-    JSON.stringify({ message: "Magic link sent successfully" }),
-    {
-      status: 200,
-      headers: {
-        "X-RateLimit-Limit": String(RATE_LIMIT_CONFIGS.MAGIC_LINK.maxRequests),
-        "X-RateLimit-Remaining": String(rateLimitResult.remaining),
-        "X-RateLimit-Reset": String(Math.floor(rateLimitResult.resetAt / 1000)),
-      },
-    }
-  );
+  return new Response(JSON.stringify({ message: "Magic link sent successfully" }), {
+    status: 200,
+    headers: {
+      "X-RateLimit-Limit": String(RATE_LIMIT_CONFIGS.MAGIC_LINK.maxRequests),
+      "X-RateLimit-Remaining": String(rateLimitResult.remaining),
+      "X-RateLimit-Reset": String(Math.floor(rateLimitResult.resetAt / 1000)),
+    },
+  });
 };

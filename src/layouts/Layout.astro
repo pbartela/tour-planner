@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeController } from "@/components/ThemeController";
 import { getOrCreateCsrfToken } from "@/lib/server/csrf.service";
 import "@/styles/global.css";
+import i18next from "i18next";
 
 interface Props {
   title: string;
@@ -15,10 +16,13 @@ const { user } = Astro.locals;
 
 // Get CSRF token for forms (only needed if user is authenticated)
 const csrfToken = user ? getOrCreateCsrfToken(Astro.cookies) : null;
+
+// Get current locale for translations
+const locale = Astro.params.locale || "en-US";
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={locale}>
   <head>
     <meta charset="UTF-8" />
     <meta name="description" content="Astro description" />
@@ -32,23 +36,23 @@ const csrfToken = user ? getOrCreateCsrfToken(Astro.cookies) : null;
     <ThemeProvider userTheme={user?.profile?.theme} client:load>
       <header class="bg-base-100 border-b border-base-300">
         <nav class="container mx-auto flex justify-between items-center p-4">
-          <a href="/" class="text-xl font-bold text-base-content">Tour Planner</a>
+          <a href={`/${locale}`} class="text-xl font-bold text-base-content">{i18next.t("layout.siteName")}</a>
           <div class="flex items-center gap-4">
             <ThemeController client:load />
             {
               user ? (
                 <div class="flex items-center gap-4">
-                  <span class="text-base-content">Welcome, {user.profile.display_name || user.email}</span>
+                  <span class="text-base-content">{i18next.t("layout.welcome", { name: user.profile.display_name || user.email })}</span>
                   <form action="/api/auth/signout" method="post" data-astro-reload>
                     <input type="hidden" name="csrf_token" value={csrfToken} />
                     <button type="submit" class="btn btn-error btn-sm">
-                      Logout
+                      {i18next.t("layout.logout")}
                     </button>
                   </form>
                 </div>
               ) : (
-                <a href="/login" class="btn btn-primary btn-sm">
-                  Login
+                <a href={`/${locale}/login`} class="btn btn-primary btn-sm">
+                  {i18next.t("layout.login")}
                 </a>
               )
             }

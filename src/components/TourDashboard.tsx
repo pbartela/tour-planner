@@ -2,14 +2,18 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OnboardingModal } from "@/components/OnboardingModal";
-import { patch } from "@/lib/client/api-client";
+import { AddTripModal } from "@/components/tours/AddTripModal";
+import { patch, post, handleApiResponse } from "@/lib/client/api-client";
+import { useTranslation } from "react-i18next";
 
 interface TourDashboardProps {
   onboardingCompleted: boolean;
 }
 
 const TourDashboard = ({ onboardingCompleted }: TourDashboardProps): React.JSX.Element => {
+  const { t } = useTranslation("tours");
   const [isOnboardingDismissed, setIsOnboardingDismissed] = useState(onboardingCompleted);
+  const [isAddTripModalOpen, setIsAddTripModalOpen] = useState(false);
 
   const handleCompleteOnboarding = async (): Promise<void> => {
     try {
@@ -34,6 +38,28 @@ const TourDashboard = ({ onboardingCompleted }: TourDashboardProps): React.JSX.E
     setIsOnboardingDismissed(true);
   };
 
+  const handleCreateTour = async (data: {
+    title: string;
+    destination: string;
+    description?: string;
+    start_date: string;
+    end_date: string;
+  }): Promise<void> => {
+    const response = await post("/api/tours", data);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to create tour");
+    }
+
+    handleApiResponse(response);
+
+    // Reload page to show the new tour
+    if (typeof window !== "undefined") {
+      window.location.reload();
+    }
+  };
+
   return (
     <>
       <OnboardingModal
@@ -42,15 +68,20 @@ const TourDashboard = ({ onboardingCompleted }: TourDashboardProps): React.JSX.E
         onCompleteOnboarding={handleCompleteOnboarding}
         onSkipOnboardign={handleSkipOnboarding}
       />
+      <AddTripModal
+        isOpen={isAddTripModalOpen}
+        onClose={() => setIsAddTripModalOpen(false)}
+        onSubmit={handleCreateTour}
+      />
       <div className="container mx-auto py-10">
         <Card>
           <CardHeader>
-            <CardTitle>Welcome to your Dashboard!</CardTitle>
+            <CardTitle>{t("dashboard.welcomeTitle")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-center">
-              <p className="mb-4">You don&apos;t have any active tours yet.</p>
-              <Button>Create Your First Tour</Button>
+              <p className="mb-4">{t("dashboard.noToursMessage")}</p>
+              <Button onClick={() => setIsAddTripModalOpen(true)}>{t("dashboard.createFirstTour")}</Button>
             </div>
           </CardContent>
         </Card>

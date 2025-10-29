@@ -10,6 +10,19 @@ alwaysApply: false
 - Use Astro components (.astro) for static content and layout
 - Implement framework components in React only when interactivity is needed
 
+### Components
+
+Before creating or modifying components, refer to `.cursor/rules/components/COMPONENTS_REFERENCE.md` for a complete list of existing components. This reference includes:
+- Component locations and purposes
+- Props interfaces and usage examples
+- Component categories and relationships
+- Development guidelines
+
+Key principles:
+- Reuse existing components when possible
+- Follow established patterns for styling (DaisyUI), accessibility, and internationalization
+- Check existing UI components in `src/components/ui` before building new ones
+
 ### Guidelines for Styling
 
 #### Tailwind
