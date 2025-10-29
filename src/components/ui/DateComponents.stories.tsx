@@ -20,7 +20,7 @@ export const Overview: Story = {
     const [singleDate, setSingleDate] = useState<Date | undefined>(undefined);
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [calendarDate, setCalendarDate] = useState<Date | undefined>(undefined);
-    
+
     return (
       <div className="space-y-8 p-6">
         <div className="space-y-4">
@@ -34,10 +34,8 @@ export const Overview: Story = {
           {/* DatePicker Section */}
           <div className="space-y-4">
             <h2 className="text-2xl font-semibold">DatePicker</h2>
-            <p className="text-base-content/70">
-              Single date selection with popover calendar.
-            </p>
-            
+            <p className="text-base-content/70">Single date selection with popover calendar.</p>
+
             <div className="space-y-4">
               <div>
                 <label className="label">
@@ -51,7 +49,7 @@ export const Overview: Story = {
                   size="md"
                 />
               </div>
-              
+
               <div className="text-sm text-base-content/70">
                 Selected: {singleDate ? singleDate.toLocaleDateString() : "None"}
               </div>
@@ -61,10 +59,8 @@ export const Overview: Story = {
           {/* DateRangePicker Section */}
           <div className="space-y-4">
             <h2 className="text-2xl font-semibold">DateRangePicker</h2>
-            <p className="text-base-content/70">
-              Date range selection with dual-month calendar.
-            </p>
-            
+            <p className="text-base-content/70">Date range selection with dual-month calendar.</p>
+
             <div className="space-y-4">
               <div>
                 <label className="label">
@@ -78,9 +74,9 @@ export const Overview: Story = {
                   size="md"
                 />
               </div>
-              
+
               <div className="text-sm text-base-content/70">
-                Selected: {dateRange?.from ? dateRange.from.toLocaleDateString() : "None"} 
+                Selected: {dateRange?.from ? dateRange.from.toLocaleDateString() : "None"}
                 {dateRange?.to && ` - ${dateRange.to.toLocaleDateString()}`}
               </div>
             </div>
@@ -90,10 +86,8 @@ export const Overview: Story = {
         {/* DaisyCalendar Section */}
         <div className="space-y-4">
           <h2 className="text-2xl font-semibold">DaisyCalendar</h2>
-          <p className="text-base-content/70">
-            Standalone calendar component with daisyUI styling.
-          </p>
-          
+          <p className="text-base-content/70">Standalone calendar component with daisyUI styling.</p>
+
           <div className="flex justify-center">
             <DaisyCalendar
               selected={calendarDate}
@@ -103,7 +97,7 @@ export const Overview: Story = {
               buttonVariant="primary"
             />
           </div>
-          
+
           <div className="text-sm text-base-content/70 text-center">
             Selected: {calendarDate ? calendarDate.toLocaleDateString() : "None"}
           </div>
@@ -112,10 +106,8 @@ export const Overview: Story = {
         {/* Variants Showcase */}
         <div className="space-y-4">
           <h2 className="text-2xl font-semibold">All Variants</h2>
-          <p className="text-base-content/70">
-            Different color variants and sizes available.
-          </p>
-          
+          <p className="text-base-content/70">Different color variants and sizes available.</p>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-2">
               <h3 className="font-medium">Primary</h3>
@@ -147,10 +139,8 @@ export const Overview: Story = {
         {/* Sizes Showcase */}
         <div className="space-y-4">
           <h2 className="text-2xl font-semibold">All Sizes</h2>
-          <p className="text-base-content/70">
-            Different size variants from extra small to extra large.
-          </p>
-          
+          <p className="text-base-content/70">Different size variants from extra small to extra large.</p>
+
           <div className="space-y-4">
             <div className="space-y-2">
               <h3 className="font-medium">Extra Small</h3>
@@ -186,7 +176,7 @@ export const FormExample: Story = {
       endDate: undefined as DateRange | undefined,
       eventDate: undefined as Date | undefined,
     });
-    
+
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       alert(`Form submitted with:
@@ -194,11 +184,11 @@ export const FormExample: Story = {
         Date Range: ${formData.endDate?.from?.toLocaleDateString() || "None"}${formData.endDate?.to ? ` - ${formData.endDate.to.toLocaleDateString()}` : ""}
         Event Date: ${formData.eventDate?.toLocaleDateString() || "None"}`);
     };
-    
+
     return (
       <div className="max-w-2xl mx-auto p-6">
         <h1 className="text-2xl font-bold mb-6">Event Planning Form</h1>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <label htmlFor="start-date" className="label">
@@ -209,14 +199,14 @@ export const FormExample: Story = {
               id="start-date"
               name="startDate"
               value={formData.startDate}
-              onChange={(date) => setFormData(prev => ({ ...prev, startDate: date }))}
+              onChange={(date) => setFormData((prev) => ({ ...prev, startDate: date }))}
               placeholder="Select start date"
               variant="primary"
               size="md"
               required
             />
           </div>
-          
+
           <div className="space-y-2">
             <label htmlFor="date-range" className="label">
               <span className="label-text">Event Duration</span>
@@ -225,13 +215,13 @@ export const FormExample: Story = {
               id="date-range"
               name="dateRange"
               value={formData.endDate}
-              onChange={(range) => setFormData(prev => ({ ...prev, endDate: range }))}
+              onChange={(range) => setFormData((prev) => ({ ...prev, endDate: range }))}
               placeholder="Select date range"
               variant="secondary"
               size="md"
             />
           </div>
-          
+
           <div className="space-y-2">
             <label htmlFor="event-date" className="label">
               <span className="label-text">Special Event Date</span>
@@ -240,19 +230,19 @@ export const FormExample: Story = {
               id="event-date"
               name="eventDate"
               value={formData.eventDate}
-              onChange={(date) => setFormData(prev => ({ ...prev, eventDate: date }))}
+              onChange={(date) => setFormData((prev) => ({ ...prev, eventDate: date }))}
               placeholder="Select special date"
               variant="accent"
               size="md"
             />
           </div>
-          
+
           <div className="flex gap-4">
             <button type="submit" className="btn btn-primary">
               Submit Event
             </button>
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="btn btn-outline"
               onClick={() => setFormData({ startDate: undefined, endDate: undefined, eventDate: undefined })}
             >
@@ -264,4 +254,3 @@ export const FormExample: Story = {
     );
   },
 };
-
