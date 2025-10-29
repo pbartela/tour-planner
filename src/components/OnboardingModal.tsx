@@ -54,7 +54,7 @@ export const OnboardingModal = ({
     try {
       await onCompleteOnboarding();
       onClose();
-    } catch (error) {
+    } catch {
       toast.error(t("onboarding.error"));
     }
   };

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import { DatePicker } from "./DatePicker";
 import { DateRangePicker, type DateRange } from "./DateRangePicker";
 import { DaisyCalendar } from "./DaisyCalendar";
@@ -38,10 +38,11 @@ export const Overview: Story = {
 
             <div className="space-y-4">
               <div>
-                <label className="label">
+                <label className="label" htmlFor="date-picker-demo">
                   <span className="label-text">Select a date</span>
                 </label>
                 <DatePicker
+                  id="date-picker-demo"
                   value={singleDate}
                   onChange={setSingleDate}
                   placeholder="Pick a date"
@@ -63,10 +64,11 @@ export const Overview: Story = {
 
             <div className="space-y-4">
               <div>
-                <label className="label">
+                <label className="label" htmlFor="date-range-picker-demo">
                   <span className="label-text">Select a date range</span>
                 </label>
                 <DateRangePicker
+                  id="date-range-picker-demo"
                   value={dateRange}
                   onChange={setDateRange}
                   placeholder="Pick a date range"

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import { DateRangePicker, type DateRange } from "./DateRangePicker";
 import { useState } from "react";
 
@@ -91,16 +91,12 @@ export const Required: Story = {
 export const Interactive: Story = {
   render: function Render(args) {
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-    
+
     return (
       <div className="space-y-4">
-        <DateRangePicker
-          {...args}
-          value={dateRange}
-          onChange={setDateRange}
-        />
+        <DateRangePicker {...args} value={dateRange} onChange={setDateRange} />
         <div className="text-sm text-base-content/70">
-          Selected range: {dateRange?.from ? dateRange.from.toLocaleDateString() : "None"} 
+          Selected range: {dateRange?.from ? dateRange.from.toLocaleDateString() : "None"}
           {dateRange?.to && ` - ${dateRange.to.toLocaleDateString()}`}
         </div>
       </div>
@@ -116,15 +112,15 @@ export const Interactive: Story = {
 export const WithForm: Story = {
   render: function Render(args) {
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-    
+
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      const rangeText = dateRange?.from 
+      const rangeText = dateRange?.from
         ? `${dateRange.from.toLocaleDateString()}${dateRange.to ? ` - ${dateRange.to.toLocaleDateString()}` : ""}`
         : "None";
       alert(`Form submitted with date range: ${rangeText}`);
     };
-    
+
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -153,4 +149,3 @@ export const WithForm: Story = {
     required: true,
   },
 };
-

@@ -9,10 +9,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 // DateRange type definition matching react-day-picker v9
-export type DateRange = {
+export interface DateRange {
   from: Date | undefined;
   to?: Date | undefined;
-};
+}
 
 const dateRangePickerVariants = cva("input w-full", {
   variants: {
@@ -90,11 +90,11 @@ const DateRangePicker = React.forwardRef<HTMLDivElement, DateRangePickerProps>(
 
     const formatDateRange = (range: DateRange | undefined) => {
       if (!range?.from) return "";
-      
+
       if (range.to) {
         return `${format(range.from, "MMM dd")} - ${format(range.to, "MMM dd, yyyy")}`;
       }
-      
+
       return format(range.from, "MMM dd, yyyy");
     };
 
@@ -138,15 +138,12 @@ const DateRangePicker = React.forwardRef<HTMLDivElement, DateRangePickerProps>(
           <>
             <input
               type="hidden"
+              id={id}
               name={`${name}_from`}
               value={value?.from ? value.from.toISOString() : ""}
               required={required}
             />
-            <input
-              type="hidden"
-              name={`${name}_to`}
-              value={value?.to ? value.to.toISOString() : ""}
-            />
+            <input type="hidden" name={`${name}_to`} value={value?.to ? value.to.toISOString() : ""} />
           </>
         )}
       </div>
@@ -157,4 +154,3 @@ const DateRangePicker = React.forwardRef<HTMLDivElement, DateRangePickerProps>(
 DateRangePicker.displayName = "DateRangePicker";
 
 export { DateRangePicker, dateRangePickerVariants };
-

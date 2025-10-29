@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/db/supabase.client";
 import { validateSession } from "@/lib/server/session-validation.service";
 import { getOrCreateCsrfToken, checkCsrfProtection } from "@/lib/server/csrf.service";
 import { yearsInSeconds } from "@/lib/constants/time";
+import { ENV } from "@/lib/server/env-validation.service";
 import i18next from "i18next";
 
 const protectedRoutes = ["/", "/profile", "/tours"];
@@ -20,7 +21,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const lang =
     requestedLocale && allowedLocales.includes(requestedLocale as (typeof allowedLocales)[number])
       ? requestedLocale
-      : import.meta.env.PUBLIC_DEFAULT_LOCALE || "en-US";
+      : ENV.PUBLIC_DEFAULT_LOCALE;
 
   // Set i18next language for server-side rendering
   await i18next.changeLanguage(lang);

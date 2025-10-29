@@ -55,43 +55,54 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
+// Validate and parse environment variables at module load time
+let validatedEnv: Env;
+
+try {
+  const env = {
+    PUBLIC_SUPABASE_URL: import.meta.env.PUBLIC_SUPABASE_URL,
+    PUBLIC_SUPABASE_ANON_KEY: import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
+    PUBLIC_DEFAULT_LOCALE: import.meta.env.PUBLIC_DEFAULT_LOCALE,
+    SUPABASE_URL: import.meta.env.SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY: import.meta.env.SUPABASE_SERVICE_ROLE_KEY,
+    OPENROUTER_API_KEY: import.meta.env.OPENROUTER_API_KEY,
+  };
+
+  validatedEnv = envSchema.parse(env);
+  console.log("✅ Environment variables validated successfully");
+} catch (error) {
+  if (error instanceof z.ZodError) {
+    const formattedErrors = error.errors
+      .map((err) => {
+        const path = err.path.join(".");
+        return `  - ${path}: ${err.message}`;
+      })
+      .join("\n");
+
+    const errorMessage = `❌ Environment validation failed:\n${formattedErrors}\n\nPlease check your .env file and ensure all required variables are set correctly.`;
+
+    console.error(errorMessage);
+    throw new Error(errorMessage);
+  }
+
+  throw error;
+}
+
+/**
+ * Validated environment variables - use these instead of import.meta.env
+ */
+export const ENV = validatedEnv;
+
 /**
  * Validates environment variables at application startup.
  * Throws an error with detailed validation messages if any variables are invalid or missing.
  *
  * @throws {Error} If environment validation fails
+ * @deprecated Environment is now validated at module load time. Use ENV constant instead.
  */
 export function validateEnvironment(): void {
-  try {
-    const env = {
-      PUBLIC_SUPABASE_URL: import.meta.env.PUBLIC_SUPABASE_URL,
-      PUBLIC_SUPABASE_ANON_KEY: import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
-      PUBLIC_DEFAULT_LOCALE: import.meta.env.PUBLIC_DEFAULT_LOCALE,
-      SUPABASE_URL: import.meta.env.SUPABASE_URL,
-      SUPABASE_SERVICE_ROLE_KEY: import.meta.env.SUPABASE_SERVICE_ROLE_KEY,
-      OPENROUTER_API_KEY: import.meta.env.OPENROUTER_API_KEY,
-    };
-
-    envSchema.parse(env);
-
-    console.log("✅ Environment variables validated successfully");
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      const formattedErrors = error.errors
-        .map((err) => {
-          const path = err.path.join(".");
-          return `  - ${path}: ${err.message}`;
-        })
-        .join("\n");
-
-      const errorMessage = `❌ Environment validation failed:\n${formattedErrors}\n\nPlease check your .env file and ensure all required variables are set correctly.`;
-
-      console.error(errorMessage);
-      throw new Error(errorMessage);
-    }
-
-    throw error;
-  }
+  // Environment is already validated at module load time
+  console.log("✅ Environment variables already validated");
 }
 
 /**

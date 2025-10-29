@@ -23,7 +23,8 @@ function isValidRedirect(path: string): boolean {
     }
 
     // Parse as URL with a dummy base to validate path structure
-    const url = new URL(path, "http://dummy.local");
+    // The URL constructor will throw if the path is invalid
+    new URL(path, "http://dummy.local");
 
     // Ensure no protocol in the path (more precise than just checking for ':')
     // This prevents attacks like /javascript:alert(1) or /data:text/html,...
@@ -43,8 +44,10 @@ const tokenHash = url.searchParams.get("access_token");
 const type = url.searchParams.get("type");
 const next = url.searchParams.get("next");
 
+import { ENV } from "@/lib/server/env-validation.service";
+
 // Get locale from cookie or use default
-const locale = Astro.cookies.get("locale")?.value || import.meta.env.PUBLIC_DEFAULT_LOCALE || "en-US";
+const locale = Astro.cookies.get("locale")?.value || ENV.PUBLIC_DEFAULT_LOCALE;
 
 // Determine redirect destination
 let redirectPath = next || `/${locale}/`;
