@@ -30,8 +30,11 @@ const transformToViewModel = (dto: TourSummaryDto, locale: string): TourCardView
   id: dto.id,
   url: `/tours/${dto.id}`,
   title: dto.title,
+  destination: dto.destination,
   dateRange: formatDateRange(dto.start_date, dto.end_date, locale),
   hasNewActivity: dto.has_new_activity,
+  imageUrl: undefined, // Can be added to DTO later
+  participantAvatars: undefined, // Can be fetched separately if needed
 });
 
 export const TourList = () => {
@@ -40,7 +43,7 @@ export const TourList = () => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
           <SkeletonLoader key={i} />
         ))}
@@ -66,7 +69,7 @@ export const TourList = () => {
   const tours = data.data.map((tour) => transformToViewModel(tour, i18n.language));
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="space-y-6 md:grid md:grid-cols-2 md:gap-6 md:space-y-0 lg:grid-cols-3">
       {tours.map((tour) => (
         <TourCard key={tour.id} tour={tour} />
       ))}

@@ -17,12 +17,6 @@
     "noToursMessage": "You don't have any active tours yet.",
     "createFirstTour": "Create Your First Tour"
   },
-  "layout": {
-    "siteName": "Tour Planner",
-    "welcome": "Welcome, {{name}}",
-    "logout": "Logout",
-    "login": "Login"
-  },
   "createTour": {
     "title": "Create a New Tour",
     "description": "Fill out the details below to start planning your next adventure.",

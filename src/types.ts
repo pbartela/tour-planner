@@ -81,8 +81,11 @@ export interface TourCardViewModel {
   id: string;
   url: string;
   title: string;
+  destination: string;
   dateRange: string;
   hasNewActivity: boolean;
+  imageUrl?: string;
+  participantAvatars?: string[];
 }
 
 /**

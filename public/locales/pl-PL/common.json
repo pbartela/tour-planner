@@ -1,0 +1,8 @@
+{
+  "layout": {
+    "siteName": "Planer Wycieczek",
+    "welcome": "Witaj, {{name}}",
+    "logout": "Wyloguj",
+    "login": "Zaloguj"
+  }
+}

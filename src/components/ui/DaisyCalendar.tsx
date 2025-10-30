@@ -4,7 +4,11 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { DaisyCalendarRoot, DaisyCalendarChevron, DaisyCalendarWeekNumber } from "@/components/ui/calendar";
+import {
+  DaisyCalendarRoot,
+  DaisyCalendarChevron,
+  DaisyCalendarWeekNumber,
+} from "@/components/ui/calendar/index";
 
 const calendarVariants = cva("card bg-base-100", {
   variants: {
@@ -26,11 +30,10 @@ const calendarVariants = cva("card bg-base-100", {
   },
 });
 
-export interface DaisyCalendarProps
-  extends React.ComponentProps<typeof DayPicker>,
-    VariantProps<typeof calendarVariants> {
-  buttonVariant?: React.ComponentProps<typeof Button>["variant"];
-}
+export type DaisyCalendarProps = React.ComponentProps<typeof DayPicker> &
+  VariantProps<typeof calendarVariants> & {
+    buttonVariant?: React.ComponentProps<typeof Button>["variant"];
+  };
 
 function DaisyCalendar({
   className,
@@ -125,10 +128,10 @@ function DaisyCalendar({
         ...classNames,
       }}
       components={{
-        Root: DaisyCalendarRoot,
-        Chevron: DaisyCalendarChevron,
+        Root: DaisyCalendarRoot as any,
+        Chevron: DaisyCalendarChevron as any,
         DayButton: DaisyCalendarDayButton,
-        WeekNumber: DaisyCalendarWeekNumber,
+        WeekNumber: DaisyCalendarWeekNumber as any,
         ...components,
       }}
       {...props}
@@ -148,7 +151,7 @@ function DaisyCalendarDayButton({ className, day, modifiers, ...props }: React.C
     <Button
       ref={ref}
       variant="ghost"
-      size="icon"
+      size="sm"
       data-day={day.date.toLocaleDateString()}
       data-selected-single={
         modifiers.selected && !modifiers.range_start && !modifiers.range_end && !modifiers.range_middle

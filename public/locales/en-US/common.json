@@ -1,0 +1,8 @@
+{
+  "layout": {
+    "siteName": "Tour Planner",
+    "welcome": "Welcome, {{name}}",
+    "logout": "Logout",
+    "login": "Login"
+  }
+}

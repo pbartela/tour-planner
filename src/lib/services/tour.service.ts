@@ -2,19 +2,26 @@ import type { z } from "zod";
 
 import type { SupabaseClient } from "@/db/supabase.client";
 import type { getToursQuerySchema } from "@/lib/validators/tour.validators";
+import { secureError } from "@/lib/server/logger.service";
 import type { CreateTourCommand, PaginatedToursDto, TourDetailsDto, TourSummaryDto, UpdateTourCommand } from "@/types";
 
 class TourService {
-  public async getUserTours(
+  /**
+   * Lists tours for a user with pagination and status filtering.
+   * Uses RLS-safe queries to ensure user only sees tours they participate in.
+   */
+  public async listToursForUser(
     supabase: SupabaseClient,
     userId: string,
     options: z.infer<typeof getToursQuerySchema>
-  ): Promise<{ data: PaginatedToursDto | null; error: Error | null }> {
+  ): Promise<PaginatedToursDto> {
     const { status, page, limit } = options;
-    const offset = (page - 1) * limit;
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
 
     try {
       // Combine data and count into a single query to avoid N+1 issue
+      // Query participants table and join with tours using RLS-safe relationship filter
       const {
         data: tours,
         error: toursError,
@@ -23,29 +30,29 @@ class TourService {
         .from("participants")
         .select(
           `
-                    tour:tours!inner (
-                        id,
-                        title,
-                        destination,
-                        start_date,
-                        end_date,
-                        status
-                    )
-                `,
-          { count: "exact" } // Get count in the same query
+          tour:tours!inner (
+            id,
+            title,
+            destination,
+            start_date,
+            end_date,
+            status
+          )
+        `,
+          { count: "exact" }
         )
         .eq("user_id", userId)
         .eq("tour.status", status)
-        .range(offset, offset + limit - 1)
+        .range(from, to)
         .returns<{ tour: TourSummaryDto }[]>();
 
       if (toursError) {
-        console.error("Error fetching user tours:", toursError);
+        secureError("Error fetching user tours from database", toursError);
         throw new Error("Failed to fetch tours from the database.");
       }
 
       const paginatedData: PaginatedToursDto = {
-        data: tours.map((p: { tour: Omit<TourSummaryDto, "has_new_activity"> }) => ({
+        data: (tours || []).map((p: { tour: Omit<TourSummaryDto, "has_new_activity"> }) => ({
           ...p.tour,
           has_new_activity: false, // TODO: Implement activity tracking logic
         })),
@@ -56,10 +63,30 @@ class TourService {
         },
       };
 
-      return { data: paginatedData, error: null };
+      return paginatedData;
     } catch (error) {
-      console.error("Unexpected error in getUserTours:", error);
-      return { data: null, error: error instanceof Error ? error : new Error("An unexpected error occurred.") };
+      secureError("Unexpected error in listToursForUser", error);
+      throw error instanceof Error ? error : new Error("An unexpected error occurred.");
+    }
+  }
+
+  /**
+   * @deprecated Use listToursForUser instead
+   * Kept for backward compatibility during migration
+   */
+  public async getUserTours(
+    supabase: SupabaseClient,
+    userId: string,
+    options: z.infer<typeof getToursQuerySchema>
+  ): Promise<{ data: PaginatedToursDto | null; error: Error | null }> {
+    try {
+      const data = await this.listToursForUser(supabase, userId, options);
+      return { data, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error : new Error("An unexpected error occurred."),
+      };
     }
   }
 

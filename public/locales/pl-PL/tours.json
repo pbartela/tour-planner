@@ -17,12 +17,6 @@
     "noToursMessage": "Nie masz jeszcze żadnych aktywnych wycieczek.",
     "createFirstTour": "Utwórz swoją pierwszą wycieczkę"
   },
-  "layout": {
-    "siteName": "Planer Wycieczek",
-    "welcome": "Witaj, {{name}}",
-    "logout": "Wyloguj",
-    "login": "Zaloguj"
-  },
   "createTour": {
     "title": "Utwórz nową wycieczkę",
     "description": "Wypełnij poniższe szczegóły, aby rozpocząć planowanie swojej następnej przygody.",

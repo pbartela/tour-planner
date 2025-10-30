@@ -25,6 +25,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // Set i18next language for server-side rendering
   await i18next.changeLanguage(lang);
+  // Load common namespace for layout translations
+  await i18next.loadNamespaces("common");
 
   // Set i18next cookie for client-side (used by React components)
   const currentLocale = context.cookies.get("i18next")?.value;

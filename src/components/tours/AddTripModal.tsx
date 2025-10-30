@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -64,7 +62,7 @@ export const AddTripModal = ({ isOpen, onClose, onSubmit }: AddTripModalProps) =
         start_date: getDateString(startDate),
         end_date: getDateString(endDate),
       });
-      // Reset form
+      //TODO: investigate if this can be done with one function Reset form
       setTitle("");
       setUrl("");
       setDescription("");

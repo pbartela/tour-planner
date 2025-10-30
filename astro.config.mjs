@@ -56,8 +56,8 @@ export default defineConfig({
     reactI18next({
       defaultLocale: "en-US", // Default locale (validated at runtime via env-validation.service)
       locales: ["en-US", "pl-PL"],
-      namespaces: ["auth", "tours"],
-      defaultNamespace: "auth",
+      namespaces: ["common", "auth", "tours"],
+      defaultNamespace: "common",
     }),
   ],
   server: { port: 3000 },

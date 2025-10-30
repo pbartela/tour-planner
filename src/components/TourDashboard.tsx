@@ -1,17 +1,17 @@
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { AddTripModal } from "@/components/tours/AddTripModal";
 import { patch, post, handleApiResponse } from "@/lib/client/api-client";
 import { useTranslation } from "react-i18next";
+import { TourList } from "@/components/tours/TourList";
+import { QueryProvider } from "@/components/QueryProvider";
 
 interface TourDashboardProps {
   onboardingCompleted: boolean;
 }
 
 const TourDashboard = ({ onboardingCompleted }: TourDashboardProps): React.JSX.Element => {
-  const { t } = useTranslation("tours");
+  useTranslation("tours");
   const [isOnboardingDismissed, setIsOnboardingDismissed] = useState(onboardingCompleted);
   const [isAddTripModalOpen, setIsAddTripModalOpen] = useState(false);
 
@@ -25,6 +25,7 @@ const TourDashboard = ({ onboardingCompleted }: TourDashboardProps): React.JSX.E
 
       setIsOnboardingDismissed(true);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error("Error completing onboarding:", error);
       throw error; // Re-throw so OnboardingModal can handle the error
     }
@@ -74,17 +75,9 @@ const TourDashboard = ({ onboardingCompleted }: TourDashboardProps): React.JSX.E
         onSubmit={handleCreateTour}
       />
       <div className="container mx-auto py-10">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("dashboard.welcomeTitle")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center">
-              <p className="mb-4">{t("dashboard.noToursMessage")}</p>
-              <Button onClick={() => setIsAddTripModalOpen(true)}>{t("dashboard.createFirstTour")}</Button>
-            </div>
-          </CardContent>
-        </Card>
+        <QueryProvider>
+          <TourList />
+        </QueryProvider>
       </div>
     </>
   );
