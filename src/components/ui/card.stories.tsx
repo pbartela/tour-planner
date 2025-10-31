@@ -45,11 +45,7 @@ export const WithImage: Story = {
   render: (args) => (
     <Card {...args} variant="elevated" className="w-96">
       <figure>
-        <img
-          src="https://picsum.photos/640/360"
-          alt="Cover"
-          className="w-full h-44 object-cover rounded-t-xl"
-        />
+        <img src="https://picsum.photos/640/360" alt="Cover" className="w-full h-44 object-cover rounded-t-xl" />
       </figure>
       <CardHeader>
         <CardTitle>City Break: Lisbon</CardTitle>

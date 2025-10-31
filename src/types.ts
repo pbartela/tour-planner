@@ -56,6 +56,17 @@ export type UpdateProfileCommand = Partial<
 // ============================================================================
 
 /**
+ * Metadata extracted from tour destination URLs.
+ * Includes Open Graph metadata like title, description, and images.
+ */
+export interface TourMetadata {
+  title?: string;
+  description?: string;
+  image?: string;
+  canonicalUrl?: string;
+}
+
+/**
  * DTO for a summarized view of a tour.
  * Used in lists where full details are not necessary.
  * Corresponds to an item in the response of `GET /api/tours`.
@@ -65,6 +76,7 @@ export type TourSummaryDto = Pick<
   "id" | "title" | "destination" | "start_date" | "end_date" | "status"
 > & {
   has_new_activity: boolean;
+  metadata?: TourMetadata;
 };
 
 /**
@@ -103,7 +115,9 @@ export type CreateTourCommand = Pick<
  * Excludes `updated_at` as it's not exposed in the API.
  * Corresponds to the response of `GET /api/tours/{tourId}`.
  */
-export type TourDetailsDto = Omit<Tables<"tours">, "updated_at">;
+export type TourDetailsDto = Omit<Tables<"tours">, "updated_at"> & {
+  metadata?: TourMetadata;
+};
 
 /**
  * Command model for updating an existing tour.

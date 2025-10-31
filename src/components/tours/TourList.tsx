@@ -6,6 +6,10 @@ import { SkeletonLoader } from "@/components/shared/SkeletonLoader";
 import { TourCard } from "@/components/tours/TourCard";
 import { useTranslation } from "react-i18next";
 
+interface TourListProps {
+  onAddTripClick?: () => void;
+}
+
 const formatDateRange = (startDate: string, endDate: string, locale: string): string => {
   const start = new Date(startDate);
   const end = new Date(endDate);
@@ -33,11 +37,11 @@ const transformToViewModel = (dto: TourSummaryDto, locale: string): TourCardView
   destination: dto.destination,
   dateRange: formatDateRange(dto.start_date, dto.end_date, locale),
   hasNewActivity: dto.has_new_activity,
-  imageUrl: undefined, // Can be added to DTO later
+  imageUrl: dto.metadata?.image,
   participantAvatars: undefined, // Can be fetched separately if needed
 });
 
-export const TourList = () => {
+export const TourList = ({ onAddTripClick }: TourListProps = {}) => {
   const { t, i18n } = useTranslation("tours");
   const { data, isLoading, isError, error, refetch } = useTourList();
 
@@ -69,11 +73,34 @@ export const TourList = () => {
   const tours = data.data.map((tour) => transformToViewModel(tour, i18n.language));
 
   return (
-    <div className="space-y-6 md:grid md:grid-cols-2 md:gap-6 md:space-y-0 lg:grid-cols-3">
-      {tours.map((tour) => (
-        <TourCard key={tour.id} tour={tour} />
-      ))}
-    </div>
+    <>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {tours.map((tour) => (
+          <TourCard key={tour.id} tour={tour} />
+        ))}
+      </div>
+
+      {/* Floating Action Button (FAB) for adding new trips */}
+      {onAddTripClick && (
+        <button
+          onClick={onAddTripClick}
+          className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-content shadow-lg transition-transform hover:scale-110 active:scale-95"
+          aria-label={t("addTrip.title")}
+          title={t("addTrip.title")}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      )}
+    </>
   );
 };
 

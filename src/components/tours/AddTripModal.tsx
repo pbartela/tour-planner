@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,8 +19,17 @@ interface AddTripModalProps {
   }) => Promise<void>;
 }
 
+interface FormData {
+  title: string;
+  destination: string;
+  description: string;
+  start_date: Date | undefined;
+  end_date: Date | undefined;
+}
+
 export const AddTripModal = ({ isOpen, onClose, onSubmit }: AddTripModalProps) => {
   const { t, i18n } = useTranslation("tours");
+  const [error, setError] = useState<string | null>(null);
 
   // Helper function to get date in YYYY-MM-DD format
   const getDateString = (date: Date) => {
@@ -27,72 +37,75 @@ export const AddTripModal = ({ isOpen, onClose, onSubmit }: AddTripModalProps) =
   };
 
   // Set default dates: today and tomorrow
-  const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  const getDefaultDates = () => {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return { today, tomorrow };
+  };
 
-  const [title, setTitle] = useState("");
-  const [url, setUrl] = useState("");
-  const [description, setDescription] = useState("");
-  const [startDate, setStartDate] = useState<Date | undefined>(today);
-  const [endDate, setEndDate] = useState<Date | undefined>(tomorrow);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { today, tomorrow } = getDefaultDates();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit: handleFormSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { isSubmitting },
+  } = useForm<FormData>({
+    defaultValues: {
+      title: "",
+      destination: "",
+      description: "",
+      start_date: today,
+      end_date: tomorrow,
+    },
+  });
+
+  // Watch date values for validation and DatePicker
+  const startDate = watch("start_date");
+  const endDate = watch("end_date");
+
+  const onFormSubmit = handleFormSubmit(async (data) => {
     setError(null);
 
-    if (!title.trim() || !url.trim() || !startDate || !endDate) {
+    if (!data.title.trim() || !data.destination.trim() || !data.start_date || !data.end_date) {
       setError(t("addTrip.requiredFieldsError"));
       return;
     }
 
-    if (endDate <= startDate) {
+    if (data.end_date <= data.start_date) {
       setError(t("addTrip.dateValidationError"));
       return;
     }
 
-    setIsSubmitting(true);
     try {
       await onSubmit({
-        title: title.trim(),
-        destination: url.trim(),
-        description: description.trim() || undefined,
-        start_date: getDateString(startDate),
-        end_date: getDateString(endDate),
+        title: data.title.trim(),
+        destination: data.destination.trim(),
+        description: data.description.trim() || undefined,
+        start_date: getDateString(data.start_date),
+        end_date: getDateString(data.end_date),
       });
-      //TODO: investigate if this can be done with one function Reset form
-      setTitle("");
-      setUrl("");
-      setDescription("");
-      setStartDate(new Date());
-      const newTomorrow = new Date();
-      newTomorrow.setDate(newTomorrow.getDate() + 1);
-      setEndDate(newTomorrow);
+      // Reset form using React Hook Form's built-in reset function
+      reset();
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save trip");
-    } finally {
-      setIsSubmitting(false);
     }
-  };
+  });
 
   const handleClose = () => {
-    setTitle("");
-    setUrl("");
-    setDescription("");
-    setStartDate(new Date());
-    const newTomorrow = new Date();
-    newTomorrow.setDate(newTomorrow.getDate() + 1);
-    setEndDate(newTomorrow);
+    // Reset form using React Hook Form's built-in reset function
+    reset();
     setError(null);
     onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="bg-base-100 max-w-full sm:max-w-[600px] sm:rounded-lg rounded-none p-0 h-[100vh] sm:h-auto sm:max-h-[90vh] flex flex-col m-0 sm:m-4 sm:translate-x-[-50%] sm:translate-y-[-50%] sm:top-[50%] sm:left-[50%] top-0 left-0 fixed sm:relative">
+      <DialogContent className="bg-base-100 max-w-full sm:max-w-[500px] md:max-w-[540px] lg:max-w-[600px] sm:rounded-lg rounded-none p-0 h-[100vh] sm:h-auto sm:max-h-[90vh] flex flex-col m-0 sm:m-4 sm:translate-x-[-50%] sm:translate-y-[-50%] sm:top-[50%] sm:left-[50%] top-0 left-0 fixed sm:relative">
         {/* Header with close button */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-base-content/10">
           <button
@@ -115,7 +128,11 @@ export const AddTripModal = ({ isOpen, onClose, onSubmit }: AddTripModalProps) =
           <div className="w-6" />
         </div>
 
-        <form id="add-trip-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+        <form
+          id="add-trip-form"
+          onSubmit={onFormSubmit}
+          className="flex-1 overflow-y-auto px-4 py-4 space-y-5 sm:px-6 sm:py-6 sm:space-y-6"
+        >
           {error && (
             <div className="alert alert-error">
               <span>{error}</span>
@@ -130,10 +147,9 @@ export const AddTripModal = ({ isOpen, onClose, onSubmit }: AddTripModalProps) =
               id="trip-url"
               type="url"
               placeholder={t("addTrip.tripUrlPlaceholder")}
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              {...register("destination")}
               disabled={isSubmitting}
-              className="w-full bg-base-200 border-none rounded-lg p-4 placeholder:text-base-content/40"
+              className="w-full bg-base-200 border-none rounded-lg p-3 sm:p-4 placeholder:text-base-content/40"
             />
           </div>
 
@@ -145,10 +161,9 @@ export const AddTripModal = ({ isOpen, onClose, onSubmit }: AddTripModalProps) =
               id="custom-title"
               type="text"
               placeholder={t("addTrip.customTitlePlaceholder")}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              {...register("title")}
               disabled={isSubmitting}
-              className="w-full bg-base-200 border-none rounded-lg p-4 placeholder:text-base-content/40"
+              className="w-full bg-base-200 border-none rounded-lg p-3 sm:p-4 placeholder:text-base-content/40"
             />
           </div>
 
@@ -159,11 +174,10 @@ export const AddTripModal = ({ isOpen, onClose, onSubmit }: AddTripModalProps) =
             <textarea
               id="description"
               placeholder={t("addTrip.descriptionPlaceholder")}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              {...register("description")}
               disabled={isSubmitting}
               rows={4}
-              className="w-full bg-base-200 border-none rounded-lg p-4 text-base-content placeholder:text-base-content/40 focus:ring-2 focus:ring-primary resize-none disabled:opacity-50"
+              className="w-full bg-base-200 border-none rounded-lg p-3 sm:p-4 text-base-content placeholder:text-base-content/40 focus:ring-2 focus:ring-primary resize-none disabled:opacity-50"
             />
           </div>
 
@@ -175,7 +189,7 @@ export const AddTripModal = ({ isOpen, onClose, onSubmit }: AddTripModalProps) =
               <DatePicker
                 id="start-date"
                 value={startDate}
-                onChange={setStartDate}
+                onChange={(date) => setValue("start_date", date)}
                 disabled={isSubmitting}
                 placeholder={t("addTrip.startDate")}
                 locale={i18n.language}
@@ -195,7 +209,7 @@ export const AddTripModal = ({ isOpen, onClose, onSubmit }: AddTripModalProps) =
               <DatePicker
                 id="end-date"
                 value={endDate}
-                onChange={setEndDate}
+                onChange={(date) => setValue("end_date", date)}
                 disabled={isSubmitting}
                 placeholder={t("addTrip.endDate")}
                 locale={i18n.language}
@@ -211,12 +225,12 @@ export const AddTripModal = ({ isOpen, onClose, onSubmit }: AddTripModalProps) =
         </form>
 
         {/* Footer with Save button */}
-        <div className="p-4 border-t border-base-content/10">
+        <div className="p-4 sm:p-4 border-t border-base-content/10">
           <Button
             type="submit"
             form="add-trip-form"
             disabled={isSubmitting}
-            className="w-full bg-primary text-primary-content font-bold py-4 px-6 rounded-lg shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all duration-300 disabled:opacity-50"
+            className="w-full bg-primary text-primary-content font-bold py-3 sm:py-4 px-6 rounded-lg shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all duration-300 disabled:opacity-50"
           >
             {isSubmitting ? t("addTrip.saving") : t("addTrip.save")}
           </Button>

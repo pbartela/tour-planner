@@ -9,8 +9,7 @@ interface Props {
 export const TourCard = ({ tour }: Props) => {
   const { t } = useTranslation("tours");
 
-  const defaultImageUrl = "https://picsum.photos/640/360";
-  const imageUrl = tour.imageUrl || defaultImageUrl;
+  const imageUrl = tour.imageUrl || "";
 
   const placeholderAvatars = [
     "https://i.pravatar.cc/150?img=1",

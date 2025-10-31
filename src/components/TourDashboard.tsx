@@ -1,34 +1,41 @@
 import React, { useState } from "react";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { AddTripModal } from "@/components/tours/AddTripModal";
-import { patch, post, handleApiResponse } from "@/lib/client/api-client";
 import { useTranslation } from "react-i18next";
 import { TourList } from "@/components/tours/TourList";
 import { QueryProvider } from "@/components/QueryProvider";
+import { useUpdateProfileMutation } from "@/lib/hooks/useProfileMutations";
+import { useCreateTourMutation } from "@/lib/hooks/useTourMutations";
 
 interface TourDashboardProps {
   onboardingCompleted: boolean;
 }
 
-const TourDashboard = ({ onboardingCompleted }: TourDashboardProps): React.JSX.Element => {
+const TourDashboardContent = ({ onboardingCompleted }: TourDashboardProps): React.JSX.Element => {
   useTranslation("tours");
   const [isOnboardingDismissed, setIsOnboardingDismissed] = useState(onboardingCompleted);
   const [isAddTripModalOpen, setIsAddTripModalOpen] = useState(false);
 
+  const { mutate: updateProfile } = useUpdateProfileMutation();
+  const { mutate: createTour } = useCreateTourMutation();
+
   const handleCompleteOnboarding = async (): Promise<void> => {
-    try {
-      const response = await patch("/api/profiles/me", { onboarding_completed: true });
-
-      if (!response.ok) {
-        throw new Error("Failed to update profile");
-      }
-
-      setIsOnboardingDismissed(true);
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("Error completing onboarding:", error);
-      throw error; // Re-throw so OnboardingModal can handle the error
-    }
+    return new Promise((resolve, reject) => {
+      updateProfile(
+        { onboarding_completed: true },
+        {
+          onSuccess: () => {
+            setIsOnboardingDismissed(true);
+            resolve();
+          },
+          onError: (error) => {
+            // eslint-disable-next-line no-console
+            console.error("Error completing onboarding:", error);
+            reject(error);
+          },
+        }
+      );
+    });
   };
 
   const handleSkipOnboarding = () => {
@@ -46,19 +53,18 @@ const TourDashboard = ({ onboardingCompleted }: TourDashboardProps): React.JSX.E
     start_date: string;
     end_date: string;
   }): Promise<void> => {
-    const response = await post("/api/tours", data);
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to create tour");
-    }
-
-    handleApiResponse(response);
-
-    // Reload page to show the new tour
-    if (typeof window !== "undefined") {
-      window.location.reload();
-    }
+    return new Promise((resolve, reject) => {
+      createTour(data, {
+        onSuccess: () => {
+          setIsAddTripModalOpen(false);
+          // No need to reload - React Query will automatically refetch the tours list
+          resolve();
+        },
+        onError: (error) => {
+          reject(error);
+        },
+      });
+    });
   };
 
   return (
@@ -75,11 +81,17 @@ const TourDashboard = ({ onboardingCompleted }: TourDashboardProps): React.JSX.E
         onSubmit={handleCreateTour}
       />
       <div className="container mx-auto py-10">
-        <QueryProvider>
-          <TourList />
-        </QueryProvider>
+        <TourList onAddTripClick={() => setIsAddTripModalOpen(true)} />
       </div>
     </>
+  );
+};
+
+const TourDashboard = (props: TourDashboardProps): React.JSX.Element => {
+  return (
+    <QueryProvider>
+      <TourDashboardContent {...props} />
+    </QueryProvider>
   );
 };
 

@@ -4,11 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
-import {
-  DaisyCalendarRoot,
-  DaisyCalendarChevron,
-  DaisyCalendarWeekNumber,
-} from "@/components/ui/calendar/index";
+import { DaisyCalendarRoot, DaisyCalendarChevron, DaisyCalendarWeekNumber } from "@/components/ui/calendar/index";
 
 const calendarVariants = cva("card bg-base-100", {
   variants: {
