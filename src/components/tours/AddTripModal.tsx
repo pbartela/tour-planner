@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DatePicker, getDateFormatHint } from "@/components/ui/DatePicker";
 import { useTranslation } from "react-i18next";
+import { DialogTitle } from "@radix-ui/react-dialog";
 
 interface AddTripModalProps {
   isOpen: boolean;
@@ -105,7 +106,8 @@ export const AddTripModal = ({ isOpen, onClose, onSubmit }: AddTripModalProps) =
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="bg-base-100 max-w-full sm:max-w-[500px] md:max-w-[540px] lg:max-w-[600px] sm:rounded-lg rounded-none p-0 h-[100vh] sm:h-auto sm:max-h-[90vh] flex flex-col m-0 sm:m-4 sm:translate-x-[-50%] sm:translate-y-[-50%] sm:top-[50%] sm:left-[50%] top-0 left-0 fixed sm:relative">
+      <DialogTitle>{t("addTrip.title")}</DialogTitle>
+      <DialogContent className="bg-base-100 max-w-full sm:max-w-container-sm md:max-w-container-md lg:max-w-xl sm:rounded-lg rounded-none p-0 h-screen sm:h-auto sm:max-h-screen-90 flex flex-col m-0 sm:m-4 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:top-1/2 sm:left-1/2 top-0 left-0 fixed sm:relative">
         {/* Header with close button */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-base-content/10">
           <button

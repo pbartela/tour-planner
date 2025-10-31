@@ -80,7 +80,7 @@ const TourDashboardContent = ({ onboardingCompleted }: TourDashboardProps): Reac
         onClose={() => setIsAddTripModalOpen(false)}
         onSubmit={handleCreateTour}
       />
-      <div className="container mx-auto py-10">
+      <div className="container mx-auto px-4 py-10 sm:px-6 lg:px-8">
         <TourList onAddTripClick={() => setIsAddTripModalOpen(true)} />
       </div>
     </>
