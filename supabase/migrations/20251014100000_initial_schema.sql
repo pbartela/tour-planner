@@ -1,5 +1,5 @@
 -- migration: 20251014100000_initial_schema.sql
--- description: sets up the initial database schema for the tour planner application.
+-- description: complete database schema for the tour planner application.
 -- this migration includes:
 --   - creation of all tables: profiles, tours, participants, comments, votes, invitations, tags, tour_tags.
 --   - definition of custom enum types for statuses.
@@ -7,6 +7,7 @@
 --   - creation of indexes for performance.
 --   - implementation of triggers for automatic profile creation and handling user deletion.
 --   - insertion of a special 'anonymized' user profile for maintaining comment integrity.
+--   - helper functions for RLS and tour creation.
 
 -- a note on the profiles table:
 -- the foreign key constraint from 'public.profiles.id' to 'auth.users.id' has been omitted
@@ -130,6 +131,9 @@ create index on public.participants (user_id);
 create index on public.comments (tour_id, created_at desc);
 create index on public.tour_tags (tag_id);
 create index on public.invitations (tour_id, email);
+-- Performance indexes
+create index if not exists idx_tours_status on public.tours (status);
+create index if not exists idx_tours_owner_id on public.tours (owner_id);
 
 -- function to create a profile for a new user
 create or replace function public.handle_new_user()
@@ -186,6 +190,149 @@ create trigger on_auth_user_deleted
   before delete on auth.users
   for each row execute procedure public.handle_user_deletion();
 
+-- function to check if a user is a participant in a tour.
+-- this function uses security definer to bypass rls and avoid recursion.
+create or replace function public.is_participant(tour_id_to_check uuid, user_id_to_check uuid)
+returns boolean
+language plpgsql
+security definer
+as $$
+begin
+  return exists (
+    select 1
+    from public.participants
+    where tour_id = tour_id_to_check and user_id = user_id_to_check
+  );
+end;
+$$;
+
+-- function to clean up unconfirmed users older than 24 hours
+create or replace function public.cleanup_unconfirmed_users()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  deleted_count integer;
+begin
+  -- Delete users who:
+  -- 1. Have not confirmed their email (confirmed_at IS NULL)
+  -- 2. Were created more than 24 hours ago
+  -- Note: This will also cascade delete to public.profiles due to ON DELETE CASCADE
+  delete from auth.users
+  where confirmed_at is null
+    and created_at < now() - interval '24 hours';
+
+  -- Get the number of deleted rows
+  get diagnostics deleted_count = row_count;
+
+  -- Log the cleanup operation
+  if deleted_count > 0 then
+    raise notice 'Cleaned up % unconfirmed user(s)', deleted_count;
+  end if;
+end;
+$$;
+
+-- Grant execute permission to postgres role
+grant execute on function public.cleanup_unconfirmed_users() to postgres;
+
+-- Comment on the function
+comment on function public.cleanup_unconfirmed_users() is
+  'Deletes unconfirmed users older than 24 hours to prevent database bloat from abandoned signups';
+
+-- function to insert tours that bypasses RLS
+create or replace function public.create_tour(
+  p_title text,
+  p_destination text,
+  p_description text,
+  p_start_date timestamptz,
+  p_end_date timestamptz,
+  p_participant_limit integer default null,
+  p_like_threshold integer default null
+)
+returns table (
+  id uuid,
+  owner_id uuid,
+  title text,
+  destination text,
+  description text,
+  start_date timestamptz,
+  end_date timestamptz,
+  participant_limit integer,
+  like_threshold integer,
+  are_votes_hidden boolean,
+  status text,
+  created_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id uuid;
+  v_tour_id uuid;
+begin
+  -- Get the current user's ID
+  v_user_id := auth.uid();
+
+  -- Ensure user is authenticated
+  if v_user_id is null then
+    raise exception 'User must be authenticated to create a tour';
+  end if;
+
+  -- Insert the tour
+  insert into public.tours (
+    owner_id,
+    title,
+    destination,
+    description,
+    start_date,
+    end_date,
+    participant_limit,
+    like_threshold
+  ) values (
+    v_user_id,
+    p_title,
+    p_destination,
+    p_description,
+    p_start_date,
+    p_end_date,
+    p_participant_limit,
+    p_like_threshold
+  )
+  returning tours.id into v_tour_id;
+
+  -- Add the owner as a participant
+  insert into public.participants (tour_id, user_id)
+  values (v_tour_id, v_user_id);
+
+  -- Return the created tour
+  return query
+  select
+    t.id,
+    t.owner_id,
+    t.title,
+    t.destination,
+    t.description,
+    t.start_date,
+    t.end_date,
+    t.participant_limit,
+    t.like_threshold,
+    t.are_votes_hidden,
+    t.status::text,
+    t.created_at
+  from public.tours t
+  where t.id = v_tour_id;
+end;
+$$;
+
+-- Grant execute to authenticated users
+grant execute on function public.create_tour to authenticated;
+
+-- Add comment
+comment on function public.create_tour is 'Creates a new tour and adds the creator as a participant. Uses SECURITY DEFINER to bypass RLS evaluation issues with server-side clients.';
+
 -- rls policies
 
 -- profiles
@@ -210,11 +357,7 @@ create policy "tour owners can delete their tours" on public.tours
 
 -- participants
 create policy "users can view participants of tours they are in" on public.participants
-  for select using (
-    auth.uid() in (
-      select user_id from participants where tour_id = participants.tour_id
-    )
-  );
+  for select using (public.is_participant(tour_id, auth.uid()));
 
 create policy "tour owners can add new participants" on public.participants
   for insert with check (exists (select 1 from tours where id = participants.tour_id and owner_id = auth.uid()));

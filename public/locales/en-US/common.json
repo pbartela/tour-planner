@@ -4,5 +4,30 @@
     "welcome": "Welcome, {{name}}",
     "logout": "Logout",
     "login": "Login"
+  },
+  "profile": {
+    "title": "Profile",
+    "email": "Email",
+    "displayName": "Display Name",
+    "language": "Language",
+    "theme": "Theme",
+    "memberSince": "Member Since",
+    "notSet": "Not set",
+    "editProfile": "Edit Profile",
+    "cancel": "Cancel",
+    "save": "Save Changes",
+    "saving": "Saving...",
+    "reset": "Reset",
+    "updateSuccess": "Profile updated successfully!",
+    "updateError": "Error",
+    "languages": {
+      "en-US": "English (US)",
+      "pl-PL": "Polski"
+    },
+    "themes": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    }
   }
 }

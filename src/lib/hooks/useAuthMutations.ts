@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { post, handleApiResponse } from "@/lib/client/api-client";
+import { queryClient } from "@/lib/queryClient";
 
 /**
  * Request data for magic link authentication
@@ -44,5 +45,5 @@ const requestMagicLink = async (data: MagicLinkRequest): Promise<MagicLinkRespon
 export const useMagicLinkMutation = () => {
   return useMutation({
     mutationFn: requestMagicLink,
-  });
+  }, queryClient);
 };

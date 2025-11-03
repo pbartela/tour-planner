@@ -3,7 +3,6 @@ import { OnboardingModal } from "@/components/OnboardingModal";
 import { AddTripModal } from "@/components/tours/AddTripModal";
 import { useTranslation } from "react-i18next";
 import { TourList } from "@/components/tours/TourList";
-import { QueryProvider } from "@/components/QueryProvider";
 import { useUpdateProfileMutation } from "@/lib/hooks/useProfileMutations";
 import { useCreateTourMutation } from "@/lib/hooks/useTourMutations";
 
@@ -11,7 +10,7 @@ interface TourDashboardProps {
   onboardingCompleted: boolean;
 }
 
-const TourDashboardContent = ({ onboardingCompleted }: TourDashboardProps): React.JSX.Element => {
+const TourDashboard = ({ onboardingCompleted }: TourDashboardProps): React.JSX.Element => {
   useTranslation("tours");
   const [isOnboardingDismissed, setIsOnboardingDismissed] = useState(onboardingCompleted);
   const [isAddTripModalOpen, setIsAddTripModalOpen] = useState(false);
@@ -84,14 +83,6 @@ const TourDashboardContent = ({ onboardingCompleted }: TourDashboardProps): Reac
         <TourList onAddTripClick={() => setIsAddTripModalOpen(true)} />
       </div>
     </>
-  );
-};
-
-const TourDashboard = (props: TourDashboardProps): React.JSX.Element => {
-  return (
-    <QueryProvider>
-      <TourDashboardContent {...props} />
-    </QueryProvider>
   );
 };
 

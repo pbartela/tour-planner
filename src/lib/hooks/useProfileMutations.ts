@@ -1,6 +1,7 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { patch, handleApiResponse } from "@/lib/client/api-client";
 import type { ProfileDto, UpdateProfileCommand } from "@/types";
+import { queryClient } from "@/lib/queryClient";
 
 /**
  * Updates the current user's profile
@@ -23,13 +24,11 @@ const updateProfile = async (data: UpdateProfileCommand): Promise<ProfileDto> =>
  * ```
  */
 export const useUpdateProfileMutation = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: updateProfile,
     onSuccess: (data) => {
       // Update the profile cache with the new data
       queryClient.setQueryData(["profile", "me"], data);
     },
-  });
+  }, queryClient);
 };

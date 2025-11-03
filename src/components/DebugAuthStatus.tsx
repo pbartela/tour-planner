@@ -5,7 +5,6 @@ interface AuthStatus {
   isLoading: boolean;
   isLoggedIn: boolean;
   email?: string;
-  username?: string;
 }
 
 export const DebugAuthStatus = () => {

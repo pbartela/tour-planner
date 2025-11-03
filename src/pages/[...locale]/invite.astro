@@ -1,0 +1,24 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { InviteAcceptanceView } from "@/components/invitations/InviteAcceptanceView";
+
+const { user } = Astro.locals;
+const token = Astro.url.searchParams.get("token");
+
+// This is a public page - don't require authentication
+// But if user is logged in, we can use their info for email matching
+
+if (!token) {
+  return Astro.redirect("/");
+}
+---
+
+<Layout title="Tour Invitation">
+  <InviteAcceptanceView 
+    client:load 
+    token={token}
+    currentUserId={user?.id}
+    userEmail={user?.email}
+  />
+</Layout>
+

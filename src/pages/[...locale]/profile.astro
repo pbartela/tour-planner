@@ -1,0 +1,15 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { ProfileView } from "@/components/profile/ProfileView";
+
+const { user } = Astro.locals;
+
+// User is guaranteed to exist due to middleware protection
+if (!user) {
+  return Astro.redirect("/login");
+}
+---
+
+<Layout title="Profile">
+  <ProfileView client:load user={user} />
+</Layout>

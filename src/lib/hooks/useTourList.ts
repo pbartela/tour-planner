@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import type { PaginatedToursDto, TourMetadata } from "@/types";
 import { get, handleApiResponse } from "@/lib/client/api-client";
 import { getCachedMetadata, setBulkCachedMetadata, cleanupExpiredEntries } from "@/lib/utils/metadata-cache";
+import { queryClient } from "@/lib/queryClient";
 
 const getTours = async (): Promise<PaginatedToursDto> => {
   const response = await get("/api/tours");
@@ -55,5 +56,5 @@ export const useTourList = () => {
   return useQuery({
     queryKey: ["tours", { status: "active" }],
     queryFn: getTours,
-  });
+  }, queryClient);
 };

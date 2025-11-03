@@ -67,7 +67,7 @@ export const TourList = ({ onAddTripClick }: TourListProps = {}) => {
   }
 
   if (!data || data.data.length === 0) {
-    return <EmptyState />;
+    return <EmptyState onCreateTourClick={onAddTripClick} />;
   }
 
   const tours = data.data.map((tour) => transformToViewModel(tour, i18n.language));

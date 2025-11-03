@@ -7,6 +7,10 @@ const error = Astro.url.searchParams.get("error");
 const errorDescription = Astro.url.searchParams.get("error_description");
 const locale = Astro.params.locale || import.meta.env.PUBLIC_DEFAULT_LOCALE || "en-US";
 
+// Load auth namespace for translations
+await i18next.changeLanguage(locale);
+await i18next.loadNamespaces("auth");
+
 // Use the error mapping service to get localized error information
 const errorInfo = getErrorInfo(error, errorDescription, locale);
 ---
@@ -46,7 +50,7 @@ const errorInfo = getErrorInfo(error, errorDescription, locale);
 
         <!-- Additional Help -->
         <div class="text-sm text-base-content/50 mt-4">
-          <p>{i18next.t("authError.helpText", { lng: locale })}</p>
+          <p>{i18next.t("authError.helpText", { lng: locale, ns: "auth" })}</p>
         </div>
       </div>
     </div>

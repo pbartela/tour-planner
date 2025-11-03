@@ -72,7 +72,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // If user is not logged in and trying to access a protected route, redirect to login.
   if (!context.locals.user && isProtectedRoute) {
-    return context.redirect(`/${lang}/login?redirect=${encodeURIComponent(pathWithoutLocale)}`);
+    const loginUrl =
+      pathWithoutLocale === "/"
+        ? `/${lang}/login`
+        : `/${lang}/login?redirect=${encodeURIComponent(pathWithoutLocale)}`;
+    return context.redirect(loginUrl);
   }
 
   return next();
