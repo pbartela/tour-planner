@@ -130,6 +130,12 @@
     "cancelConfirm": "Are you sure you want to cancel the invitation for {{email}}?",
     "cancelSuccess": "Invitation canceled for {{email}}",
     "cancelError": "Failed to cancel invitation",
+    "resendButton": "Resend",
+    "resending": "Resending...",
+    "resendSuccess": "Invitation resent to {{email}}",
+    "resendError": "Failed to resend invitation",
+    "removeButton": "Remove",
+    "removing": "Removing...",
     "status": {
       "pending": "Pending",
       "accepted": "Accepted",

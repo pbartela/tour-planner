@@ -202,6 +202,10 @@ otp_expiry = 3600
 subject = "Magic Link - Sign In"
 content_path = "./supabase/templates/invite.html"
 
+[auth.email.template.invite]
+subject = "You're invited to join a tour!"
+content_path = "./supabase/templates/tour-invite.html"
+
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
 enable_signup = false

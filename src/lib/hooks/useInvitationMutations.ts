@@ -27,6 +27,17 @@ const cancelInvitation = async (invitationId: string): Promise<void> => {
 };
 
 /**
+ * Resends an invitation for declined or expired invitations
+ */
+const resendInvitation = async (invitationId: string): Promise<void> => {
+  const response = await post(`/api/invitations/${invitationId}/resend`, {});
+  if (!response.ok && response.status !== 204) {
+    const error = await response.json().catch(() => ({ error: { message: "Failed to resend invitation" } }));
+    throw new Error(error.error?.message || "Failed to resend invitation");
+  }
+};
+
+/**
  * Accepts an invitation
  */
 const acceptInvitation = async (invitationId: string, token?: string): Promise<AcceptInvitationResponse> => {
@@ -118,6 +129,19 @@ export const useDeclineInvitationMutation = () => {
     onSuccess: (data) => {
       // Invalidate invitations list for that tour
       queryClient.invalidateQueries({ queryKey: ["invitations", data.tour_id] });
+    },
+  }, queryClient);
+};
+
+/**
+ * React Query mutation hook for resending an invitation
+ */
+export const useResendInvitationMutation = (tourId: string) => {
+  return useMutation({
+    mutationFn: (invitationId: string) => resendInvitation(invitationId),
+    onSuccess: () => {
+      // Invalidate and refetch invitations list to get updated status
+      queryClient.invalidateQueries({ queryKey: ["invitations", tourId] });
     },
   }, queryClient);
 };

@@ -2,22 +2,15 @@ import type { SupabaseClient } from "@/db/supabase.client";
 import { secureError } from "@/lib/server/logger.service";
 import { createSupabaseAdminClient } from "@/db/supabase.admin.client";
 import { ENV } from "@/lib/server/env-validation.service";
-import type {
-  InvitationDto,
-  SendInvitationsResponse,
-  InvitationByTokenDto,
-  AcceptInvitationResponse,
-} from "@/types";
+import type { InvitationDto, SendInvitationsResponse, InvitationByTokenDto, AcceptInvitationResponse } from "@/types";
+import { randomBytes } from "crypto";
 
 class InvitationService {
   /**
    * Lists all invitations for a tour.
    * Only accessible by tour owner (enforced by RLS).
    */
-  public async listTourInvitations(
-    supabase: SupabaseClient,
-    tourId: string
-  ): Promise<InvitationDto[]> {
+  public async listTourInvitations(supabase: SupabaseClient, tourId: string): Promise<InvitationDto[]> {
     try {
       const { data: invitations, error } = await supabase
         .from("invitations")
@@ -58,8 +51,8 @@ class InvitationService {
         expires_at: inv.expires_at,
         created_at: inv.created_at,
         tour_title: (inv as { tours?: { title: string } | null }).tours?.title,
-        inviter_display_name: (inv as { profiles?: { display_name: string | null } | null }).profiles
-          ?.display_name || undefined,
+        inviter_display_name:
+          (inv as { profiles?: { display_name: string | null } | null }).profiles?.display_name || undefined,
       }));
     } catch (error) {
       secureError("Unexpected error in listTourInvitations", error);
@@ -71,10 +64,7 @@ class InvitationService {
    * Gets an invitation by token.
    * Public endpoint - no authentication required.
    */
-  public async getInvitationByToken(
-    supabase: SupabaseClient,
-    token: string
-  ): Promise<InvitationByTokenDto | null> {
+  public async getInvitationByToken(supabase: SupabaseClient, token: string): Promise<InvitationByTokenDto | null> {
     try {
       const { data: invitation, error } = await supabase
         .from("invitations")
@@ -158,18 +148,9 @@ class InvitationService {
   ): Promise<SendInvitationsResponse> {
     const sent: string[] = [];
     const skipped: string[] = [];
-    const errors: Array<{ email: string; error: string }> = [];
+    const errors: { email: string; error: string }[] = [];
 
     try {
-      // Get inviter's display name to personalize the email
-      const { data: inviterProfile } = await supabase
-        .from("profiles")
-        .select("display_name")
-        .eq("id", inviterId)
-        .single();
-      
-      const inviterName = inviterProfile?.display_name || "A friend";
-
       // Normalize emails (lowercase, trim)
       const normalizedEmails = emails.map((email) => email.toLowerCase().trim());
 
@@ -214,9 +195,7 @@ class InvitationService {
         throw new Error("Failed to check existing invitations.");
       }
 
-      const pendingEmails = new Set(
-        (existingInvitations || []).map((inv) => inv.email.toLowerCase())
-      );
+      const pendingEmails = new Set((existingInvitations || []).map((inv) => inv.email.toLowerCase()));
 
       // Process each email
       for (const email of normalizedEmails) {
@@ -256,47 +235,42 @@ class InvitationService {
           }
 
           // Send invitation email via Supabase Auth
-          // Uses signInWithOtp with custom redirect to invitation acceptance page
-          // In local dev, emails are captured by Inbucket (http://localhost:54324)
+          // Uses inviteUserByEmail to send invitation email using invite template
           try {
             const adminClient = createSupabaseAdminClient();
-            
-            // Build invitation URL - redirect to /invite?token={token}
-            // After login/registration, user will be redirected to /auth/confirm which will
-            // auto-accept the invitation if token is in the redirect path
+
+            // Build invitation URL - redirect to /invite?token={token} via /auth/confirm
+            // The /auth/confirm endpoint handles PKCE magic link flow, then redirects to next parameter
             const baseUrl = siteUrl.replace(/\/$/, ""); // Remove trailing slash
             const inviteUrl = new URL("/invite", baseUrl);
             inviteUrl.searchParams.set("token", invitation.token);
-            
-            // Use signInWithOtp to send a magic link email.
-            // We pass custom data to the email template to show invitation content.
-            const { error: emailError } = await adminClient.auth.signInWithOtp({
-              email: email,
-              options: {
-                emailRedirectTo: inviteUrl.toString(),
-                shouldCreateUser: true, // Allow new user registration
-                data: {
-                  is_invitation: true,
-                  inviter_name: inviterName,
-                }
+
+            // Build redirect URL that goes through /auth/confirm for PKCE flow
+            const confirmUrl = new URL("/auth/confirm", baseUrl);
+            confirmUrl.searchParams.set("next", inviteUrl.toString());
+
+            // Invite user by email - this sends the email automatically using invite template
+            // Creates user if they don't exist, sends invitation email with magic link
+            // Pass invitation_token in data so it's available in the email template
+            const { error: emailError } = await adminClient.auth.admin.inviteUserByEmail(email, {
+              redirectTo: confirmUrl.toString(), // Magic link goes through /auth/confirm, then to /invite?token={token}
+              data: {
+                invitation_token: invitation.token,
               },
             });
 
             if (emailError) {
-              secureError(`Failed to send invitation email to ${email}`, emailError);
+              secureError("Failed to send invitation email", emailError);
               errors.push({ email, error: "Failed to send invitation email" });
-              // Note: invitation was created, but email failed - we still count it as error
-              // In production, you might want to delete the invitation record on email failure
               continue;
             }
 
+            // Supabase automatically sends the email using the invite template
+            // In local dev, captured by Mailpit (http://localhost:54324)
             sent.push(email);
-          } catch (emailSendError) {
-            secureError(`Unexpected error sending invitation email to ${email}`, emailSendError);
-            errors.push({
-              email,
-              error: "Failed to send invitation email",
-            });
+          } catch (err) {
+            secureError("Error sending invitation email", err);
+            errors.push({ email, error: "Failed to send invitation" });
             continue;
           }
         } catch (error) {
@@ -419,7 +393,131 @@ class InvitationService {
       throw error instanceof Error ? error : new Error("An unexpected error occurred.");
     }
   }
+
+  /**
+   * Resends an invitation for declined or expired invitations.
+   * Resets status to pending, generates new token, and sends email.
+   * Only tour owner can resend (enforced by RLS).
+   */
+  public async resendInvitation(
+    supabase: SupabaseClient,
+    invitationId: string,
+    inviterId: string,
+    siteUrl: string
+  ): Promise<void> {
+    try {
+      // Get the invitation to verify it exists and get email/tour_id
+      const { data: invitation, error: fetchError } = await supabase
+        .from("invitations")
+        .select("id, tour_id, email, status, expires_at")
+        .eq("id", invitationId)
+        .maybeSingle();
+
+      if (fetchError) {
+        secureError("Error fetching invitation for resend", fetchError);
+        throw new Error("Failed to fetch invitation.");
+      }
+
+      if (!invitation) {
+        throw new Error("Invitation not found.");
+      }
+
+      // Only allow resending declined or expired invitations
+      // Expired invitations are still "pending" status but past expiration
+      const isExpired = new Date(invitation.expires_at) < new Date();
+      if (invitation.status === "accepted") {
+        throw new Error("Cannot resend an accepted invitation.");
+      }
+
+      // Calculate new expiration date (default 7 days from now)
+      const newExpiresAt = new Date();
+      newExpiresAt.setDate(newExpiresAt.getDate() + 7);
+
+      // Generate new unique token (32 hex characters = 128 bits)
+      // Similar to database trigger logic
+      const generateToken = (): string => {
+        return randomBytes(16).toString("hex");
+      };
+
+      // Generate unique token (try up to 10 times to ensure uniqueness)
+      let newToken = generateToken();
+      let attempts = 0;
+      const maxAttempts = 10;
+
+      while (attempts < maxAttempts) {
+        const { data: existing } = await supabase
+          .from("invitations")
+          .select("id")
+          .eq("token", newToken)
+          .maybeSingle();
+
+        if (!existing) {
+          break; // Token is unique
+        }
+
+        newToken = generateToken();
+        attempts++;
+      }
+
+      if (attempts >= maxAttempts) {
+        throw new Error("Failed to generate unique invitation token");
+      }
+
+      // Update invitation: reset status to pending, set new token, update expires_at
+      const { data: updatedInvitation, error: updateError } = await supabase
+        .from("invitations")
+        .update({
+          status: "pending",
+          token: newToken,
+          expires_at: newExpiresAt.toISOString(),
+        })
+        .eq("id", invitationId)
+        .select("token")
+        .single();
+
+      if (updateError) {
+        secureError("Error updating invitation for resend", updateError);
+        throw new Error("Failed to update invitation.");
+      }
+
+      if (!updatedInvitation || !updatedInvitation.token) {
+        throw new Error("Failed to generate new invitation token.");
+      }
+
+      // Send invitation email via Supabase Auth
+      try {
+        const adminClient = createSupabaseAdminClient();
+
+        // Build invitation URL - redirect to /invite?token={token} via /auth/confirm
+        const baseUrl = siteUrl.replace(/\/$/, ""); // Remove trailing slash
+        const inviteUrl = new URL("/invite", baseUrl);
+        inviteUrl.searchParams.set("token", updatedInvitation.token);
+
+        // Build redirect URL that goes through /auth/confirm for PKCE flow
+        const confirmUrl = new URL("/auth/confirm", baseUrl);
+        confirmUrl.searchParams.set("next", inviteUrl.toString());
+
+        // Invite user by email - this sends the email automatically using invite template
+        const { error: emailError } = await adminClient.auth.admin.inviteUserByEmail(invitation.email, {
+          redirectTo: confirmUrl.toString(),
+          data: {
+            invitation_token: updatedInvitation.token,
+          },
+        });
+
+        if (emailError) {
+          secureError("Failed to send resend invitation email", emailError);
+          throw new Error("Failed to send invitation email.");
+        }
+      } catch (err) {
+        secureError("Error sending resend invitation email", err);
+        throw new Error("Failed to send invitation email.");
+      }
+    } catch (error) {
+      secureError("Unexpected error in resendInvitation", error);
+      throw error instanceof Error ? error : new Error("An unexpected error occurred.");
+    }
+  }
 }
 
 export const invitationService = new InvitationService();
-

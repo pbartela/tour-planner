@@ -7,7 +7,7 @@
  * 2. Server extracts token_hash from query parameters
  * 3. Server calls supabase.auth.verifyOtp() to verify and create session
  * 4. Session established server-side via secure httpOnly cookies
- * 5. User redirected to intended destination
+ * 5. User redirected to intended destination (e.g., invite page for accept/decline)
  *
  * Security: Tokens never exposed to client-side JavaScript
  * All authentication logic handled server-side for maximum security
@@ -97,39 +97,8 @@ try {
     return Astro.redirect(`/${locale}/auth/error?error=session_failed`);
   }
 
-  // Check if redirect path contains an invitation token
-  // If so, automatically accept the invitation after successful login
-  const inviteMatch = redirectPath.match(/\/invite\?token=([^&]+)/);
-  if (inviteMatch && data.user) {
-    const invitationToken = inviteMatch[1];
-
-    try {
-      // Call the accept_invitation database function
-      const { data: tourId, error: acceptError } = await supabase.rpc("accept_invitation", {
-        invitation_token: invitationToken,
-        accepting_user_id: data.user.id,
-      });
-
-      if (acceptError) {
-        // Log error but don't fail the login - let the user handle it on the invite page
-        warn("Failed to auto-accept invitation after login", {
-          error: acceptError,
-          userId: data.user.id,
-          token: invitationToken.substring(0, 8) + "...", // Log partial token for debugging
-        });
-        // Continue to invite page - the component will show appropriate error
-      } else if (tourId) {
-        // Successfully accepted - redirect directly to tour page
-        return Astro.redirect(`/${locale}/tours/${tourId}`);
-      }
-    } catch (err) {
-      warn("Error during auto-accept invitation", err);
-      // Continue to invite page on error
-    }
-  }
-
   // Session is now established via cookies automatically by Supabase client
-  // Redirect to the intended destination
+  // Redirect to the intended destination (e.g., invite page where user can accept/decline)
   return Astro.redirect(redirectPath);
 } catch (err) {
   secureError("Unexpected error during token verification", err);
