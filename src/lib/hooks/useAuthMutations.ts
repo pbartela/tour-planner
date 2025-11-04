@@ -43,7 +43,10 @@ const requestMagicLink = async (data: MagicLinkRequest): Promise<MagicLinkRespon
  * ```
  */
 export const useMagicLinkMutation = () => {
-  return useMutation({
-    mutationFn: requestMagicLink,
-  }, queryClient);
+  return useMutation(
+    {
+      mutationFn: requestMagicLink,
+    },
+    queryClient
+  );
 };

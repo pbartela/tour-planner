@@ -24,11 +24,14 @@ const updateProfile = async (data: UpdateProfileCommand): Promise<ProfileDto> =>
  * ```
  */
 export const useUpdateProfileMutation = () => {
-  return useMutation({
-    mutationFn: updateProfile,
-    onSuccess: (data) => {
-      // Update the profile cache with the new data
-      queryClient.setQueryData(["profile", "me"], data);
+  return useMutation(
+    {
+      mutationFn: updateProfile,
+      onSuccess: (data) => {
+        // Update the profile cache with the new data
+        queryClient.setQueryData(["profile", "me"], data);
+      },
     },
-  }, queryClient);
+    queryClient
+  );
 };

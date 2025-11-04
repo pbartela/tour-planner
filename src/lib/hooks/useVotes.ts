@@ -20,10 +20,13 @@ const fetchVotes = async (tourId: string): Promise<TourVotesDto> => {
  * ```
  */
 export const useVotes = (tourId: string) => {
-  return useQuery({
-    queryKey: ["votes", tourId],
-    queryFn: () => fetchVotes(tourId),
-    enabled: !!tourId,
-    staleTime: 10 * 1000, // 10 seconds
-  }, queryClient);
+  return useQuery(
+    {
+      queryKey: ["votes", tourId],
+      queryFn: () => fetchVotes(tourId),
+      enabled: !!tourId,
+      staleTime: 10 * 1000, // 10 seconds
+    },
+    queryClient
+  );
 };

@@ -117,4 +117,3 @@ export const InvitationForm = ({ tourId, onSuccess }: InvitationFormProps) => {
     </form>
   );
 };
-

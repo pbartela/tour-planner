@@ -20,10 +20,13 @@ const fetchTourDetails = async (tourId: string): Promise<TourDetailsDto> => {
  * ```
  */
 export const useTourDetails = (tourId: string) => {
-  return useQuery({
-    queryKey: ["tour", tourId],
-    queryFn: () => fetchTourDetails(tourId),
-    enabled: !!tourId,
-    staleTime: 60 * 1000, // 1 minute
-  }, queryClient);
+  return useQuery(
+    {
+      queryKey: ["tour", tourId],
+      queryFn: () => fetchTourDetails(tourId),
+      enabled: !!tourId,
+      staleTime: 60 * 1000, // 1 minute
+    },
+    queryClient
+  );
 };

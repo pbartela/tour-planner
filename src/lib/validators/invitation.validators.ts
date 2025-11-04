@@ -42,4 +42,3 @@ export const tourIdParamSchema = z.string().uuid("Invalid tour ID format");
  * Schema for validating invitation token query parameter
  */
 export const invitationTokenSchema = z.string().min(32).max(64);
-

@@ -2,6 +2,14 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { SkeletonLoader } from "@/components/shared/SkeletonLoader";
 import { get, handleApiResponse } from "@/lib/client/api-client";
 import type { InvitationByTokenDto } from "@/types";
@@ -18,6 +26,8 @@ export const InviteAcceptanceView = ({ token, currentUserId, userEmail }: Invite
   const [invitation, setInvitation] = useState<InvitationByTokenDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [declineDialogOpen, setDeclineDialogOpen] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
   const acceptMutation = useAcceptInvitationMutation();
   const declineMutation = useDeclineInvitationMutation();
 
@@ -48,6 +58,8 @@ export const InviteAcceptanceView = ({ token, currentUserId, userEmail }: Invite
       });
 
       toast.success(t("invitations.acceptSuccess"));
+      // Show loading state before redirect
+      setIsNavigating(true);
       // Redirect directly to tour details page
       window.location.href = `/tours/${result.tour_id}`;
     } catch (err) {
@@ -56,12 +68,12 @@ export const InviteAcceptanceView = ({ token, currentUserId, userEmail }: Invite
     }
   };
 
-  const handleDecline = async () => {
-    if (!invitation || !currentUserId) return;
+  const handleDeclineClick = () => {
+    setDeclineDialogOpen(true);
+  };
 
-    // Confirmation dialog
-    const confirmed = window.confirm(t("invitations.confirmDecline"));
-    if (!confirmed) return;
+  const handleDeclineConfirm = async () => {
+    if (!invitation || !currentUserId) return;
 
     try {
       await declineMutation.mutateAsync({
@@ -70,6 +82,9 @@ export const InviteAcceptanceView = ({ token, currentUserId, userEmail }: Invite
       });
 
       toast.success(t("invitations.declineSuccess"));
+      setDeclineDialogOpen(false);
+      // Show loading state before redirect
+      setIsNavigating(true);
       // Redirect to dashboard
       window.location.href = "/";
     } catch (err) {
@@ -79,9 +94,16 @@ export const InviteAcceptanceView = ({ token, currentUserId, userEmail }: Invite
   };
 
   const handleLogin = () => {
+    // Show loading state before redirect
+    setIsNavigating(true);
     // Redirect to login with redirect back to this invite page
     const inviteUrl = `/invite?token=${encodeURIComponent(token)}`;
     window.location.href = `/login?redirect=${encodeURIComponent(inviteUrl)}`;
+  };
+
+  const handleGoHome = () => {
+    setIsNavigating(true);
+    window.location.href = "/";
   };
 
   if (isLoading) {
@@ -100,7 +122,9 @@ export const InviteAcceptanceView = ({ token, currentUserId, userEmail }: Invite
             <h1 className="card-title text-2xl justify-center">{t("invitations.errorTitle")}</h1>
             <p className="text-base-content/70">{error || t("invitations.notFound")}</p>
             <div className="card-actions justify-center mt-4">
-              <Button onClick={() => (window.location.href = "/")}>{t("invitations.goHome")}</Button>
+              <Button onClick={handleGoHome} disabled={isNavigating}>
+                {isNavigating ? t("common.redirecting") : t("invitations.goHome")}
+              </Button>
             </div>
           </div>
         </div>
@@ -120,7 +144,9 @@ export const InviteAcceptanceView = ({ token, currentUserId, userEmail }: Invite
                 : t("invitations.alreadyProcessed", { status: invitation.status })}
             </p>
             <div className="card-actions justify-center mt-4">
-              <Button onClick={() => (window.location.href = "/")}>{t("invitations.goHome")}</Button>
+              <Button onClick={handleGoHome} disabled={isNavigating}>
+                {isNavigating ? t("common.redirecting") : t("invitations.goHome")}
+              </Button>
             </div>
           </div>
         </div>
@@ -139,9 +165,7 @@ export const InviteAcceptanceView = ({ token, currentUserId, userEmail }: Invite
           <div className="space-y-4">
             <div>
               <p className="text-base-content/70">{t("invitations.invitedBy")}</p>
-              <p className="font-semibold">
-                {invitation.inviter_display_name || invitation.inviter_email}
-              </p>
+              <p className="font-semibold">{invitation.inviter_display_name || invitation.inviter_email}</p>
             </div>
             <div>
               <p className="text-base-content/70">{t("invitations.tourTitle")}</p>
@@ -157,37 +181,73 @@ export const InviteAcceptanceView = ({ token, currentUserId, userEmail }: Invite
             {isLoggedIn && isEmailMatch ? (
               <div className="flex gap-4">
                 <Button
-                  onClick={handleDecline}
-                  disabled={declineMutation.isPending}
-                  variant="outline"
+                  onClick={handleDeclineClick}
+                  disabled={declineMutation.isPending || acceptMutation.isPending || isNavigating}
+                  variant="neutral-outline"
                 >
                   {declineMutation.isPending ? t("invitations.declining") : t("invitations.declineButton")}
                 </Button>
                 <Button
                   onClick={handleAccept}
-                  disabled={acceptMutation.isPending}
-                  className="btn-primary"
+                  disabled={acceptMutation.isPending || declineMutation.isPending || isNavigating}
+                  variant="primary"
                 >
-                  {acceptMutation.isPending ? t("invitations.accepting") : t("invitations.acceptButton")}
+                  {acceptMutation.isPending
+                    ? t("invitations.accepting")
+                    : isNavigating
+                      ? t("common.redirecting")
+                      : t("invitations.acceptButton")}
                 </Button>
               </div>
             ) : isLoggedIn && !isEmailMatch ? (
               <div className="text-center space-y-4">
                 <div className="alert alert-error">
-                  <span>{t("invitations.emailMismatchStrict", { invitedEmail: invitation.email, currentEmail: userEmail })}</span>
+                  <span>
+                    {t("invitations.emailMismatchStrict", { invitedEmail: invitation.email, currentEmail: userEmail })}
+                  </span>
                 </div>
                 <p className="text-sm text-base-content/70">{t("invitations.emailMismatchInstructions")}</p>
-                <Button onClick={() => (window.location.href = "/")}>{t("invitations.goHome")}</Button>
+                <Button onClick={handleGoHome} disabled={isNavigating}>
+                  {isNavigating ? t("common.redirecting") : t("invitations.goHome")}
+                </Button>
               </div>
             ) : (
-              <Button onClick={handleLogin} className="btn-primary">
-                {t("invitations.loginButton")}
+              <Button onClick={handleLogin} disabled={isNavigating} variant="primary">
+                {isNavigating ? t("common.redirecting") : t("invitations.loginButton")}
               </Button>
             )}
           </div>
         </div>
       </div>
+
+      <Dialog open={declineDialogOpen} onOpenChange={setDeclineDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("invitations.declineTitle")}</DialogTitle>
+            <DialogDescription>{t("invitations.confirmDecline")}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeclineDialogOpen(false)}
+              disabled={declineMutation.isPending || isNavigating}
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeclineConfirm}
+              disabled={declineMutation.isPending || isNavigating}
+            >
+              {declineMutation.isPending
+                ? t("invitations.declining")
+                : isNavigating
+                  ? t("common.redirecting")
+                  : t("common.confirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
-

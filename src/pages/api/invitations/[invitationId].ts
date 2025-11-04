@@ -163,4 +163,3 @@ export const DELETE: APIRoute = async ({ params, request, locals, cookies }) => 
     );
   }
 };
-

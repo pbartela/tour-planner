@@ -26,11 +26,13 @@ const fetchTourInvitations = async (tourId: string): Promise<InvitationDto[]> =>
  * ```
  */
 export const useTourInvitations = ({ tourId }: UseTourInvitationsOptions) => {
-  return useQuery({
-    queryKey: ["invitations", tourId],
-    queryFn: () => fetchTourInvitations(tourId),
-    enabled: !!tourId,
-    staleTime: 30 * 1000, // 30 seconds
-  }, queryClient);
+  return useQuery(
+    {
+      queryKey: ["invitations", tourId],
+      queryFn: () => fetchTourInvitations(tourId),
+      enabled: !!tourId,
+      staleTime: 30 * 1000, // 30 seconds
+    },
+    queryClient
+  );
 };
-

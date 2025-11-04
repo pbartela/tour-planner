@@ -122,12 +122,46 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
 
   const { supabase } = locals;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  // Verify user session using session validation service
+  const user = await validateSession(supabase);
   if (!user) {
-    return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: "UNAUTHORIZED",
+          message: "Authentication required",
+        },
+      }),
+      {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  // Rate limiting: use user ID for authenticated users
+  const clientId = getClientIdentifier(request, user.id);
+  const rateLimitResult = checkRateLimit(clientId, RATE_LIMIT_CONFIGS.API);
+
+  if (!rateLimitResult.allowed) {
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: "TOO_MANY_REQUESTS",
+          message: "Rate limit exceeded. Please try again later.",
+        },
+      }),
+      {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          "Retry-After": String(Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)),
+          "X-RateLimit-Limit": String(RATE_LIMIT_CONFIGS.API.maxRequests),
+          "X-RateLimit-Remaining": String(rateLimitResult.remaining),
+          "X-RateLimit-Reset": String(rateLimitResult.resetAt),
+        },
+      }
+    );
   }
 
   try {
@@ -135,7 +169,20 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
     const validation = createTourCommandSchema.safeParse(body);
 
     if (!validation.success) {
-      return new Response(JSON.stringify(validation.error.flatten()), { status: 400 });
+      // Format validation errors according to plan
+      const errorDetails = validation.error.errors.map((err) => `${err.path.join(".")}: ${err.message}`).join("; ");
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "BAD_REQUEST",
+            message: `Invalid request body: ${errorDetails}`,
+          },
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     const { data: tour, error } = await tourService.createTour(supabase, {
@@ -145,12 +192,37 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
     });
 
     if (error) {
-      return new Response(JSON.stringify({ message: "Internal Server Error" }), { status: 500 });
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create tour",
+          },
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
-    return new Response(JSON.stringify(tour), { status: 201 });
+    return new Response(JSON.stringify(tour), {
+      status: 201,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
     secureError("Unexpected error in POST /api/tours", error);
-    return new Response(JSON.stringify({ message: "Internal Server Error" }), { status: 500 });
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "An unexpected error occurred",
+        },
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 };

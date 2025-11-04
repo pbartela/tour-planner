@@ -167,7 +167,7 @@ export const TourDetailsView = ({ tourId, currentUserId, onEdit }: TourDetailsVi
             />
             <div className="modal-action">
               <Button
-                variant="outline"
+                variant="neutral-outline"
                 onClick={() => {
                   setShowDeleteConfirm(false);
                   setDeleteConfirmInput("");
@@ -176,10 +176,9 @@ export const TourDetailsView = ({ tourId, currentUserId, onEdit }: TourDetailsVi
                 {t("tourDetails.deleteConfirm.cancel")}
               </Button>
               <Button
-                variant="default"
+                variant="error"
                 onClick={handleDelete}
                 disabled={deleteConfirmInput !== tour.title || deleteMutation.isPending}
-                className="bg-error text-error-content hover:bg-error/90"
               >
                 {deleteMutation.isPending
                   ? t("tourDetails.deleteConfirm.deleting")

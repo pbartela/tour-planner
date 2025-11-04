@@ -52,11 +52,16 @@ export const CommentItem = ({ comment, currentUserId, onEdit, onDelete }: Commen
 
       {isEditing ? (
         <div className="space-y-2">
+          <label htmlFor={`edit-comment-textarea-${comment.id}`} className="sr-only">
+            {t("comments.editLabel")}
+          </label>
           <textarea
+            id={`edit-comment-textarea-${comment.id}`}
             className="textarea textarea-bordered w-full"
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
             rows={3}
+            aria-label={t("comments.editLabel")}
           />
           <div className="flex gap-2">
             <Button size="sm" onClick={handleSave}>

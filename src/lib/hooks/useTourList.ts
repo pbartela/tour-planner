@@ -53,8 +53,11 @@ export const useTourList = () => {
     cleanupExpiredEntries();
   }, []);
 
-  return useQuery({
-    queryKey: ["tours", { status: "active" }],
-    queryFn: getTours,
-  }, queryClient);
+  return useQuery(
+    {
+      queryKey: ["tours", { status: "active" }],
+      queryFn: getTours,
+    },
+    queryClient
+  );
 };

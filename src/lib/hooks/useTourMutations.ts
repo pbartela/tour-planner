@@ -51,50 +51,53 @@ const deleteTour = async (tourId: string): Promise<void> => {
  * ```
  */
 export const useCreateTourMutation = () => {
-  return useMutation({
-    mutationFn: createTour,
-    onSuccess: (newTour: TourDetailsDto) => {
-      // Convert TourDetailsDto to TourSummaryDto for the list
-      const newTourSummary: TourSummaryDto = {
-        id: newTour.id,
-        title: newTour.title,
-        destination: newTour.destination,
-        start_date: newTour.start_date,
-        end_date: newTour.end_date,
-        status: newTour.status,
-        has_new_activity: false,
-        metadata: newTour.metadata,
-      };
+  return useMutation(
+    {
+      mutationFn: createTour,
+      onSuccess: (newTour: TourDetailsDto) => {
+        // Convert TourDetailsDto to TourSummaryDto for the list
+        const newTourSummary: TourSummaryDto = {
+          id: newTour.id,
+          title: newTour.title,
+          destination: newTour.destination,
+          start_date: newTour.start_date,
+          end_date: newTour.end_date,
+          status: newTour.status,
+          has_new_activity: false,
+          metadata: newTour.metadata,
+        };
 
-      // Cache metadata if available
-      if (newTour.metadata && (newTour.metadata.image || newTour.metadata.title || newTour.metadata.description)) {
-        setCachedMetadata(newTour.id, newTour.metadata);
-      }
-
-      // Update the tours list cache without refetching
-      queryClient.setQueryData<PaginatedToursDto>(["tours", { status: "active" }], (oldData) => {
-        if (!oldData) {
-          return {
-            data: [newTourSummary],
-            pagination: {
-              page: 1,
-              limit: 10,
-              total: 1,
-            },
-          };
+        // Cache metadata if available
+        if (newTour.metadata && (newTour.metadata.image || newTour.metadata.title || newTour.metadata.description)) {
+          setCachedMetadata(newTour.id, newTour.metadata);
         }
 
-        return {
-          ...oldData,
-          data: [newTourSummary, ...oldData.data],
-          pagination: {
-            ...oldData.pagination,
-            total: oldData.pagination.total + 1,
-          },
-        };
-      });
+        // Update the tours list cache without refetching
+        queryClient.setQueryData<PaginatedToursDto>(["tours", { status: "active" }], (oldData) => {
+          if (!oldData) {
+            return {
+              data: [newTourSummary],
+              pagination: {
+                page: 1,
+                limit: 10,
+                total: 1,
+              },
+            };
+          }
+
+          return {
+            ...oldData,
+            data: [newTourSummary, ...oldData.data],
+            pagination: {
+              ...oldData.pagination,
+              total: oldData.pagination.total + 1,
+            },
+          };
+        });
+      },
     },
-  }, queryClient);
+    queryClient
+  );
 };
 
 /**
@@ -114,63 +117,66 @@ export const useCreateTourMutation = () => {
  * ```
  */
 export const useUpdateTourMutation = () => {
-  return useMutation({
-    mutationFn: ({ tourId, data }: { tourId: string; data: UpdateTourCommand }) => updateTour(tourId, data),
-    onMutate: async ({ tourId, data }) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["tours"] });
-      await queryClient.cancelQueries({ queryKey: ["tour", tourId] });
+  return useMutation(
+    {
+      mutationFn: ({ tourId, data }: { tourId: string; data: UpdateTourCommand }) => updateTour(tourId, data),
+      onMutate: async ({ tourId, data }) => {
+        // Cancel outgoing refetches
+        await queryClient.cancelQueries({ queryKey: ["tours"] });
+        await queryClient.cancelQueries({ queryKey: ["tour", tourId] });
 
-      // Snapshot previous values
-      const previousToursList = queryClient.getQueryData<PaginatedToursDto>(["tours", { status: "active" }]);
-      const previousTourDetails = queryClient.getQueryData<TourDetailsDto>(["tour", tourId]);
+        // Snapshot previous values
+        const previousToursList = queryClient.getQueryData<PaginatedToursDto>(["tours", { status: "active" }]);
+        const previousTourDetails = queryClient.getQueryData<TourDetailsDto>(["tour", tourId]);
 
-      // Optimistically update the tour list
-      queryClient.setQueryData<PaginatedToursDto>(["tours", { status: "active" }], (old) => {
-        if (!old) return old;
+        // Optimistically update the tour list
+        queryClient.setQueryData<PaginatedToursDto>(["tours", { status: "active" }], (old) => {
+          if (!old) return old;
 
-        return {
-          ...old,
-          data: old.data.map((tour) =>
-            tour.id === tourId
-              ? {
-                  ...tour,
-                  ...data,
-                  start_date: data.start_date ? new Date(data.start_date).toISOString() : tour.start_date,
-                  end_date: data.end_date ? new Date(data.end_date).toISOString() : tour.end_date,
-                }
-              : tour
-          ),
-        };
-      });
-
-      // Optimistically update tour details cache if it exists
-      if (previousTourDetails) {
-        queryClient.setQueryData<TourDetailsDto>(["tour", tourId], {
-          ...previousTourDetails,
-          ...data,
-          start_date: data.start_date ? new Date(data.start_date).toISOString() : previousTourDetails.start_date,
-          end_date: data.end_date ? new Date(data.end_date).toISOString() : previousTourDetails.end_date,
+          return {
+            ...old,
+            data: old.data.map((tour) =>
+              tour.id === tourId
+                ? {
+                    ...tour,
+                    ...data,
+                    start_date: data.start_date ? new Date(data.start_date).toISOString() : tour.start_date,
+                    end_date: data.end_date ? new Date(data.end_date).toISOString() : tour.end_date,
+                  }
+                : tour
+            ),
+          };
         });
-      }
 
-      return { previousToursList, previousTourDetails };
+        // Optimistically update tour details cache if it exists
+        if (previousTourDetails) {
+          queryClient.setQueryData<TourDetailsDto>(["tour", tourId], {
+            ...previousTourDetails,
+            ...data,
+            start_date: data.start_date ? new Date(data.start_date).toISOString() : previousTourDetails.start_date,
+            end_date: data.end_date ? new Date(data.end_date).toISOString() : previousTourDetails.end_date,
+          });
+        }
+
+        return { previousToursList, previousTourDetails };
+      },
+      onError: (err, variables, context) => {
+        // Rollback on error
+        if (context?.previousToursList) {
+          queryClient.setQueryData(["tours", { status: "active" }], context.previousToursList);
+        }
+        if (context?.previousTourDetails) {
+          queryClient.setQueryData(["tour", variables.tourId], context.previousTourDetails);
+        }
+      },
+      onSettled: (data, error, variables) => {
+        // Refetch to ensure consistency
+        queryClient.invalidateQueries({ queryKey: ["tours"] });
+        queryClient.invalidateQueries({ queryKey: ["tour", variables.tourId] });
+      },
     },
-    onError: (err, variables, context) => {
-      // Rollback on error
-      if (context?.previousToursList) {
-        queryClient.setQueryData(["tours", { status: "active" }], context.previousToursList);
-      }
-      if (context?.previousTourDetails) {
-        queryClient.setQueryData(["tour", variables.tourId], context.previousTourDetails);
-      }
-    },
-    onSettled: (data, error, variables) => {
-      // Refetch to ensure consistency
-      queryClient.invalidateQueries({ queryKey: ["tours"] });
-      queryClient.invalidateQueries({ queryKey: ["tour", variables.tourId] });
-    },
-  }, queryClient);
+    queryClient
+  );
 };
 
 /**
@@ -191,40 +197,43 @@ export const useUpdateTourMutation = () => {
  * ```
  */
 export const useDeleteTourMutation = () => {
-  return useMutation({
-    mutationFn: (tourId: string) => deleteTour(tourId),
-    onMutate: async (tourId) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["tours"] });
+  return useMutation(
+    {
+      mutationFn: (tourId: string) => deleteTour(tourId),
+      onMutate: async (tourId) => {
+        // Cancel outgoing refetches
+        await queryClient.cancelQueries({ queryKey: ["tours"] });
 
-      // Snapshot previous value
-      const previousToursList = queryClient.getQueryData<PaginatedToursDto>(["tours", { status: "active" }]);
+        // Snapshot previous value
+        const previousToursList = queryClient.getQueryData<PaginatedToursDto>(["tours", { status: "active" }]);
 
-      // Optimistically remove the tour from the list
-      queryClient.setQueryData<PaginatedToursDto>(["tours", { status: "active" }], (old) => {
-        if (!old) return old;
+        // Optimistically remove the tour from the list
+        queryClient.setQueryData<PaginatedToursDto>(["tours", { status: "active" }], (old) => {
+          if (!old) return old;
 
-        return {
-          ...old,
-          data: old.data.filter((tour) => tour.id !== tourId),
-          pagination: {
-            ...old.pagination,
-            total: old.pagination.total - 1,
-          },
-        };
-      });
+          return {
+            ...old,
+            data: old.data.filter((tour) => tour.id !== tourId),
+            pagination: {
+              ...old.pagination,
+              total: old.pagination.total - 1,
+            },
+          };
+        });
 
-      return { previousToursList };
+        return { previousToursList };
+      },
+      onError: (err, tourId, context) => {
+        // Rollback on error
+        if (context?.previousToursList) {
+          queryClient.setQueryData(["tours", { status: "active" }], context.previousToursList);
+        }
+      },
+      onSettled: () => {
+        // Refetch to ensure consistency
+        queryClient.invalidateQueries({ queryKey: ["tours"] });
+      },
     },
-    onError: (err, tourId, context) => {
-      // Rollback on error
-      if (context?.previousToursList) {
-        queryClient.setQueryData(["tours", { status: "active" }], context.previousToursList);
-      }
-    },
-    onSettled: () => {
-      // Refetch to ensure consistency
-      queryClient.invalidateQueries({ queryKey: ["tours"] });
-    },
-  }, queryClient);
+    queryClient
+  );
 };

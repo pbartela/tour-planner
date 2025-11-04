@@ -123,12 +123,7 @@ export const POST: APIRoute = async ({ params, request, locals, cookies }) => {
     }
 
     // Resend the invitation (RLS will also enforce ownership)
-    await invitationService.resendInvitation(
-      supabase,
-      invitationIdValidation.data,
-      user.id,
-      ENV.PUBLIC_SITE_URL
-    );
+    await invitationService.resendInvitation(supabase, invitationIdValidation.data, user.id, ENV.PUBLIC_SITE_URL);
 
     return new Response(null, {
       status: 204,
@@ -167,4 +162,3 @@ export const POST: APIRoute = async ({ params, request, locals, cookies }) => {
     );
   }
 };
-

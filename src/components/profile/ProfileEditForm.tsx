@@ -98,7 +98,9 @@ export const ProfileEditForm = ({ profile, onSuccess }: ProfileEditFormProps) =>
 
       {updateProfileMutation.isError && (
         <div className="alert alert-error">
-          <span>{t("profile.updateError")}: {updateProfileMutation.error?.message}</span>
+          <span>
+            {t("profile.updateError")}: {updateProfileMutation.error?.message}
+          </span>
         </div>
       )}
 

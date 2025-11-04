@@ -445,11 +445,7 @@ class InvitationService {
       const maxAttempts = 10;
 
       while (attempts < maxAttempts) {
-        const { data: existing } = await supabase
-          .from("invitations")
-          .select("id")
-          .eq("token", newToken)
-          .maybeSingle();
+        const { data: existing } = await supabase.from("invitations").select("id").eq("token", newToken).maybeSingle();
 
         if (!existing) {
           break; // Token is unique

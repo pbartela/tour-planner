@@ -35,10 +35,13 @@ const fetchComments = async (tourId: string, page: number, limit: number): Promi
  * ```
  */
 export const useComments = ({ tourId, page = 1, limit = 20 }: UseCommentsOptions) => {
-  return useQuery({
-    queryKey: ["comments", tourId, { page, limit }],
-    queryFn: () => fetchComments(tourId, page, limit),
-    enabled: !!tourId,
-    staleTime: 30 * 1000, // 30 seconds
-  }, queryClient);
+  return useQuery(
+    {
+      queryKey: ["comments", tourId, { page, limit }],
+      queryFn: () => fetchComments(tourId, page, limit),
+      enabled: !!tourId,
+      staleTime: 30 * 1000, // 30 seconds
+    },
+    queryClient
+  );
 };
