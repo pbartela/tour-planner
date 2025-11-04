@@ -1,7 +1,6 @@
 import type { SupabaseClient } from "@/db/supabase.client";
 import { secureError } from "@/lib/server/logger.service";
 import { createSupabaseAdminClient } from "@/db/supabase.admin.client";
-import { ENV } from "@/lib/server/env-validation.service";
 import type { InvitationDto, SendInvitationsResponse, InvitationByTokenDto, AcceptInvitationResponse } from "@/types";
 import { randomBytes } from "crypto";
 
@@ -41,19 +40,22 @@ class InvitationService {
       }
 
       // Transform to InvitationDto
-      return (invitations || []).map((inv) => ({
-        id: inv.id,
-        tour_id: inv.tour_id,
-        inviter_id: inv.inviter_id,
-        email: inv.email,
-        status: inv.status,
-        token: inv.token || undefined,
-        expires_at: inv.expires_at,
-        created_at: inv.created_at,
-        tour_title: (inv as { tours?: { title: string } | null }).tours?.title,
-        inviter_display_name:
-          (inv as { profiles?: { display_name: string | null } | null }).profiles?.display_name || undefined,
-      }));
+      return (invitations || []).map((inv) => {
+        const tours = inv.tours as { title: string }[] | null | undefined;
+        const profiles = inv.profiles as { display_name: string | null }[] | null | undefined;
+        return {
+          id: inv.id,
+          tour_id: inv.tour_id,
+          inviter_id: inv.inviter_id,
+          email: inv.email,
+          status: inv.status,
+          token: inv.token || undefined,
+          expires_at: inv.expires_at,
+          created_at: inv.created_at,
+          tour_title: tours && tours.length > 0 ? tours[0].title : undefined,
+          inviter_display_name: profiles && profiles.length > 0 ? profiles[0].display_name || undefined : undefined,
+        };
+      });
     } catch (error) {
       secureError("Unexpected error in listTourInvitations", error);
       throw error instanceof Error ? error : new Error("An unexpected error occurred.");
@@ -116,10 +118,11 @@ class InvitationService {
         .eq("id", invitation.inviter_id)
         .maybeSingle();
 
+      const tours = invitation.tours as { title: string }[] | null | undefined;
       return {
         id: invitation.id,
         tour_id: invitation.tour_id,
-        tour_title: (invitation as { tours?: { title: string } | null }).tours?.title || "",
+        tour_title: tours && tours.length > 0 ? tours[0].title : "",
         inviter_email: inviterEmail,
         inviter_display_name: profile?.display_name || undefined,
         email: invitation.email,
@@ -178,6 +181,9 @@ class InvitationService {
               }
             } catch {
               // Skip if user not found
+              //TODO: Consider adding logger
+              secureError("Error fetching participant user", { userId: p.user_id });
+              errors.push({ email: p.user_id, error: "Failed to fetch participant user" });
             }
           })
         );
@@ -235,23 +241,21 @@ class InvitationService {
           }
 
           // Send invitation email via Supabase Auth
-          // Uses inviteUserByEmail to send invitation email using invite template
+          // Try inviteUserByEmail first (for new users), fallback to signInWithOtp for existing users
           try {
             const adminClient = createSupabaseAdminClient();
 
             // Build invitation URL - redirect to /invite?token={token} via /auth/confirm
             // The /auth/confirm endpoint handles PKCE magic link flow, then redirects to next parameter
             const baseUrl = siteUrl.replace(/\/$/, ""); // Remove trailing slash
-            const inviteUrl = new URL("/invite", baseUrl);
-            inviteUrl.searchParams.set("token", invitation.token);
+            // Use relative path for next parameter (not full URL)
+            const invitePath = `/invite?token=${encodeURIComponent(invitation.token)}`;
 
             // Build redirect URL that goes through /auth/confirm for PKCE flow
             const confirmUrl = new URL("/auth/confirm", baseUrl);
-            confirmUrl.searchParams.set("next", inviteUrl.toString());
+            confirmUrl.searchParams.set("next", invitePath);
 
-            // Invite user by email - this sends the email automatically using invite template
-            // Creates user if they don't exist, sends invitation email with magic link
-            // Pass invitation_token in data so it's available in the email template
+            // Try inviteUserByEmail first (creates user if they don't exist, uses invite template)
             const { error: emailError } = await adminClient.auth.admin.inviteUserByEmail(email, {
               redirectTo: confirmUrl.toString(), // Magic link goes through /auth/confirm, then to /invite?token={token}
               data: {
@@ -259,15 +263,36 @@ class InvitationService {
               },
             });
 
+            // If user already exists, use signInWithOtp instead
             if (emailError) {
-              secureError("Failed to send invitation email", emailError);
-              errors.push({ email, error: "Failed to send invitation email" });
-              continue;
-            }
+              const errorMessage = emailError.message || "";
+              if (errorMessage.includes("already been registered") || errorMessage.includes("already registered")) {
+                // User exists - use signInWithOtp (works for existing users)
+                const { error: otpError } = await adminClient.auth.signInWithOtp({
+                  email: email,
+                  options: {
+                    emailRedirectTo: confirmUrl.toString(),
+                    shouldCreateUser: true, // Works for both existing and new users
+                  },
+                });
 
-            // Supabase automatically sends the email using the invite template
-            // In local dev, captured by Mailpit (http://localhost:54324)
-            sent.push(email);
+                if (otpError) {
+                  secureError("Failed to send invitation email via OTP for existing user", otpError);
+                  errors.push({ email, error: "Failed to send invitation email" });
+                  continue;
+                }
+
+                sent.push(email);
+              } else {
+                // Other error - log and add to errors
+                secureError("Failed to send invitation email", emailError);
+                errors.push({ email, error: "Failed to send invitation email" });
+                continue;
+              }
+            } else {
+              // Success - inviteUserByEmail worked (new user)
+              sent.push(email);
+            }
           } catch (err) {
             secureError("Error sending invitation email", err);
             errors.push({ email, error: "Failed to send invitation" });
@@ -424,7 +449,6 @@ class InvitationService {
 
       // Only allow resending declined or expired invitations
       // Expired invitations are still "pending" status but past expiration
-      const isExpired = new Date(invitation.expires_at) < new Date();
       if (invitation.status === "accepted") {
         throw new Error("Cannot resend an accepted invitation.");
       }
@@ -486,28 +510,95 @@ class InvitationService {
 
         // Build invitation URL - redirect to /invite?token={token} via /auth/confirm
         const baseUrl = siteUrl.replace(/\/$/, ""); // Remove trailing slash
-        const inviteUrl = new URL("/invite", baseUrl);
-        inviteUrl.searchParams.set("token", updatedInvitation.token);
+        // Use relative path for next parameter (not full URL)
+        const invitePath = `/invite?token=${encodeURIComponent(updatedInvitation.token)}`;
 
         // Build redirect URL that goes through /auth/confirm for PKCE flow
         const confirmUrl = new URL("/auth/confirm", baseUrl);
-        confirmUrl.searchParams.set("next", inviteUrl.toString());
+        confirmUrl.searchParams.set("next", invitePath);
 
-        // Invite user by email - this sends the email automatically using invite template
-        const { error: emailError } = await adminClient.auth.admin.inviteUserByEmail(invitation.email, {
-          redirectTo: confirmUrl.toString(),
-          data: {
-            invitation_token: updatedInvitation.token,
-          },
-        });
+        // Different handling for declined vs expired invitations:
+        // - Declined: user definitely exists (they had to be logged in to decline)
+        // - Expired: user might not exist (invitation could have expired before they registered)
+        if (invitation.status === "declined") {
+          // User exists - use signInWithOtp with shouldCreateUser: true (works for existing users too)
+          // Using shouldCreateUser: true ensures email is sent even for confirmed users
+          const { error: otpError } = await adminClient.auth.signInWithOtp({
+            email: invitation.email,
+            options: {
+              emailRedirectTo: confirmUrl.toString(),
+              shouldCreateUser: true, // Works for both existing and new users
+            },
+          });
 
-        if (emailError) {
-          secureError("Failed to send resend invitation email", emailError);
-          throw new Error("Failed to send invitation email.");
+          if (otpError) {
+            secureError("Failed to send resend invitation email via OTP for declined", otpError);
+            throw new Error("Failed to send invitation email.");
+          }
+        } else {
+          // Expired invitation - try to find user by email with pagination
+          // Check if user exists by searching through all pages if needed
+          let existingUser = null;
+          let page = 1;
+          const perPage = 1000; // Max per page
+
+          while (existingUser === null) {
+            const { data: usersList, error: listError } = await adminClient.auth.admin.listUsers({
+              page,
+              perPage,
+            });
+
+            if (listError) {
+              secureError("Error listing users to check if exists", listError);
+              break; // Continue with fallback approach
+            }
+
+            if (!usersList?.users || usersList.users.length === 0) {
+              break; // No more users
+            }
+
+            existingUser = usersList.users.find((u) => u.email?.toLowerCase() === invitation.email.toLowerCase());
+
+            // If we found the user or there are no more pages, break
+            if (existingUser || usersList.users.length < perPage) {
+              break;
+            }
+
+            page++;
+          }
+
+          if (existingUser) {
+            // User exists - use signInWithOtp with shouldCreateUser: true (works for existing users)
+            const { error: otpError } = await adminClient.auth.signInWithOtp({
+              email: invitation.email,
+              options: {
+                emailRedirectTo: confirmUrl.toString(),
+                shouldCreateUser: true, // Works for both existing and new users
+              },
+            });
+
+            if (otpError) {
+              secureError("Failed to send resend invitation email via OTP for expired", otpError);
+              throw new Error("Failed to send invitation email.");
+            }
+          } else {
+            // User doesn't exist - use inviteUserByEmail (uses invite template)
+            const { error: emailError } = await adminClient.auth.admin.inviteUserByEmail(invitation.email, {
+              redirectTo: confirmUrl.toString(),
+              data: {
+                invitation_token: updatedInvitation.token,
+              },
+            });
+
+            if (emailError) {
+              secureError("Failed to send resend invitation email for expired (new user)", emailError);
+              throw new Error("Failed to send invitation email.");
+            }
+          }
         }
       } catch (err) {
         secureError("Error sending resend invitation email", err);
-        throw new Error("Failed to send invitation email.");
+        throw err instanceof Error ? err : new Error("An unexpected error occurred.");
       }
     } catch (error) {
       secureError("Unexpected error in resendInvitation", error);

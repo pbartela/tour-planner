@@ -17,7 +17,7 @@ export const prerender = false;
  *
  * Response: InvitationDto[] (200 OK)
  */
-export const GET: APIRoute = async ({ params, url, locals, request }) => {
+export const GET: APIRoute = async ({ params, locals, request }) => {
   const { supabase } = locals;
 
   // Validate session
@@ -209,8 +209,30 @@ export const POST: APIRoute = async ({ params, request, locals, cookies }) => {
       );
     }
 
-    // TODO: Add rate limiting for invitations (e.g., max 10 per hour per tour)
-    // For now, we rely on general API rate limiting
+    // Tour-specific rate limiting for invitation sending (10 requests per hour per tour)
+    const invitationRateLimitId = `invitations:tour:${tourIdValidation.data}:user:${user.id}`;
+    const invitationRateLimit = checkRateLimit(invitationRateLimitId, RATE_LIMIT_CONFIGS.TOUR_INVITATIONS);
+
+    if (!invitationRateLimit.allowed) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "TOO_MANY_REQUESTS",
+            message: "Too many invitation requests. Please try again later.",
+          },
+        }),
+        {
+          status: 429,
+          headers: {
+            "Content-Type": "application/json",
+            "Retry-After": String(Math.ceil((invitationRateLimit.resetAt - Date.now()) / 1000)),
+            "X-RateLimit-Limit": String(RATE_LIMIT_CONFIGS.TOUR_INVITATIONS.maxRequests),
+            "X-RateLimit-Remaining": String(invitationRateLimit.remaining),
+            "X-RateLimit-Reset": String(invitationRateLimit.resetAt),
+          },
+        }
+      );
+    }
 
     // Get site URL from request for invitation links
     const siteUrl = new URL(request.url).origin;

@@ -6,7 +6,7 @@ import { yearsInSeconds } from "@/lib/constants/time";
 import { ENV } from "@/lib/server/env-validation.service";
 import i18next from "i18next";
 
-const protectedRoutes = ["/", "/profile", "/tours"];
+const protectedRoutes = ["/", "/profile", "/tours", "/invite"];
 // Routes that authenticated users should be redirected away from.
 const authRoutes = ["/login"];
 // Allowed locales - must match those defined in astro.config.mjs

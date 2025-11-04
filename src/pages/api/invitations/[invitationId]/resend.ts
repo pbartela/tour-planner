@@ -6,7 +6,6 @@ import { checkCsrfProtection } from "@/lib/server/csrf.service";
 import { secureError } from "@/lib/server/logger.service";
 import { validateSession } from "@/lib/server/session-validation.service";
 import { tourService } from "@/lib/services/tour.service";
-import { ENV } from "@/lib/server/env-validation.service";
 
 export const prerender = false;
 
@@ -121,9 +120,9 @@ export const POST: APIRoute = async ({ params, request, locals, cookies }) => {
         }
       );
     }
-
+    const siteUrl = new URL(request.url).origin;
     // Resend the invitation (RLS will also enforce ownership)
-    await invitationService.resendInvitation(supabase, invitationIdValidation.data, user.id, ENV.PUBLIC_SITE_URL);
+    await invitationService.resendInvitation(supabase, invitationIdValidation.data, user.id, siteUrl);
 
     return new Response(null, {
       status: 204,

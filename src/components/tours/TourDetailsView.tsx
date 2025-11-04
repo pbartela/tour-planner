@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { navigate } from "astro:transitions/client";
 import { useTourDetails } from "@/lib/hooks/useTourDetails";
 import { useDeleteTourMutation } from "@/lib/hooks/useTourMutations";
 import { CommentsList } from "./CommentsList";
@@ -28,8 +29,8 @@ export const TourDetailsView = ({ tourId, currentUserId, onEdit }: TourDetailsVi
     if (deleteConfirmInput === tour?.title) {
       deleteMutation.mutate(tourId, {
         onSuccess: () => {
-          // Redirect to home page after successful deletion
-          window.location.href = "/";
+          // Navigate to home page after successful deletion using Astro View Transitions
+          navigate("/");
         },
       });
     }

@@ -100,21 +100,21 @@ export const InvitedUsersList = ({ tourId, isOwner }: InvitedUsersListProps) => 
       <ul className="space-y-2">
         {invitations.map((invitation) => {
           const isExpired = new Date(invitation.expires_at) < new Date();
-          const canCancel = isOwner && invitation.status === "pending" && !isExpired;
-          const canRemove =
-            isOwner && (invitation.status === "declined" || (invitation.status === "pending" && isExpired));
-          const canResend =
-            isOwner && (invitation.status === "declined" || (invitation.status === "pending" && isExpired));
+          const status = invitation.status as "pending" | "accepted" | "declined";
+
+          const canCancel = isOwner && status === "pending" && !isExpired;
+          // Allow removing declined invitations or expired pending invitations
+          const canRemove = isOwner && (status === "declined" || (status === "pending" && isExpired));
+          // Allow resending declined invitations or expired pending invitations
+          const canResend = isOwner && (status === "declined" || (status === "pending" && isExpired));
 
           return (
             <li key={invitation.id} className="flex items-center justify-between gap-4 p-3 bg-base-200 rounded-lg">
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{invitation.email}</span>
-                  <span className={getStatusBadgeClass(invitation.status)}>
-                    {t(`invitations.status.${invitation.status}`)}
-                  </span>
-                  {isExpired && invitation.status === "pending" && (
+                  <span className={getStatusBadgeClass(status)}>{t(`invitations.status.${status}`)}</span>
+                  {isExpired && status === "pending" && (
                     <span className="badge badge-neutral badge-sm">{t("invitations.expired")}</span>
                   )}
                 </div>
@@ -142,7 +142,7 @@ export const InvitedUsersList = ({ tourId, isOwner }: InvitedUsersListProps) => 
                 )}
                 {canResend && (
                   <Button
-                    variant="neutral-outline"
+                    variant="primary"
                     size="sm"
                     onClick={() => handleResend(invitation.id, invitation.email)}
                     disabled={resendMutation.isPending}
@@ -178,13 +178,13 @@ export const InvitedUsersList = ({ tourId, isOwner }: InvitedUsersListProps) => 
           </DialogHeader>
           <DialogFooter>
             <Button
-              variant="outline"
+              variant="neutral-outline"
               onClick={() => setCancelDialog({ open: false, invitationId: "", email: "" })}
               disabled={cancelMutation.isPending}
             >
               {t("common.cancel")}
             </Button>
-            <Button variant="destructive" onClick={handleCancelConfirm} disabled={cancelMutation.isPending}>
+            <Button variant="error" onClick={handleCancelConfirm} disabled={cancelMutation.isPending}>
               {cancelMutation.isPending ? t("invitations.canceling") : t("common.confirm")}
             </Button>
           </DialogFooter>

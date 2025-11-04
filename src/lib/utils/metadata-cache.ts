@@ -6,6 +6,17 @@ import type { TourMetadata } from "@/types";
  * Fully compliant with privacy laws - only caches public metadata, no user data.
  */
 
+/**
+ * Logs cache errors to console in development for debugging.
+ * Silent in production to avoid exposing implementation details.
+ */
+const logCacheError = (operation: string, error: unknown): void => {
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.warn(`[MetadataCache] ${operation} failed:`, error);
+  }
+};
+
 const CACHE_KEY = "tour_metadata_v1";
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -26,7 +37,8 @@ const isLocalStorageAvailable = (): boolean => {
     localStorage.setItem(testKey, "test");
     localStorage.removeItem(testKey);
     return true;
-  } catch {
+  } catch (error) {
+    logCacheError("localStorage availability check", error);
     return false;
   }
 };
@@ -47,8 +59,8 @@ const loadCache = (): MetadataCache => {
 
     const cache: MetadataCache = JSON.parse(cached);
     return cache;
-  } catch {
-    // Silent fail - cache loading errors are non-critical
+  } catch (error) {
+    logCacheError("Cache loading", error);
     return {};
   }
 };
@@ -63,14 +75,16 @@ const saveCache = (cache: MetadataCache): void => {
 
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-  } catch {
+  } catch (error) {
+    logCacheError("Cache saving (attempting cleanup)", error);
     // Handle quota exceeded or other errors
     // Try to clear old entries and retry
     cleanupExpiredEntries();
     try {
       localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-    } catch {
-      // If still fails, silently continue without caching
+    } catch (retryError) {
+      logCacheError("Cache saving (after cleanup retry)", retryError);
+      // If still fails, continue without caching
     }
   }
 };
@@ -161,8 +175,8 @@ export const clearMetadataCache = (): void => {
 
   try {
     localStorage.removeItem(CACHE_KEY);
-  } catch {
-    // Silent fail - clearing errors are non-critical
+  } catch (error) {
+    logCacheError("Cache clearing", error);
   }
 };
 

@@ -17,11 +17,15 @@ import { useAcceptInvitationMutation, useDeclineInvitationMutation } from "@/lib
 
 interface InviteAcceptanceViewProps {
   token: string;
-  currentUserId?: string;
-  userEmail?: string;
+  currentUserId: string;
+  userEmail: string;
 }
 
-export const InviteAcceptanceView = ({ token, currentUserId, userEmail }: InviteAcceptanceViewProps) => {
+export const InviteAcceptanceView = ({
+  token,
+  currentUserId: _currentUserId,
+  userEmail,
+}: InviteAcceptanceViewProps) => {
   const { t } = useTranslation("tours");
   const [invitation, setInvitation] = useState<InvitationByTokenDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,7 +53,7 @@ export const InviteAcceptanceView = ({ token, currentUserId, userEmail }: Invite
   }, [token, t]);
 
   const handleAccept = async () => {
-    if (!invitation || !currentUserId) return;
+    if (!invitation) return;
 
     try {
       const result = await acceptMutation.mutateAsync({
@@ -73,7 +77,7 @@ export const InviteAcceptanceView = ({ token, currentUserId, userEmail }: Invite
   };
 
   const handleDeclineConfirm = async () => {
-    if (!invitation || !currentUserId) return;
+    if (!invitation) return;
 
     try {
       await declineMutation.mutateAsync({
@@ -91,14 +95,6 @@ export const InviteAcceptanceView = ({ token, currentUserId, userEmail }: Invite
       const errorMessage = err instanceof Error ? err.message : t("invitations.declineError");
       toast.error(errorMessage);
     }
-  };
-
-  const handleLogin = () => {
-    // Show loading state before redirect
-    setIsNavigating(true);
-    // Redirect to login with redirect back to this invite page
-    const inviteUrl = `/invite?token=${encodeURIComponent(token)}`;
-    window.location.href = `/login?redirect=${encodeURIComponent(inviteUrl)}`;
   };
 
   const handleGoHome = () => {
@@ -154,8 +150,9 @@ export const InviteAcceptanceView = ({ token, currentUserId, userEmail }: Invite
     );
   }
 
-  const isEmailMatch = currentUserId && userEmail && userEmail.toLowerCase() === invitation.email.toLowerCase();
-  const isLoggedIn = !!currentUserId;
+  // User is guaranteed to be authenticated at this point (enforced by middleware)
+  // Check if user's email matches the invitation email
+  const isEmailMatch = userEmail.toLowerCase() === invitation.email.toLowerCase();
 
   return (
     <div className="container mx-auto max-w-2xl p-4">
@@ -178,7 +175,7 @@ export const InviteAcceptanceView = ({ token, currentUserId, userEmail }: Invite
           </div>
 
           <div className="card-actions justify-center mt-6">
-            {isLoggedIn && isEmailMatch ? (
+            {isEmailMatch ? (
               <div className="flex gap-4">
                 <Button
                   onClick={handleDeclineClick}
@@ -199,7 +196,7 @@ export const InviteAcceptanceView = ({ token, currentUserId, userEmail }: Invite
                       : t("invitations.acceptButton")}
                 </Button>
               </div>
-            ) : isLoggedIn && !isEmailMatch ? (
+            ) : (
               <div className="text-center space-y-4">
                 <div className="alert alert-error">
                   <span>
@@ -211,10 +208,6 @@ export const InviteAcceptanceView = ({ token, currentUserId, userEmail }: Invite
                   {isNavigating ? t("common.redirecting") : t("invitations.goHome")}
                 </Button>
               </div>
-            ) : (
-              <Button onClick={handleLogin} disabled={isNavigating} variant="primary">
-                {isNavigating ? t("common.redirecting") : t("invitations.loginButton")}
-              </Button>
             )}
           </div>
         </div>

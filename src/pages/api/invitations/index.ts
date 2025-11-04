@@ -3,20 +3,38 @@ import type { APIRoute } from "astro";
 import { invitationService } from "@/lib/services/invitation.service";
 import { invitationTokenSchema } from "@/lib/validators/invitation.validators";
 import { secureError } from "@/lib/server/logger.service";
+import { validateSession } from "@/lib/server/session-validation.service";
 
 export const prerender = false;
 
 /**
  * GET /api/invitations?token={token}
  * Returns invitation details by token.
- * Public endpoint - no authentication required.
- * Used on the invitation acceptance page before login.
+ * Requires authentication - user must be logged in to view invitations.
+ * Used on the invitation acceptance page after authentication.
  *
  * Query parameter: token (string, 32-64 characters)
- * Response: InvitationByTokenDto (200 OK) or 404 Not Found
+ * Response: InvitationByTokenDto (200 OK), 401 Unauthorized, or 404 Not Found
  */
 export const GET: APIRoute = async ({ url, locals }) => {
   const { supabase } = locals;
+
+  // Validate session - user must be authenticated
+  const user = await validateSession(supabase);
+  if (!user) {
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: "UNAUTHORIZED",
+          message: "Authentication required to view invitations",
+        },
+      }),
+      {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
 
   // Get token from query parameters
   const token = url.searchParams.get("token");
@@ -54,8 +72,8 @@ export const GET: APIRoute = async ({ url, locals }) => {
   }
 
   try {
-    // Use unauthenticated client or create a basic client for public access
-    // The RLS policy allows public read access for pending, non-expired invitations
+    // Get invitation using authenticated client
+    // The RLS policy ensures user's email matches the invitation email
     const invitation = await invitationService.getInvitationByToken(supabase, tokenValidation.data);
 
     if (!invitation) {

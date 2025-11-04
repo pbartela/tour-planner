@@ -224,6 +224,18 @@ export const RATE_LIMIT_CONFIGS = {
     maxRequests: isDevelopment ? 1000 : 100,
     windowMs: minutes(1),
   },
+
+  /**
+   * Tour invitation sending rate limits
+   * - Production/Test: 10 invitation requests per hour per tour
+   * - Development: 100 invitation requests per hour per tour
+   * Note: This limits the number of times the send invitations endpoint can be called,
+   * not the number of email addresses per request
+   */
+  TOUR_INVITATIONS: {
+    maxRequests: isDevelopment ? 100 : 10,
+    windowMs: minutes(60),
+  },
 } as const;
 
 /**

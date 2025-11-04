@@ -54,6 +54,15 @@ export const useCreateTourMutation = () => {
   return useMutation(
     {
       mutationFn: createTour,
+      onMutate: async () => {
+        // Cancel outgoing refetches
+        await queryClient.cancelQueries({ queryKey: ["tours"] });
+
+        // Snapshot previous value
+        const previousToursList = queryClient.getQueryData<PaginatedToursDto>(["tours", { status: "active" }]);
+
+        return { previousToursList };
+      },
       onSuccess: (newTour: TourDetailsDto) => {
         // Convert TourDetailsDto to TourSummaryDto for the list
         const newTourSummary: TourSummaryDto = {
@@ -94,6 +103,16 @@ export const useCreateTourMutation = () => {
             },
           };
         });
+      },
+      onError: (err, variables, context) => {
+        // Rollback on error
+        if (context?.previousToursList) {
+          queryClient.setQueryData(["tours", { status: "active" }], context.previousToursList);
+        }
+      },
+      onSettled: () => {
+        // Refetch to ensure consistency
+        queryClient.invalidateQueries({ queryKey: ["tours"] });
       },
     },
     queryClient
