@@ -11,7 +11,7 @@ export function handleDatabaseError(error: unknown): { message: string; status: 
     switch (errorCode) {
       case POSTGRES_ERROR_CODES.UNIQUE_VIOLATION:
         return {
-          message: DATABASE_ERROR_MESSAGES.USERNAME_TAKEN,
+          message: DATABASE_ERROR_MESSAGES.EMAIL_TAKEN,
           status: 409,
         };
       case POSTGRES_ERROR_CODES.FOREIGN_KEY_VIOLATION:

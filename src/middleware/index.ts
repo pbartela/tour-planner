@@ -3,9 +3,10 @@ import { createSupabaseServerClient } from "@/db/supabase.client";
 import { validateSession } from "@/lib/server/session-validation.service";
 import { getOrCreateCsrfToken, checkCsrfProtection } from "@/lib/server/csrf.service";
 import { yearsInSeconds } from "@/lib/constants/time";
+import { ENV } from "@/lib/server/env-validation.service";
 import i18next from "i18next";
 
-const protectedRoutes = ["/", "/profile", "/tours"];
+const protectedRoutes = ["/", "/profile", "/tours", "/invite"];
 // Routes that authenticated users should be redirected away from.
 const authRoutes = ["/login"];
 // Allowed locales - must match those defined in astro.config.mjs
@@ -20,10 +21,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const lang =
     requestedLocale && allowedLocales.includes(requestedLocale as (typeof allowedLocales)[number])
       ? requestedLocale
-      : import.meta.env.PUBLIC_DEFAULT_LOCALE || "en-US";
+      : ENV.PUBLIC_DEFAULT_LOCALE;
 
   // Set i18next language for server-side rendering
   await i18next.changeLanguage(lang);
+  // Load common namespace for layout translations
+  await i18next.loadNamespaces("common");
 
   // Set i18next cookie for client-side (used by React components)
   const currentLocale = context.cookies.get("i18next")?.value;
@@ -69,7 +72,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // If user is not logged in and trying to access a protected route, redirect to login.
   if (!context.locals.user && isProtectedRoute) {
-    return context.redirect(`/${lang}/login?redirect=${encodeURIComponent(pathWithoutLocale)}`);
+    const loginUrl =
+      pathWithoutLocale === "/" ? `/${lang}/login` : `/${lang}/login?redirect=${encodeURIComponent(pathWithoutLocale)}`;
+    return context.redirect(loginUrl);
   }
 
   return next();

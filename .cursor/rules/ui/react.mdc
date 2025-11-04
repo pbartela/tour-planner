@@ -16,6 +16,30 @@ alwaysApply: false
 - Consider using the new useOptimistic hook for optimistic UI updates in forms
 - Use useTransition for non-urgent state updates to keep the UI responsive
 
+### React Query Provider
+
+- **QueryProvider MUST be included inside React components, NOT in Astro pages**
+- When a React component uses React Query hooks (useQuery, useMutation, etc.), wrap the component's content with QueryProvider internally
+- Follow the pattern used in `TourDashboard.tsx`, `TourDetailsView.tsx`, and `ProfileView.tsx`:
+  ```tsx
+  // Component content that uses React Query hooks
+  const ComponentContent = (props) => {
+    const { data } = useQuery(...);
+    // ... component logic
+  };
+  
+  // Export wrapper with QueryProvider
+  export const Component = (props) => {
+    return (
+      <QueryProvider>
+        <ComponentContent {...props} />
+      </QueryProvider>
+    );
+  };
+  ```
+- Do NOT add QueryProvider in `.astro` files - it should only exist within React components
+- This ensures proper context sharing within the React component tree and avoids SSR issues
+
 ### Components Reference
 
 Refer to `.cursor/rules/components/COMPONENTS_REFERENCE.md` for a complete catalog of all React components in the codebase. The reference includes:

@@ -83,6 +83,91 @@ The application should now be running at `http://localhost:4321`.
 
 6. **Create a Pull Request** on GitHub
 
+### Branch Naming Best Practices
+
+Use descriptive, kebab-case branch names that clearly indicate the type and scope of work:
+
+#### Branch Name Format
+```
+<type>/<short-description>
+```
+
+#### Branch Types
+- `feature/` - New feature implementation
+- `fix/` - Bug fixes
+- `refactor/` - Code refactoring without behavior changes
+- `docs/` - Documentation updates
+- `test/` - Adding or updating tests
+- `chore/` - Maintenance tasks (dependencies, tooling)
+- `perf/` - Performance improvements
+- `security/` - Security-related changes
+
+#### Good Examples
+✅ `feature/invitation-system` - Clear scope, single feature
+✅ `fix/rate-limiting-invitations` - Specific fix
+✅ `refactor/query-client-pattern` - Clear refactoring goal
+✅ `docs/rollback-guide` - Documentation addition
+✅ `security/csrf-protection` - Security enhancement
+
+#### Bad Examples
+❌ `metada-cache` - Typo, unclear scope (metadata? what about it?)
+❌ `updates` - Too vague
+❌ `fix-stuff` - Not descriptive
+❌ `feature/add-everything` - Too broad
+❌ `john-dev` - Personal branch names
+
+### Pull Request Scope Guidelines
+
+**Golden Rule**: Each PR should represent ONE logical change that can be:
+- Reviewed independently
+- Deployed independently (when possible)
+- Reverted independently if issues arise
+
+#### What Counts as "One Logical Change"?
+
+✅ **Good PR Scopes**:
+
+1. **Single Feature**:
+   - Title: "Add invitation system with email sending"
+   - Changes: Invitation table, email service, UI components for sending invites
+   - Why it's good: All changes work together for one user-facing feature
+
+2. **Single Bug Fix**:
+   - Title: "Fix rate limiting bypass in invitation endpoint"
+   - Changes: Rate limit config, API endpoint update, tests
+   - Why it's good: Focused on solving one specific problem
+
+3. **Related Refactoring**:
+   - Title: "Refactor query client to singleton pattern for Astro"
+   - Changes: Remove QueryProvider, add queryClient.ts, update all consumers
+   - Why it's good: Single architectural change with necessary updates
+
+❌ **Bad PR Scopes**:
+
+1. **Multiple Unrelated Features**:
+   - Title: "Add metadata cache and fix navigation and update migrations"
+   - Changes: Caching system + View Transitions + Database migrations + RLS policies
+   - Why it's bad: Impossible to review, deploy, or revert independently
+
+2. **Feature Creep**:
+   - Title: "Add user profiles"
+   - Changes: Profile CRUD + Avatar uploads + Email preferences + Theme settings
+   - Why it's bad: Should be split into multiple PRs (core profiles, then enhancements)
+
+#### When to Split a PR
+
+**Split if**:
+- PR has >500 lines of changes (unless mostly generated)
+- Changes span multiple unrelated features
+- Some changes could be deployed independently
+- Reverting would affect unrelated functionality
+- Reviewers request splitting for clarity
+
+**Don't split if**:
+- Changes are tightly coupled (e.g., API + UI for same feature)
+- Splitting would break functionality
+- It's a large refactoring that must be atomic
+
 ## Code Standards
 
 ### TypeScript
@@ -203,26 +288,81 @@ Before submitting a pull request:
 4. **Keep PRs Focused**: One feature or fix per pull request
 5. **Respond to Feedback**: Be open to feedback and make requested changes promptly
 
-### Pull Request Template
+### Pull Request Title Format
+
+Use the format: `<type>: <clear description>`
+
+**Types**:
+- `feat:` - New feature
+- `fix:` - Bug fix
+- `refactor:` - Code refactoring
+- `docs:` - Documentation
+- `test:` - Tests
+- `chore:` - Maintenance
+- `perf:` - Performance
+- `security:` - Security fix
+
+**Good Examples**:
+- ✅ `feat: add invitation system with email notifications`
+- ✅ `fix: resolve rate limiting bypass in invitation API`
+- ✅ `refactor: convert Query Client to singleton for Astro compatibility`
+- ✅ `docs: add database rollback guide`
+
+**Bad Examples**:
+- ❌ `Metada cache` - Typo, vague, missing type
+- ❌ `Updates` - Too vague
+- ❌ `WIP` - Not ready for review (use draft PRs instead)
+
+### Pull Request Description Template
 
 ```markdown
-## Description
-Brief description of changes
+## Summary
+Brief description of what this PR does (1-2 sentences)
+
+## Motivation
+Why is this change needed? What problem does it solve?
+
+## Changes
+- Change 1
+- Change 2
+- Change 3
+
+## Breaking Changes
+List any breaking changes and migration steps (if applicable)
+See MIGRATION_GUIDE.md if this introduces breaking changes.
 
 ## Type of Change
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Breaking change
+- [ ] Bug fix (non-breaking change that fixes an issue)
+- [ ] New feature (non-breaking change that adds functionality)
+- [ ] Breaking change (fix or feature that causes existing functionality to change)
 - [ ] Documentation update
+- [ ] Refactoring (no functional changes)
+- [ ] Performance improvement
+
+## Testing
+- [ ] Manual testing completed
+- [ ] Unit tests added/updated
+- [ ] Integration tests pass
+- [ ] Tested in both dev and production mode
+- [ ] Database migrations tested (if applicable)
+
+## Deployment Notes
+Any special considerations for deployment? Database migrations?
+
+## Screenshots (if applicable)
+Visual changes should include before/after screenshots
 
 ## Related Issues
 Fixes #(issue number)
 
-## Testing
-Describe how you tested your changes
-
-## Screenshots (if applicable)
-Add screenshots for UI changes
+## Checklist
+- [ ] Code follows project style guidelines
+- [ ] Self-reviewed code
+- [ ] Commented complex logic
+- [ ] Documentation updated (README, CLAUDE.md, etc.)
+- [ ] No console.log or debugging code
+- [ ] Migrations have rollback documentation (if applicable)
+- [ ] Breaking changes documented in MIGRATION_GUIDE.md (if applicable)
 ```
 
 ## Project Structure
@@ -316,10 +456,19 @@ When contributing to the project, please keep security in mind:
 
 See [docs/SECURITY.md](docs/SECURITY.md) for detailed security guidelines and [docs/SECURITY_IMPLEMENTATION.md](docs/SECURITY_IMPLEMENTATION.md) for implementation details.
 
+## Additional Resources
+
+- **[CLAUDE.md](./CLAUDE.md)** - Project architecture, tech stack, and coding conventions
+- **[MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md)** - Breaking changes and migration instructions
+- **[supabase/ROLLBACK_GUIDE.md](./supabase/ROLLBACK_GUIDE.md)** - Database migration rollback procedures
+- **[docs/SECURITY.md](./docs/SECURITY.md)** - Security guidelines
+- **[docs/SECURITY_IMPLEMENTATION.md](./docs/SECURITY_IMPLEMENTATION.md)** - Security implementation details
+
 ## Need Help?
 
 - Check existing [Issues](https://github.com/turu/tour-planner/issues) for similar problems
 - Create a new issue if you encounter a bug or have a feature request
+- Review the [Additional Resources](#additional-resources) for guidance
 - Reach out to the maintainers if you need clarification
 
 Thank you for contributing to Plan Tour!

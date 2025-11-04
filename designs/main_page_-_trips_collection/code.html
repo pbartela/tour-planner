@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>My Trips</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13a4ec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101c22",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 24
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-200">
+<div class="relative flex min-h-screen w-full flex-col">
+<header class="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm">
+<div class="flex flex-col gap-2 p-4 pb-2">
+<div class="flex items-center h-12 justify-between">
+<button class="flex size-12 shrink-0 items-center justify-center rounded-full text-slate-800 dark:text-slate-200">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="flex w-12 items-center justify-end">
+<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-12 bg-transparent text-slate-800 dark:text-slate-200 gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0">
+<img class="h-10 w-10 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAu1I_qlpGSWC88bqtY3ZmPXhKQ7HBTN7HR8iDakskRCjock_QS8ZcTCpv4J-Bp1kugn4yZyhyN7W3U8ikvsg0Uz6puTHvpCHS9yXmgiq5JZkqlp_Ij-tLTOn25pQAkUSR0q9_seugbxGna6UtEI3-Fi2PRi1NxPLllZ3goIXiiSLvMUCEHedSYvLKEDYi8GmsHs5taYT_Ya0HOWNoJ0KrJDo5mLba8uKnwxn1xRjIbNKfM58fagwEtdP5Z1ou2LXS205SAPK4g3veL"/>
+</button>
+</div>
+</div>
+<h1 class="text-slate-900 dark:text-white tracking-tight text-[28px] font-bold leading-tight px-2">My Trips</h1>
+</div>
+</header>
+<main class="flex-1 px-4 py-3">
+<div class="mb-4">
+<label class="flex flex-col min-w-40 h-12 w-full">
+<div class="flex w-full flex-1 items-stretch rounded-full h-full">
+<div class="text-slate-500 dark:text-slate-400 flex border-none bg-white dark:bg-slate-800 items-center justify-center pl-4 rounded-l-full border-r-0">
+<span class="material-symbols-outlined">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-r-full text-slate-900 dark:text-white focus:outline-0 focus:ring-0 border-none bg-white dark:bg-slate-800 focus:border-none h-full placeholder:text-slate-500 dark:placeholder:text-slate-400 px-4 pl-2 text-base font-normal leading-normal" placeholder="Search for a trip" value=""/>
+</div>
+</label>
+</div>
+<div class="flex gap-3 p-3 overflow-x-auto scrollbar-hide">
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full bg-primary text-white pl-5 pr-4">
+<p class="text-sm font-medium leading-normal">Upcoming</p>
+</button>
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full bg-white dark:bg-slate-800 pl-5 pr-4">
+<p class="text-slate-800 dark:text-slate-200 text-sm font-medium leading-normal">Past</p>
+</button>
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full bg-white dark:bg-slate-800 pl-5 pr-4">
+<p class="text-slate-800 dark:text-slate-200 text-sm font-medium leading-normal">In-Progress</p>
+</button>
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full bg-white dark:bg-slate-800 pl-5 pr-4">
+<p class="text-slate-800 dark:text-slate-200 text-sm font-medium leading-normal">Favorites</p>
+</button>
+</div>
+<div class="space-y-6 pt-4">
+<div class="flex flex-col items-stretch justify-start rounded-xl bg-white dark:bg-slate-800 shadow-sm @container">
+<div class="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-t-xl" data-alt="Mountain landscape during a beautiful sunset" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAIFGPMqaHRt6SZUU5jB8EGLn_gCRI7aqHZGNajQUGVdeaJ-Mb8T8XnFu_UI6Saq3bybhXQMV3JydFFFDUgZvoItAt12JLKlEMcbnDTiZkS8GCFcsZU3juiq2FkCdwPznyTxIi4BDersha8wbfw_SMnXrHbCcQOZr8gxumh3VIgWHQbclx7-Azn4372GmNyS6SV_y4a5THxwA-RTh83yBRPSRp2lpME_lExzMS4NinQF8GfXcPScmQrYwoXluFgUDTBExqfTC8IWraz");'></div>
+<div class="flex w-full flex-col items-stretch justify-center gap-2 p-4">
+<div>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-normal leading-normal">Switzerland</p>
+<p class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">Weekend in the Mountains</p>
+<p class="text-slate-500 dark:text-slate-400 text-base font-normal leading-normal">Aug 15 - Aug 20, 2024</p>
+</div>
+<div class="flex items-center justify-start mt-2">
+<div class="flex -space-x-3">
+<img class="h-9 w-9 rounded-full border-2 border-white dark:border-slate-800 object-cover" data-alt="User avatar 1" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCg-XlTE53g9iT8HnbmE4HaeMQh2oElZAN_sFaTU2Gy7zFejKF57is4E_KWNGJeO3zJk_UqIIJYatG-bkB3RZ3UH4kIWNBJJu9ui2-2loXpzoKz89CTTq9FOKyjm5bzVUHD26tddBg00rboxbokU421ojw3-6Ayfjq6A5jGhKhhpQKlk4yCqgCn-dKzUz386eRzlWep7_27PLu-Di7caTMyhwRDn9bxDKlBon7CmCk_nEltCEqS9q4UX54OQL5PHXgO3QY5pbocH7K4"/>
+<img class="h-9 w-9 rounded-full border-2 border-white dark:border-slate-800 object-cover" data-alt="User avatar 2" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnv0EULORao_QrmBZXxpqDGMd5CBh-OF9qlCpBdQWYWYKvqLrdb1J_99ShH9e7Rg7mrGJXJbzKLzHzp5QwqBGKuzj2djryPV33u24x5ptyhH13cX1UcQsy56uJ5g9fFMPS06fv_0t7C8moQLTh4FAUNpmuL4GcFMWipG7QOZbLQAjQhazPR86v-4Uk5DxMQIyLVvzju8MmY9_z1vmQvqEQywrrIRjeF_0kJajAG0jv3tfE_vK0OrzhbR_qnNi6nMav9ZvxbP1dCjRt"/>
+<img class="h-9 w-9 rounded-full border-2 border-white dark:border-slate-800 object-cover" data-alt="User avatar 3" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUJCTmrKryGIC-fOWTX8cxgAJeeBr6ghmQ-AF6OArYBTtbLCD9i35H8XNUQvgN5N4y5HFvKgMnFOYKVmgHa95y6D3Wn_cKH2qyz2C0M18rWgtTYyqFYzfg86v7p-r0_D3My4DZhvsvDFOIVaVgtf0i2fcAvAQQWwTsfH37TABxPve-wQyyX2AS0QZ3dTFaA3TC-yXW6USzuesV4rFzJczqYZaPI9CrddO6Kejt3mWQcvHWsepw3cTRY8l52LfILL0xTROtikX7Jyn5"/>
+</div>
+</div>
+</div>
+</div>
+<div class="flex flex-col items-stretch justify-start rounded-xl bg-white dark:bg-slate-800 shadow-sm @container">
+<div class="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-t-xl" data-alt="Eiffel Tower in Paris" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBtYvxIdCo8JTAPwvn2jiuiWQTF94LNcRDMvJNsmWsF5YLcsZxDDUVwnoPhrTmjKVyXOKEVFNcJ-IYUPV_GBsTX2X7B2sHaRT_kaQRYZlen_oHiMu74mjRAfuhp0El_Ifz92UsLlHVve9IgJaMTTU8MA85wcNxWBBH1nBF9FcAjgXHCxlywLAnJKwt32bMGo96DZGTUVpnnbwPjR1r6A-nFToigTw1OPdPVMcETszvRGJs11l_yBKK-8TTRsoAALho4XB1a0avSVTbI");'></div>
+<div class="flex w-full flex-col items-stretch justify-center gap-2 p-4">
+<div>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-normal leading-normal">Paris, France</p>
+<p class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">Parisian Adventure</p>
+<p class="text-slate-500 dark:text-slate-400 text-base font-normal leading-normal">Sep 01 - Sep 07, 2024</p>
+</div>
+<div class="flex items-center justify-start mt-2">
+<div class="flex -space-x-3">
+<img class="h-9 w-9 rounded-full border-2 border-white dark:border-slate-800 object-cover" data-alt="User avatar 4" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQwq8csurVCxyFL8pur4oUxQUwrG1eo-TJL1qoX_lvL-hPoy6J5nI3dQjtVnRT-Z9riMaPhYTPtRWugWt5gqdL0gylIsyweuC1KcJsbksrmQcm533g9EFPPz9aDaMLkV9-jah1Ki6Vgvc3uGTb7Jchz3JWailt7rO_0e3FZ0zFOab_pqE9iskcyZXEIZM8yXs17WKTg_Rc5b9A-737DJqx-olt5PVDji1ggQQfcV1h8Rs5Cqerig0Zh3awe0XcxpurZKGO69iW2Am_"/>
+<img class="h-9 w-9 rounded-full border-2 border-white dark:border-slate-800 object-cover" data-alt="User avatar 5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDCrFuZBRQfmTae-nCFSeQ2Th740cYS-hnzvcqnVUGgrOIknhbZWHYtsbYwFhmxzL-TzhSnHNznvtQqavjqBnBMwrJ8dr4HxJbuLe-jyNDXXQgh6eGuYosvejpRJORSdmgwlgnjJ3nHuJIkuFIX9a-eA5XvwZL4vcnacAicHtWwLfLOnlc_bVXFShH6F10ueSwFPIsbPRBh4tXAVFYRabSrn_oU3BXXRbh5_bB9kGg5SB6fSfsXd7EkQ-KvW4Tx7Pfwd8QEbaWdPUVx"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<div class="fixed bottom-6 right-6">
+<button class="flex items-center justify-center w-16 h-16 rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+</div>
+</div>
+</body></html>

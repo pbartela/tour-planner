@@ -1,5 +1,3 @@
-"use client";
-
 import { supabaseBrowserClient } from "@/db/supabase.client";
 import { useEffect } from "react";
 

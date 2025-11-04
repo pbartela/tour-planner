@@ -120,19 +120,10 @@ function timingSafeEqual(a: string, b: string): boolean {
  *   - Sends email to user-provided address (attacker gains nothing)
  *   - CSRF doesn't apply without an existing authenticated session
  *
- * - /api/auth/session (POST):
- *   - Part of OAuth/PKCE callback flow
- *   - Called programmatically during authentication, not user action
- *   - Currently deprecated (see auth-callback.astro.deprecated)
- *   - TODO: Remove this endpoint when fully migrated to PKCE flow
- *
  * IMPORTANT: /api/auth/signout is NOT in this list and REQUIRES CSRF protection
  * because it's a state-changing operation on an authenticated session.
  */
-const CSRF_EXEMPT_AUTH_ENDPOINTS = [
-  "/api/auth/magic-link",
-  "/api/auth/session", // TODO: Remove when deprecated endpoint is deleted
-] as const;
+const CSRF_EXEMPT_AUTH_ENDPOINTS = ["/api/auth/magic-link"] as const;
 
 /**
  * Middleware helper to check CSRF token for state-changing methods (POST, PUT, PATCH, DELETE).

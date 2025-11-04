@@ -168,4 +168,3 @@ export const Default: Story = {
 > **"Does this variation teach something new about how to use the component, or is it just showing the same thing with different values?"**
 
 If it's the latter → **Use Controls! 🎛️**
-

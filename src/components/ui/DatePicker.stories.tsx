@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import { DatePicker } from "./DatePicker";
 import { useState } from "react";
 
@@ -76,17 +76,11 @@ export const Required: Story = {
 export const Interactive: Story = {
   render: function Render(args) {
     const [date, setDate] = useState<Date | undefined>(undefined);
-    
+
     return (
       <div className="space-y-4">
-        <DatePicker
-          {...args}
-          value={date}
-          onChange={setDate}
-        />
-        <div className="text-sm text-base-content/70">
-          Selected date: {date ? date.toLocaleDateString() : "None"}
-        </div>
+        <DatePicker {...args} value={date} onChange={setDate} />
+        <div className="text-sm text-base-content/70">Selected date: {date ? date.toLocaleDateString() : "None"}</div>
       </div>
     );
   },
@@ -100,12 +94,12 @@ export const Interactive: Story = {
 export const WithForm: Story = {
   render: function Render(args) {
     const [date, setDate] = useState<Date | undefined>(undefined);
-    
+
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       alert(`Form submitted with date: ${date ? date.toLocaleDateString() : "None"}`);
     };
-    
+
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -134,4 +128,3 @@ export const WithForm: Story = {
     required: true,
   },
 };
-

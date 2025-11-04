@@ -1,0 +1,33 @@
+{
+  "layout": {
+    "siteName": "Planer Wycieczek",
+    "welcome": "Witaj, {{name}}",
+    "logout": "Wyloguj",
+    "login": "Zaloguj"
+  },
+  "profile": {
+    "title": "Profil",
+    "email": "Email",
+    "displayName": "Wyświetlana nazwa",
+    "language": "Język",
+    "theme": "Motyw",
+    "memberSince": "Członek od",
+    "notSet": "Nie ustawiono",
+    "editProfile": "Edytuj profil",
+    "cancel": "Anuluj",
+    "save": "Zapisz zmiany",
+    "saving": "Zapisywanie...",
+    "reset": "Resetuj",
+    "updateSuccess": "Profil zaktualizowany pomyślnie!",
+    "updateError": "Błąd",
+    "languages": {
+      "en-US": "English (US)",
+      "pl-PL": "Polski"
+    },
+    "themes": {
+      "light": "Jasny",
+      "dark": "Ciemny",
+      "system": "Systemowy"
+    }
+  }
+}

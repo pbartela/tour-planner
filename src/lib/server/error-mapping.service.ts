@@ -9,71 +9,73 @@ import i18next from "i18next";
  * @returns ErrorInfo object with title, message, and action text
  */
 export function getErrorInfo(errorCode: string | null, errorDescription: string | null, locale = "en-US"): ErrorInfo {
+  const ns = "auth";
+
   switch (errorCode) {
     case "access_denied":
       return {
-        title: i18next.t("authError.accessDenied.title", { lng: locale }),
-        message: i18next.t("authError.accessDenied.message", { lng: locale }),
-        action: i18next.t("authError.accessDenied.action", { lng: locale }),
+        title: i18next.t("authError.accessDenied.title", { lng: locale, ns }),
+        message: i18next.t("authError.accessDenied.message", { lng: locale, ns }),
+        action: i18next.t("authError.accessDenied.action", { lng: locale, ns }),
         errorCode: "access_denied",
       };
 
     case "expired_token":
     case "token_expired":
       return {
-        title: i18next.t("authError.expiredLink.title", { lng: locale }),
-        message: i18next.t("authError.expiredLink.message", { lng: locale }),
-        action: i18next.t("authError.expiredLink.action", { lng: locale }),
+        title: i18next.t("authError.expiredLink.title", { lng: locale, ns }),
+        message: i18next.t("authError.expiredLink.message", { lng: locale, ns }),
+        action: i18next.t("authError.expiredLink.action", { lng: locale, ns }),
         errorCode: "expired_token",
       };
 
     case "invalid_token":
     case "invalid_request":
       return {
-        title: i18next.t("authError.invalidLink.title", { lng: locale }),
-        message: i18next.t("authError.invalidLink.message", { lng: locale }),
-        action: i18next.t("authError.invalidLink.action", { lng: locale }),
+        title: i18next.t("authError.invalidLink.title", { lng: locale, ns }),
+        message: i18next.t("authError.invalidLink.message", { lng: locale, ns }),
+        action: i18next.t("authError.invalidLink.action", { lng: locale, ns }),
         errorCode: "invalid_token",
       };
 
     case "already_used":
     case "link_used":
       return {
-        title: i18next.t("authError.alreadyUsed.title", { lng: locale }),
-        message: i18next.t("authError.alreadyUsed.message", { lng: locale }),
-        action: i18next.t("authError.alreadyUsed.action", { lng: locale }),
+        title: i18next.t("authError.alreadyUsed.title", { lng: locale, ns }),
+        message: i18next.t("authError.alreadyUsed.message", { lng: locale, ns }),
+        action: i18next.t("authError.alreadyUsed.action", { lng: locale, ns }),
         errorCode: "already_used",
       };
 
     case "no_tokens":
       return {
-        title: i18next.t("authError.noTokens.title", { lng: locale }),
-        message: i18next.t("authError.noTokens.message", { lng: locale }),
-        action: i18next.t("authError.noTokens.action", { lng: locale }),
+        title: i18next.t("authError.noTokens.title", { lng: locale, ns }),
+        message: i18next.t("authError.noTokens.message", { lng: locale, ns }),
+        action: i18next.t("authError.noTokens.action", { lng: locale, ns }),
         errorCode: "no_tokens",
       };
 
     case "session_failed":
       return {
-        title: i18next.t("authError.sessionFailed.title", { lng: locale }),
-        message: i18next.t("authError.sessionFailed.message", { lng: locale }),
-        action: i18next.t("authError.sessionFailed.action", { lng: locale }),
+        title: i18next.t("authError.sessionFailed.title", { lng: locale, ns }),
+        message: i18next.t("authError.sessionFailed.message", { lng: locale, ns }),
+        action: i18next.t("authError.sessionFailed.action", { lng: locale, ns }),
         errorCode: "session_failed",
       };
 
     case "unexpected_error":
       return {
-        title: i18next.t("authError.unexpectedError.title", { lng: locale }),
-        message: i18next.t("authError.unexpectedError.message", { lng: locale }),
-        action: i18next.t("authError.unexpectedError.action", { lng: locale }),
+        title: i18next.t("authError.unexpectedError.title", { lng: locale, ns }),
+        message: i18next.t("authError.unexpectedError.message", { lng: locale, ns }),
+        action: i18next.t("authError.unexpectedError.action", { lng: locale, ns }),
         errorCode: "unexpected_error",
       };
 
     default:
       return {
-        title: i18next.t("authError.generic.title", { lng: locale }),
-        message: errorDescription || i18next.t("authError.generic.message", { lng: locale }),
-        action: i18next.t("authError.generic.action", { lng: locale }),
+        title: i18next.t("authError.generic.title", { lng: locale, ns }),
+        message: errorDescription || i18next.t("authError.generic.message", { lng: locale, ns }),
+        action: i18next.t("authError.generic.action", { lng: locale, ns }),
         errorCode: errorCode || "unknown_error",
       };
   }

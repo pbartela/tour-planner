@@ -175,6 +175,7 @@ const DatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
         {name && (
           <input
             type="hidden"
+            id={id}
             name={name}
             value={value ? value.toISOString().split("T")[0] : ""}
             required={required}
@@ -188,4 +189,3 @@ const DatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
 DatePicker.displayName = "DatePicker";
 
 export { DatePicker, datePickerVariants };
-

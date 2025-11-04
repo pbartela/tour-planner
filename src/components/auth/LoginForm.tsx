@@ -8,7 +8,7 @@ import { z } from "zod";
 import { Loader2 } from "lucide-react";
 
 import { AuthHeader } from "./AuthHeader";
-import { post } from "@/lib/client/api-client";
+import { useMagicLinkMutation } from "@/lib/hooks/useAuthMutations";
 
 const createMagicLinkSchema = (t: (key: string) => string) =>
   z.object({
@@ -22,36 +22,32 @@ export const LoginForm = ({ redirectTo }: { redirectTo?: string | null }) => {
   const magicLinkSchema = createMagicLinkSchema(t);
 
   const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+
+  const { mutate: requestMagicLink, isPending, isError, error } = useMagicLinkMutation();
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<MagicLinkFormData>({
     resolver: zodResolver(magicLinkSchema),
   });
 
-  const onSubmit = async (data: MagicLinkFormData) => {
-    setError("");
+  const onSubmit = (data: MagicLinkFormData) => {
     setMessage("");
 
-    try {
-      const response = await post("/api/auth/magic-link", {
-        ...data,
+    requestMagicLink(
+      {
+        email: data.email,
         redirectTo,
         locale: i18n.language,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || t("magicLink.error"));
+      },
+      {
+        onSuccess: () => {
+          setMessage(t("magicLink.success"));
+        },
       }
-
-      setMessage(t("magicLink.success"));
-    } catch (err) {
-      setError((err as Error).message);
-    }
+    );
   };
 
   return (
@@ -68,11 +64,11 @@ export const LoginForm = ({ redirectTo }: { redirectTo?: string | null }) => {
             error={errors.email?.message}
           />
           {message && <p className="text-sm text-green-600 dark:text-green-500">{message}</p>}
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {isError && <p className="text-sm text-destructive">{error?.message || t("magicLink.error")}</p>}
           <div className="flex w-full px-0 py-3">
-            <Button type="submit" className="w-full" variant="primary" size="lg" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isSubmitting ? t("magicLink.submitting") : t("magicLink.submit")}
+            <Button type="submit" className="w-full" variant="primary" size="lg" disabled={isPending}>
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isPending ? t("magicLink.submitting") : t("magicLink.submit")}
             </Button>
           </div>
         </form>

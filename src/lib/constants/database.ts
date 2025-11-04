@@ -17,7 +17,6 @@ export const POSTGRES_ERROR_CODES = {
  * Common database error messages
  */
 export const DATABASE_ERROR_MESSAGES = {
-  USERNAME_TAKEN: "Username is already taken",
   EMAIL_TAKEN: "Email is already taken",
   FOREIGN_KEY_CONSTRAINT: "Referenced record does not exist",
   REQUIRED_FIELD: "Required field is missing",

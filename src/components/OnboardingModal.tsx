@@ -54,7 +54,7 @@ export const OnboardingModal = ({
     try {
       await onCompleteOnboarding();
       onClose();
-    } catch (error) {
+    } catch {
       toast.error(t("onboarding.error"));
     }
   };
@@ -63,7 +63,7 @@ export const OnboardingModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t(step.titleKey)}</DialogTitle>
           <DialogDescription>{t(step.descriptionKey)}</DialogDescription>

@@ -1,0 +1,24 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { InviteAcceptanceView } from "@/components/invitations/InviteAcceptanceView";
+
+const { user } = Astro.locals;
+const token = Astro.url.searchParams.get("token");
+
+// Protected page - authentication is required (enforced by middleware)
+// User must be logged in to view invitation details
+
+if (!token) {
+  return Astro.redirect("/");
+}
+
+// At this point, user is guaranteed to be authenticated due to middleware protection
+if (!user) {
+  // This should never happen due to middleware, but safety check
+  return Astro.redirect(`/login?redirect=/invite?token=${encodeURIComponent(token)}`);
+}
+---
+
+<Layout title="Tour Invitation">
+  <InviteAcceptanceView client:load token={token} currentUserId={user.id} userEmail={user.email} />
+</Layout>

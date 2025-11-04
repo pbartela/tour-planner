@@ -1,7 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 
-export const EmptyState = () => {
+interface EmptyStateProps {
+  onCreateTourClick?: () => void;
+}
+
+export const EmptyState = ({ onCreateTourClick }: EmptyStateProps) => {
   const { t } = useTranslation("tours");
 
   return (
@@ -9,9 +13,7 @@ export const EmptyState = () => {
       <div className="flex flex-col items-center gap-y-4">
         <h3 className="text-2xl font-bold tracking-tight">{t("emptyState.title")}</h3>
         <p className="text-sm text-muted-foreground">{t("emptyState.description")}</p>
-        <a href="/tours/create">
-          <Button>{t("emptyState.createTour")}</Button>
-        </a>
+        {onCreateTourClick && <Button onClick={onCreateTourClick}>{t("emptyState.createTour")}</Button>}
       </div>
     </div>
   );

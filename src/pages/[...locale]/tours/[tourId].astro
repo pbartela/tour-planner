@@ -1,0 +1,20 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { TourDetailsView } from "@/components/tours/TourDetailsView";
+
+const { user } = Astro.locals;
+const { tourId } = Astro.params;
+
+// User is guaranteed to exist due to middleware protection
+if (!user) {
+  return Astro.redirect("/login");
+}
+
+if (!tourId) {
+  return Astro.redirect("/");
+}
+---
+
+<Layout title="Tour Details">
+  <TourDetailsView client:load tourId={tourId} currentUserId={user.id} />
+</Layout>

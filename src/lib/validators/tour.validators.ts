@@ -2,8 +2,8 @@ import { z } from "zod";
 
 export const getToursQuerySchema = z.object({
   status: z.enum(["active", "archived"]).default("active"),
-  page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().default(20),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
 const baseTourSchema = z.object({

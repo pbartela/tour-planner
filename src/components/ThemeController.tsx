@@ -1,9 +1,7 @@
-"use client";
-
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
+import { themeChange } from "theme-change";
 
 const themes = [
-  { name: "Default", value: "default" },
   { name: "Light", value: "light" },
   { name: "Dark", value: "dark" },
   { name: "Cupcake", value: "cupcake" },
@@ -36,23 +34,21 @@ const themes = [
 ];
 
 export function ThemeController(): React.JSX.Element {
-  const [currentTheme, setCurrentTheme] = useState<string>("default");
-
   useEffect(() => {
-    // Get current theme from localStorage or default
+    // Initialize theme-change library
+    // Pass false to prevent subscribing to browser's color scheme changes
+    // The library will automatically handle theme switching and localStorage
+    themeChange(false);
+
+    // Set initial theme based on localStorage or system preference
     const stored = localStorage.getItem("theme");
-    if (stored) {
-      setCurrentTheme(stored);
+    if (!stored) {
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const defaultTheme = prefersDark ? "dark" : "light";
+      localStorage.setItem("theme", defaultTheme);
+      document.documentElement.setAttribute("data-theme", defaultTheme);
     }
   }, []);
-
-  const handleThemeChange = (themeValue: string): void => {
-    setCurrentTheme(themeValue);
-    localStorage.setItem("theme", themeValue);
-
-    // Apply the theme using data-theme attribute (DaisyUI way)
-    document.documentElement.setAttribute("data-theme", themeValue);
-  };
 
   return (
     <div className="dropdown dropdown-end">
@@ -73,18 +69,17 @@ export function ThemeController(): React.JSX.Element {
           ></path>
         </svg>
       </div>
-      <ul className="dropdown-content bg-base-300 rounded-box z-[1] w-52 p-2 shadow-2xl">
+      <ul className="dropdown-content bg-base-300 rounded-box z-10 w-52 p-2 shadow-2xl">
         {themes.map((theme) => (
           <li key={theme.value}>
-            <input
-              type="radio"
-              name="theme-dropdown"
-              className="theme-controller btn btn-sm btn-block btn-ghost justify-start"
-              aria-label={theme.name}
-              value={theme.value}
-              checked={currentTheme === theme.value}
-              onChange={() => handleThemeChange(theme.value)}
-            />
+            <button
+              type="button"
+              className="btn btn-sm btn-block btn-ghost justify-start"
+              data-set-theme={theme.value}
+              data-act-class="btn-active"
+            >
+              {theme.name}
+            </button>
           </li>
         ))}
       </ul>

@@ -107,11 +107,11 @@ Endpoints for managing tours.
 
 - **Method:** `GET`
 - **URL:** `/api/tours`
-- **Description:** Retrieves a list of tours the current user is participating in.
+- **Description:** Retrieves a paginated list of tours the current user is participating in. Returns only tours where the user is a participant. Authorization is enforced by PostgreSQL RLS via request-scoped Supabase client.
 - **Query Parameters:**
   - `status` (string, optional): Filter by status. `active` or `archived`. Defaults to `active`.
-  - `page` (integer, optional): For pagination. Defaults to `1`.
-  - `limit` (integer, optional): For pagination. Defaults to `20`.
+  - `page` (integer, optional): Page number for pagination. Must be ≥ 1. Defaults to `1`.
+  - `limit` (integer, optional): Number of results per page. Must be between 1 and 100. Defaults to `20`.
 - **Response (Success):**
   - **Code:** `200 OK`
   - **Body:**
@@ -124,7 +124,8 @@ Endpoints for managing tours.
           "destination": "The Alps",
           "start_date": "2026-07-10T08:00:00Z",
           "end_date": "2026-07-15T18:00:00Z",
-          "status": "active"
+          "status": "active",
+          "has_new_activity": false
         }
       ],
       "pagination": {
@@ -134,8 +135,21 @@ Endpoints for managing tours.
       }
     }
     ```
+  - **Note:** The `has_new_activity` field is temporarily set to `false` until activity tracking (comments/votes) is implemented. The `data` array may be empty if no tours match the criteria.
 - **Response (Error):**
-  - **Code:** `401 Unauthorized` - User is not authenticated.
+  All error responses use the standardized format:
+  ```json
+  {
+    "error": {
+      "code": "ERROR_CODE",
+      "message": "Human-readable error message"
+    }
+  }
+  ```
+  - **Code:** `400 Bad Request` - Invalid query parameters (e.g., `status` other than 'active'/'archived', `page` < 1, `limit` outside [1, 100]). Error code: `BAD_REQUEST`.
+  - **Code:** `401 Unauthorized` - User is not authenticated. Error code: `UNAUTHORIZED`.
+  - **Code:** `429 Too Many Requests` - Rate limit exceeded. Returns `Retry-After` header and rate limit metadata headers (`X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`). Error code: `TOO_MANY_REQUESTS`.
+  - **Code:** `500 Internal Server Error` - An unexpected error occurred. Error code: `INTERNAL_SERVER_ERROR`.
 
 ---
 

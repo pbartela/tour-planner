@@ -31,6 +31,24 @@ const locale = Astro.params.locale || "en-US";
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
     <ClientRouter />
+    <script is:inline>
+      /* eslint-disable */
+      // Initialize theme from localStorage before page renders to prevent flash
+      try {
+        const theme = localStorage.getItem("theme");
+        if (theme) {
+          document.documentElement.setAttribute("data-theme", theme);
+        } else {
+          // Set default theme based on system preference
+          const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          const defaultTheme = prefersDark ? "dark" : "light";
+          document.documentElement.setAttribute("data-theme", defaultTheme);
+        }
+      } catch (_e) {
+        // Ignore localStorage errors and set light as fallback
+        document.documentElement.setAttribute("data-theme", "light");
+      }
+    </script>
   </head>
   <body>
     <ThemeProvider userTheme={user?.profile?.theme} client:load>
@@ -42,7 +60,9 @@ const locale = Astro.params.locale || "en-US";
             {
               user ? (
                 <div class="flex items-center gap-4">
-                  <span class="text-base-content">{i18next.t("layout.welcome", { name: user.profile.display_name || user.email })}</span>
+                  <span class="text-base-content">
+                    {i18next.t("layout.welcome", { name: user.profile.display_name || user.email })}
+                  </span>
                   <form action="/api/auth/signout" method="post" data-astro-reload>
                     <input type="hidden" name="csrf_token" value={csrfToken} />
                     <button type="submit" class="btn btn-error btn-sm">

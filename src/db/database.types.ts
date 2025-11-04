@@ -66,25 +66,31 @@ export interface Database {
         Row: {
           created_at: string;
           email: string;
+          expires_at: string;
           id: string;
           inviter_id: string;
           status: Database["public"]["Enums"]["invitation_status"];
+          token: string | null;
           tour_id: string;
         };
         Insert: {
           created_at?: string;
           email: string;
+          expires_at?: string;
           id?: string;
           inviter_id: string;
           status?: Database["public"]["Enums"]["invitation_status"];
+          token?: string | null;
           tour_id: string;
         };
         Update: {
           created_at?: string;
           email?: string;
+          expires_at?: string;
           id?: string;
           inviter_id?: string;
           status?: Database["public"]["Enums"]["invitation_status"];
+          token?: string | null;
           tour_id?: string;
         };
         Relationships: [
@@ -146,7 +152,6 @@ export interface Database {
           onboarding_completed: boolean;
           theme: string;
           updated_at: string;
-          username: string | null;
         };
         Insert: {
           created_at?: string;
@@ -156,7 +161,6 @@ export interface Database {
           onboarding_completed?: boolean;
           theme?: string;
           updated_at?: string;
-          username?: string | null;
         };
         Update: {
           created_at?: string;
@@ -166,7 +170,6 @@ export interface Database {
           onboarding_completed?: boolean;
           theme?: string;
           updated_at?: string;
-          username?: string;
         };
         Relationships: [];
       };
@@ -306,7 +309,46 @@ export interface Database {
       };
     };
     Views: Record<never, never>;
-    Functions: Record<never, never>;
+    Functions: {
+      accept_invitation: {
+        Args: { accepting_user_id: string; invitation_token: string };
+        Returns: string;
+      };
+      cleanup_unconfirmed_users: { Args: never; Returns: undefined };
+      create_tour: {
+        Args: {
+          p_description: string;
+          p_destination: string;
+          p_end_date: string;
+          p_like_threshold?: number;
+          p_participant_limit?: number;
+          p_start_date: string;
+          p_title: string;
+        };
+        Returns: {
+          are_votes_hidden: boolean;
+          created_at: string;
+          description: string;
+          destination: string;
+          end_date: string;
+          id: string;
+          like_threshold: number;
+          owner_id: string;
+          participant_limit: number;
+          start_date: string;
+          status: string;
+          title: string;
+        }[];
+      };
+      decline_invitation: {
+        Args: { declining_user_id: string; invitation_token: string };
+        Returns: string;
+      };
+      is_participant: {
+        Args: { tour_id_to_check: string; user_id_to_check: string };
+        Returns: boolean;
+      };
+    };
     Enums: {
       invitation_status: "pending" | "accepted" | "declined";
       tour_status: "active" | "archived";
