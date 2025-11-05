@@ -27,7 +27,10 @@ export const TourFormDialog = ({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogTitle>{title}</DialogTitle>
-      <DialogContent className="bg-base-100 max-w-full sm:max-w-container-sm md:max-w-container-md lg:max-w-xl sm:rounded-lg rounded-none p-0 h-screen sm:h-auto sm:max-h-screen-90 flex flex-col m-0 sm:m-4 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:top-1/2 sm:left-1/2 top-0 left-0 fixed sm:relative">
+      <DialogContent
+        showCloseButton={false}
+        className="bg-base-100 max-w-full sm:max-w-container-sm md:max-w-container-md lg:max-w-xl sm:rounded-lg rounded-none p-0 h-screen sm:h-auto sm:max-h-screen-90 flex flex-col"
+      >
         {/* Header with close button */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-base-content/10">
           <button

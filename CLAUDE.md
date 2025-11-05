@@ -235,6 +235,68 @@ return new Response(
 - Implement dark mode with `dark:` variant
 - Reference existing components before creating new ones
 
+### Storybook (Component Documentation)
+
+All reusable UI components should have corresponding `.stories.tsx` files:
+
+**Structure:**
+```typescript
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { ComponentName } from "./ComponentName";
+
+const meta: Meta<typeof ComponentName> = {
+  title: "UI/ComponentName",
+  component: ComponentName,
+  tags: ["autodocs"],
+  argTypes: {
+    // Define controls for interactive props
+    variant: {
+      control: "select",
+      options: ["option1", "option2"],
+    },
+  },
+};
+
+export default meta;
+type Story = StoryObj<typeof ComponentName>;
+
+// Export named stories showing key use cases
+export const Primary: Story = {
+  render: () => <ComponentName variant="primary" />,
+};
+```
+
+**Best Practices:**
+- Keep stories concise - show only essential variations
+- Avoid redundant examples that differ only in text or quantity
+- Focus on demonstrating:
+  - All visual variants (colors, sizes, states)
+  - Key props combinations
+  - Real-world usage context
+- Use descriptive story names: `AllVariants`, `WithIcons`, `InContext`
+- Group related components visually in single stories
+- Include `tags: ["autodocs"]` for automatic prop documentation
+- Use `argTypes` to make props interactive in Storybook UI
+
+**Example - Good vs Bad:**
+```typescript
+// ❌ Bad - redundant stories
+export const PrimaryButton: Story = { args: { variant: "primary" } };
+export const SecondaryButton: Story = { args: { variant: "secondary" } };
+export const AccentButton: Story = { args: { variant: "accent" } };
+
+// ✅ Good - single comprehensive story
+export const AllVariants: Story = {
+  render: () => (
+    <div className="flex gap-2">
+      <Button variant="primary">Primary</Button>
+      <Button variant="secondary">Secondary</Button>
+      <Button variant="accent">Accent</Button>
+    </div>
+  ),
+};
+```
+
 ### Database & Supabase
 
 - All data access uses Row Level Security (RLS)
@@ -294,6 +356,57 @@ Environment validation happens at both:
 - Translations in namespaces: `common`, `auth`, `tours`
 - Use `react-i18next` in React components
 - i18next configured for server-side rendering
+
+### Translation Key Extraction
+
+The project uses `i18next-parser` to automatically extract translation keys from code. Run:
+- `npm run i18n:extract` - Extract keys and update translation files
+- `npm run i18n:extract:dry` - Check what would change without updating
+- `npm run i18n:check` - Verify translation coverage
+
+**Dynamic Translation Keys:**
+
+When using dynamic translation keys (e.g., `t(\`status.${value}\`)`), you **must** add extraction hints as comments, otherwise the keys will be removed by the extraction script:
+
+```typescript
+// ❌ Bad - keys will be removed by i18n:extract
+<p>{t(`invitations.status.${status}`)}</p>
+
+// ✅ Good - keys preserved with extraction hints
+// Dynamic status translation keys (extracted by i18next-parser):
+// t('invitations.status.pending'), t('invitations.status.accepted'), t('invitations.status.declined')
+
+return (
+  <p>{t(`invitations.status.${status}`)}</p>
+);
+```
+
+**Pattern:**
+1. Add a descriptive comment explaining the dynamic keys
+2. Add commented `t()` calls with all possible key values on a single line
+3. Use simple key paths (without namespace prefix) - the namespace is inferred from the component's `useTranslation()` call
+4. Place the comment **before** the code block that uses the dynamic keys (e.g., before `return` statement or JSX block)
+5. List all possible dynamic values that could be used
+
+**Example in component:**
+```typescript
+export const InvitedUsersList = ({ invitations }: Props) => {
+  const { t } = useTranslation("tours");
+
+  // Dynamic status translation keys (extracted by i18next-parser):
+  // t('invitations.status.pending'), t('invitations.status.accepted'), t('invitations.status.declined')
+
+  return (
+    <ul>
+      {invitations.map((inv) => (
+        <li key={inv.id}>
+          {t(`invitations.status.${inv.status}`)}
+        </li>
+      ))}
+    </ul>
+  );
+};
+```
 
 ## Additional Notes
 

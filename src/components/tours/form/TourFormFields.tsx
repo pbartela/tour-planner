@@ -1,6 +1,6 @@
 import type { UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FormField } from "@/components/ui/FormField";
 import { DatePicker, getDateFormatHint } from "@/components/ui/DatePicker";
 import { useTranslation } from "react-i18next";
 
@@ -28,10 +28,7 @@ export const TourFormFields = ({ register, setValue, watch, isSubmitting }: Tour
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="trip-url" className="text-sm font-medium text-base-content/60">
-          {t("addTrip.tripUrl")}
-        </Label>
+      <FormField label={t("addTrip.tripUrl")} htmlFor="trip-url">
         <Input
           id="trip-url"
           type="url"
@@ -40,12 +37,9 @@ export const TourFormFields = ({ register, setValue, watch, isSubmitting }: Tour
           disabled={isSubmitting}
           className="w-full bg-base-200 border-none rounded-lg p-3 sm:p-4 placeholder:text-base-content/40"
         />
-      </div>
+      </FormField>
 
-      <div className="space-y-2">
-        <Label htmlFor="custom-title" className="text-sm font-medium text-base-content/60">
-          {t("addTrip.customTitle")}
-        </Label>
+      <FormField label={t("addTrip.customTitle")} htmlFor="custom-title">
         <Input
           id="custom-title"
           type="text"
@@ -54,12 +48,9 @@ export const TourFormFields = ({ register, setValue, watch, isSubmitting }: Tour
           disabled={isSubmitting}
           className="w-full bg-base-200 border-none rounded-lg p-3 sm:p-4 placeholder:text-base-content/40"
         />
-      </div>
+      </FormField>
 
-      <div className="space-y-2">
-        <Label htmlFor="description" className="text-sm font-medium text-base-content/60">
-          {t("addTrip.description")}
-        </Label>
+      <FormField label={t("addTrip.description")} htmlFor="description">
         <textarea
           id="description"
           placeholder={t("addTrip.descriptionPlaceholder")}
@@ -68,13 +59,14 @@ export const TourFormFields = ({ register, setValue, watch, isSubmitting }: Tour
           rows={4}
           className="w-full bg-base-200 border-none rounded-lg p-3 sm:p-4 text-base-content placeholder:text-base-content/40 focus:ring-2 focus:ring-primary resize-none disabled:opacity-50"
         />
-      </div>
+      </FormField>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="start-date" className="text-sm font-medium text-base-content/60">
-            {t("addTrip.startDate")}
-          </Label>
+        <FormField
+          label={t("addTrip.startDate")}
+          htmlFor="start-date"
+          hint={`${t("addTrip.dateFormatLabel")}: ${getDateFormatHint(i18n.language)}`}
+        >
           <DatePicker
             id="start-date"
             value={startDate}
@@ -84,17 +76,14 @@ export const TourFormFields = ({ register, setValue, watch, isSubmitting }: Tour
             locale={i18n.language}
             minDate={new Date()}
             className="w-full"
-            aria-describedby="start-date-hint"
           />
-          <p id="start-date-hint" className="text-xs text-base-content/40">
-            {t("addTrip.dateFormatLabel")}: {getDateFormatHint(i18n.language)}
-          </p>
-        </div>
+        </FormField>
 
-        <div className="space-y-2">
-          <Label htmlFor="end-date" className="text-sm font-medium text-base-content/60">
-            {t("addTrip.endDate")}
-          </Label>
+        <FormField
+          label={t("addTrip.endDate")}
+          htmlFor="end-date"
+          hint={`${t("addTrip.dateFormatLabel")}: ${getDateFormatHint(i18n.language)}`}
+        >
           <DatePicker
             id="end-date"
             value={endDate}
@@ -104,12 +93,8 @@ export const TourFormFields = ({ register, setValue, watch, isSubmitting }: Tour
             locale={i18n.language}
             minDate={startDate || new Date()}
             className="w-full"
-            aria-describedby="end-date-hint"
           />
-          <p id="end-date-hint" className="text-xs text-base-content/40">
-            {t("addTrip.dateFormatLabel")}: {getDateFormatHint(i18n.language)}
-          </p>
-        </div>
+        </FormField>
       </div>
     </div>
   );

@@ -11,6 +11,7 @@ import { InvitationForm } from "./InvitationForm";
 import { InvitedUsersList } from "./InvitedUsersList";
 import { EditTourModal } from "./EditTourModal";
 import { Button } from "@/components/ui/button";
+import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 import { SkeletonLoader } from "@/components/shared/SkeletonLoader";
 
 interface TourDetailsViewProps {
@@ -25,7 +26,6 @@ export const TourDetailsView = ({ tourId, currentUserId }: TourDetailsViewProps)
   const lockVotingMutation = useLockVotingMutation();
   const unlockVotingMutation = useUnlockVotingMutation();
   const markAsViewedMutation = useMarkTourAsViewedMutation();
-  const [deleteConfirmInput, setDeleteConfirmInput] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -62,14 +62,13 @@ export const TourDetailsView = ({ tourId, currentUserId }: TourDetailsViewProps)
   };
 
   const handleDelete = () => {
-    if (deleteConfirmInput === tour?.title) {
-      deleteMutation.mutate(tourId, {
-        onSuccess: () => {
-          // Navigate to home page after successful deletion using Astro View Transitions
-          navigate("/");
-        },
-      });
-    }
+    deleteMutation.mutate(tourId, {
+      onSuccess: () => {
+        setShowDeleteConfirm(false);
+        // Navigate to home page after successful deletion using Astro View Transitions
+        navigate("/");
+      },
+    });
   };
 
   if (isLoading) {
@@ -215,48 +214,24 @@ export const TourDetailsView = ({ tourId, currentUserId }: TourDetailsViewProps)
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="modal modal-open">
-          <div className="modal-box">
-            <h3 className="text-lg font-bold">{t("tourDetails.deleteConfirm.title")}</h3>
-            <p className="py-4">
-              {t("tourDetails.deleteConfirm.message")}
-              <br />
-              <br />
-              {t("tourDetails.deleteConfirm.typeTitlePrompt")} <strong>{tour.title}</strong>{" "}
-              {t("tourDetails.deleteConfirm.toConfirm")}
-            </p>
-            <input
-              type="text"
-              className="input input-bordered w-full"
-              value={deleteConfirmInput}
-              onChange={(e) => setDeleteConfirmInput(e.target.value)}
-              placeholder={tour.title}
-            />
-            <div className="modal-action">
-              <Button
-                variant="neutral-outline"
-                onClick={() => {
-                  setShowDeleteConfirm(false);
-                  setDeleteConfirmInput("");
-                }}
-              >
-                {t("tourDetails.deleteConfirm.cancel")}
-              </Button>
-              <Button
-                variant="error"
-                onClick={handleDelete}
-                disabled={deleteConfirmInput !== tour.title || deleteMutation.isPending}
-              >
-                {deleteMutation.isPending
-                  ? t("tourDetails.deleteConfirm.deleting")
-                  : t("tourDetails.deleteConfirm.confirm")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        title={t("tourDetails.deleteConfirm.title")}
+        message={t("tourDetails.deleteConfirm.message")}
+        confirmText={t("tourDetails.deleteConfirm.confirm")}
+        cancelText={t("tourDetails.deleteConfirm.cancel")}
+        variant="error"
+        isPending={deleteMutation.isPending}
+        pendingText={t("tourDetails.deleteConfirm.deleting")}
+        requireTextConfirmation={{
+          expectedText: tour.title,
+          placeholder: tour.title,
+          prompt: t("tourDetails.deleteConfirm.typeTitlePrompt"),
+        }}
+      />
 
       {/* Edit Tour Modal */}
       {isEditModalOpen && (

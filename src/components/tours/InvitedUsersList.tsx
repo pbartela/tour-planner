@@ -10,6 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { InvitationStatusBadge } from "@/components/ui/InvitationStatusBadge";
+import { Badge } from "@/components/ui/Badge";
 import { useTourInvitations } from "@/lib/hooks/useInvitations";
 import { useCancelInvitationMutation, useResendInvitationMutation } from "@/lib/hooks/useInvitationMutations";
 import { SkeletonLoader } from "@/components/shared/SkeletonLoader";
@@ -59,19 +61,6 @@ export const InvitedUsersList = ({ tourId, isOwner }: InvitedUsersListProps) => 
     }
   };
 
-  const getStatusBadgeClass = (status: string): string => {
-    switch (status) {
-      case "pending":
-        return "badge badge-warning";
-      case "accepted":
-        return "badge badge-success";
-      case "declined":
-        return "badge badge-error";
-      default:
-        return "badge badge-neutral";
-    }
-  };
-
   const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString();
   };
@@ -108,14 +97,21 @@ export const InvitedUsersList = ({ tourId, isOwner }: InvitedUsersListProps) => 
           // Allow resending declined invitations or expired pending invitations
           const canResend = isOwner && (status === "declined" || (status === "pending" && isExpired));
 
+          // Dynamic status translation keys (extracted by i18next-parser):
+          // t('invitations.status.pending'), t('invitations.status.accepted'), t('invitations.status.declined')
+
           return (
             <li key={invitation.id} className="flex items-center justify-between gap-4 p-3 bg-base-200 rounded-lg">
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{invitation.email}</span>
-                  <span className={getStatusBadgeClass(status)}>{t(`invitations.status.${status}`)}</span>
+                  <InvitationStatusBadge status={status} expired={isExpired}>
+                    {t(`invitations.status.${status}`)}
+                  </InvitationStatusBadge>
                   {isExpired && status === "pending" && (
-                    <span className="badge badge-neutral badge-sm">{t("invitations.expired")}</span>
+                    <Badge variant="neutral" size="sm">
+                      {t("invitations.expired")}
+                    </Badge>
                   )}
                 </div>
                 <div className="text-sm text-base-content/70 mt-1">

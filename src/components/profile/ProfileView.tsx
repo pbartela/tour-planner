@@ -47,11 +47,13 @@ export const ProfileView = ({ user }: ProfileViewProps) => {
                 <p className="text-lg">{user.profile.display_name || t("profile.notSet")}</p>
               </div>
 
+              {/* Dynamic language keys: t('profile.languages.en-US'), t('profile.languages.pl-PL') */}
               <div>
                 <p className="text-sm text-base-content/60">{t("profile.language")}</p>
                 <p className="text-lg">{t(`profile.languages.${user.profile.language}`)}</p>
               </div>
 
+              {/* Dynamic theme keys: t('profile.themes.light'), t('profile.themes.dark'), t('profile.themes.system') */}
               <div>
                 <p className="text-sm text-base-content/60">{t("profile.theme")}</p>
                 <p className="text-lg">{t(`profile.themes.${user.profile.theme}`)}</p>

@@ -112,6 +112,11 @@
     "skippedMessage_few": "Pominięto {{count}} adresy e-mail (już uczestnicy lub mają oczekujące zaproszenia): {{emails}}",
     "skippedMessage_many": "Pominięto {{count}} adresów e-mail (już uczestnicy lub mają oczekujące zaproszenia): {{emails}}",
     "skippedMessage_other": "Pominięto {{count}} adresów e-mail (już uczestnicy lub mają oczekujące zaproszenia): {{emails}}",
+    "status": {
+      "accepted": "Zaakceptowane",
+      "declined": "Odrzucone",
+      "pending": "Oczekujące"
+    },
     "tourTitle": "Wycieczka",
     "unknownError": "Nieznany błąd"
   },
@@ -129,7 +134,6 @@
       "deleting": "Usuwanie...",
       "message": "Czy na pewno chcesz usunąć tę wycieczkę? Ta akcja nie może zostać cofnięta.",
       "title": "Usuń wycieczkę",
-      "toConfirm": "aby potwierdzić:",
       "typeTitlePrompt": "Proszę wpisać"
     },
     "description": "Opis",
