@@ -1,9 +1,13 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
-export interface Database {
+export type Database = {
   graphql_public: {
-    Tables: Record<never, never>;
-    Views: Record<never, never>;
+    Tables: {
+      [_ in never]: never;
+    };
+    Views: {
+      [_ in never]: never;
+    };
     Functions: {
       graphql: {
         Args: {
@@ -15,8 +19,12 @@ export interface Database {
         Returns: Json;
       };
     };
-    Enums: Record<never, never>;
-    CompositeTypes: Record<never, never>;
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
   };
   public: {
     Tables: {
@@ -72,6 +80,7 @@ export interface Database {
           status: Database["public"]["Enums"]["invitation_status"];
           token: string | null;
           tour_id: string;
+          updated_at: string;
         };
         Insert: {
           created_at?: string;
@@ -82,6 +91,7 @@ export interface Database {
           status?: Database["public"]["Enums"]["invitation_status"];
           token?: string | null;
           tour_id: string;
+          updated_at?: string;
         };
         Update: {
           created_at?: string;
@@ -92,6 +102,7 @@ export interface Database {
           status?: Database["public"]["Enums"]["invitation_status"];
           token?: string | null;
           tour_id?: string;
+          updated_at?: string;
         };
         Relationships: [
           {
@@ -188,6 +199,38 @@ export interface Database {
         };
         Relationships: [];
       };
+      tour_activity: {
+        Row: {
+          created_at: string;
+          id: string;
+          last_viewed_at: string;
+          tour_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          last_viewed_at?: string;
+          tour_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          last_viewed_at?: string;
+          tour_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tour_activity_tour_id_fkey";
+            columns: ["tour_id"];
+            isOneToOne: false;
+            referencedRelation: "tours";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       tour_tags: {
         Row: {
           tag_id: number;
@@ -233,6 +276,7 @@ export interface Database {
           status: Database["public"]["Enums"]["tour_status"];
           title: string;
           updated_at: string;
+          voting_locked: boolean;
         };
         Insert: {
           are_votes_hidden?: boolean;
@@ -248,6 +292,7 @@ export interface Database {
           status?: Database["public"]["Enums"]["tour_status"];
           title: string;
           updated_at?: string;
+          voting_locked?: boolean;
         };
         Update: {
           are_votes_hidden?: boolean;
@@ -263,6 +308,7 @@ export interface Database {
           status?: Database["public"]["Enums"]["tour_status"];
           title?: string;
           updated_at?: string;
+          voting_locked?: boolean;
         };
         Relationships: [
           {
@@ -308,12 +354,15 @@ export interface Database {
         ];
       };
     };
-    Views: Record<never, never>;
+    Views: {
+      [_ in never]: never;
+    };
     Functions: {
       accept_invitation: {
         Args: { accepting_user_id: string; invitation_token: string };
         Returns: string;
       };
+      cleanup_expired_invitations: { Args: never; Returns: undefined };
       cleanup_unconfirmed_users: { Args: never; Returns: undefined };
       create_tour: {
         Args: {
@@ -353,9 +402,11 @@ export interface Database {
       invitation_status: "pending" | "accepted" | "declined";
       tour_status: "active" | "archived";
     };
-    CompositeTypes: Record<never, never>;
+    CompositeTypes: {
+      [_ in never]: never;
+    };
   };
-}
+};
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
 

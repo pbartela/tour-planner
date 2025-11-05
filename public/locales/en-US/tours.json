@@ -15,6 +15,13 @@
     "tripUrl": "Trip URL",
     "tripUrlPlaceholder": "e.g. airbnb.com/rooms/..."
   },
+  "editTrip": {
+    "error": "Failed to update tour",
+    "save": "Save Changes",
+    "saving": "Saving...",
+    "success": "Tour updated successfully",
+    "title": "Edit Trip"
+  },
   "comments": {
     "addLabel": "Add Comment",
     "addPlaceholder": "Add a comment...",
@@ -139,8 +146,16 @@
   "voting": {
     "like": "Like",
     "liked": "Liked",
+    "lockVoting": "Lock Voting",
+    "lockVotingSuccess": "Voting locked successfully",
+    "lockVotingError": "Failed to lock voting",
     "title": "Likes",
+    "unlockVoting": "Unlock Voting",
+    "unlockVotingSuccess": "Voting unlocked successfully",
+    "unlockVotingError": "Failed to unlock voting",
     "votingDisabled": "Voting is currently disabled",
-    "votingDisabledAlert": "Voting is currently disabled for this tour."
+    "votingDisabledAlert": "Voting is currently disabled for this tour.",
+    "votingLocked": "Voting is locked",
+    "votingLockedMessage": "The tour owner has locked voting. No changes can be made."
   }
 }

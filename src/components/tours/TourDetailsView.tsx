@@ -1,29 +1,64 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { navigate } from "astro:transitions/client";
+import toast from "react-hot-toast";
 import { useTourDetails } from "@/lib/hooks/useTourDetails";
-import { useDeleteTourMutation } from "@/lib/hooks/useTourMutations";
+import { useDeleteTourMutation, useLockVotingMutation, useUnlockVotingMutation } from "@/lib/hooks/useTourMutations";
+import { useMarkTourAsViewedMutation } from "@/lib/hooks/useTourActivity";
 import { CommentsList } from "./CommentsList";
 import { VotingSection } from "./VotingSection";
 import { InvitationForm } from "./InvitationForm";
 import { InvitedUsersList } from "./InvitedUsersList";
+import { EditTourModal } from "./EditTourModal";
 import { Button } from "@/components/ui/button";
 import { SkeletonLoader } from "@/components/shared/SkeletonLoader";
 
 interface TourDetailsViewProps {
   tourId: string;
   currentUserId: string;
-  onEdit?: () => void;
 }
 
-export const TourDetailsView = ({ tourId, currentUserId, onEdit }: TourDetailsViewProps) => {
+export const TourDetailsView = ({ tourId, currentUserId }: TourDetailsViewProps) => {
   const { t } = useTranslation("tours");
   const { data: tour, isLoading, isError, error } = useTourDetails(tourId);
   const deleteMutation = useDeleteTourMutation();
+  const lockVotingMutation = useLockVotingMutation();
+  const unlockVotingMutation = useUnlockVotingMutation();
+  const markAsViewedMutation = useMarkTourAsViewedMutation();
   const [deleteConfirmInput, setDeleteConfirmInput] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const isOwner = tour?.owner_id === currentUserId;
+
+  // Mark tour as viewed when component mounts
+  useEffect(() => {
+    if (tourId) {
+      markAsViewedMutation.mutate(tourId);
+    }
+  }, [tourId, markAsViewedMutation]);
+
+  const handleToggleVotingLock = () => {
+    if (tour?.voting_locked) {
+      unlockVotingMutation.mutate(tourId, {
+        onSuccess: () => {
+          toast.success(t("voting.unlockVotingSuccess"));
+        },
+        onError: () => {
+          toast.error(t("voting.unlockVotingError"));
+        },
+      });
+    } else {
+      lockVotingMutation.mutate(tourId, {
+        onSuccess: () => {
+          toast.success(t("voting.lockVotingSuccess"));
+        },
+        onError: () => {
+          toast.error(t("voting.lockVotingError"));
+        },
+      });
+    }
+  };
 
   const handleDelete = () => {
     if (deleteConfirmInput === tour?.title) {
@@ -75,11 +110,9 @@ export const TourDetailsView = ({ tourId, currentUserId, onEdit }: TourDetailsVi
             </div>
             {isOwner && (
               <div className="flex gap-2">
-                {onEdit && (
-                  <Button variant="outline" onClick={onEdit}>
-                    {t("tourDetails.edit")}
-                  </Button>
-                )}
+                <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
+                  {t("tourDetails.edit")}
+                </Button>
                 <Button variant="outline" onClick={() => setShowDeleteConfirm(true)} className="text-error">
                   {t("tourDetails.delete")}
                 </Button>
@@ -138,7 +171,41 @@ export const TourDetailsView = ({ tourId, currentUserId, onEdit }: TourDetailsVi
       )}
 
       {/* Voting Section */}
-      <VotingSection tourId={tourId} currentUserId={currentUserId} areVotesHidden={tour.are_votes_hidden} />
+      <div className="space-y-4">
+        {isOwner && (
+          <div className="card bg-base-100 shadow-xl">
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold">
+                    {tour.voting_locked ? t("voting.unlockVoting") : t("voting.lockVoting")}
+                  </h3>
+                  <p className="text-sm text-base-content/60">
+                    {tour.voting_locked ? t("voting.votingLockedMessage") : "Allow participants to vote"}
+                  </p>
+                </div>
+                <Button
+                  variant={tour.voting_locked ? "error" : "default"}
+                  onClick={handleToggleVotingLock}
+                  disabled={lockVotingMutation.isPending || unlockVotingMutation.isPending}
+                >
+                  {lockVotingMutation.isPending || unlockVotingMutation.isPending
+                    ? "..."
+                    : tour.voting_locked
+                      ? `🔓 ${t("voting.unlockVoting")}`
+                      : `🔒 ${t("voting.lockVoting")}`}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        <VotingSection
+          tourId={tourId}
+          currentUserId={currentUserId}
+          areVotesHidden={tour.are_votes_hidden}
+          votingLocked={tour.voting_locked}
+        />
+      </div>
 
       {/* Comments Section */}
       <div className="card bg-base-100 shadow-xl">
@@ -188,6 +255,11 @@ export const TourDetailsView = ({ tourId, currentUserId, onEdit }: TourDetailsVi
             </div>
           </div>
         </div>
+      )}
+
+      {/* Edit Tour Modal */}
+      {isEditModalOpen && (
+        <EditTourModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} tour={tour} />
       )}
     </div>
   );

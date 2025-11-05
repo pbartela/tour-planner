@@ -7,16 +7,27 @@ interface VotingSectionProps {
   tourId: string;
   currentUserId: string;
   areVotesHidden?: boolean;
+  votingLocked?: boolean;
 }
 
-export const VotingSection = ({ tourId, currentUserId, areVotesHidden = false }: VotingSectionProps) => {
+export const VotingSection = ({
+  tourId,
+  currentUserId,
+  areVotesHidden = false,
+  votingLocked = false,
+}: VotingSectionProps) => {
   const { t } = useTranslation("tours");
   const { data: votes, isLoading } = useVotes(tourId);
   const toggleVoteMutation = useToggleVoteMutation(tourId, currentUserId);
 
   const userHasVoted = votes?.users.includes(currentUserId) ?? false;
+  const isVotingDisabled = areVotesHidden || votingLocked;
 
   const handleVote = () => {
+    if (votingLocked) {
+      alert(t("voting.votingLockedMessage"));
+      return;
+    }
     if (areVotesHidden) {
       alert(t("voting.votingDisabledAlert"));
       return;
@@ -38,13 +49,14 @@ export const VotingSection = ({ tourId, currentUserId, areVotesHidden = false }:
         <div>
           <h3 className="text-lg font-semibold">{t("voting.title")}</h3>
           <p className="text-3xl font-bold text-primary">{votes?.count || 0}</p>
-          {areVotesHidden && <p className="text-sm text-warning">{t("voting.votingDisabled")}</p>}
+          {votingLocked && <p className="text-sm text-error">{t("voting.votingLocked")}</p>}
+          {!votingLocked && areVotesHidden && <p className="text-sm text-warning">{t("voting.votingDisabled")}</p>}
         </div>
         <Button
           size="lg"
           variant={userHasVoted ? "default" : "outline"}
           onClick={handleVote}
-          disabled={areVotesHidden || toggleVoteMutation.isPending}
+          disabled={isVotingDisabled || toggleVoteMutation.isPending}
         >
           {toggleVoteMutation.isPending ? "..." : userHasVoted ? `❤️ ${t("voting.liked")}` : `🤍 ${t("voting.like")}`}
         </Button>

@@ -73,7 +73,7 @@ export interface TourMetadata {
  */
 export type TourSummaryDto = Pick<
   Tables<"tours">,
-  "id" | "title" | "destination" | "start_date" | "end_date" | "status"
+  "id" | "title" | "destination" | "start_date" | "end_date" | "status" | "updated_at"
 > & {
   has_new_activity: boolean;
   metadata?: TourMetadata;

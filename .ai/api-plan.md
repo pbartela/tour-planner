@@ -138,6 +138,7 @@ Endpoints for managing tours.
   - **Note:** The `has_new_activity` field is temporarily set to `false` until activity tracking (comments/votes) is implemented. The `data` array may be empty if no tours match the criteria.
 - **Response (Error):**
   All error responses use the standardized format:
+
   ```json
   {
     "error": {
