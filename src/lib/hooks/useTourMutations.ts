@@ -256,3 +256,123 @@ export const useDeleteTourMutation = () => {
     queryClient
   );
 };
+
+/**
+ * Locks voting for a tour
+ */
+const lockVoting = async (tourId: string): Promise<TourDetailsDto> => {
+  const response = await post(`/api/tours/${tourId}/voting/lock`, {});
+  return handleApiResponse<TourDetailsDto>(response);
+};
+
+/**
+ * Unlocks voting for a tour
+ */
+const unlockVoting = async (tourId: string): Promise<TourDetailsDto> => {
+  const response = await post(`/api/tours/${tourId}/voting/unlock`, {});
+  return handleApiResponse<TourDetailsDto>(response);
+};
+
+/**
+ * React Query mutation hook for locking voting on a tour (owner only)
+ *
+ * @example
+ * ```tsx
+ * const { mutate, isPending } = useLockVotingMutation();
+ *
+ * const handleLockVoting = (tourId: string) => {
+ *   mutate(tourId, {
+ *     onSuccess: () => {
+ *       toast.success('Voting locked!');
+ *     }
+ *   });
+ * };
+ * ```
+ */
+export const useLockVotingMutation = () => {
+  return useMutation(
+    {
+      mutationFn: (tourId: string) => lockVoting(tourId),
+      onMutate: async (tourId) => {
+        // Cancel outgoing refetches
+        await queryClient.cancelQueries({ queryKey: ["tour", tourId] });
+
+        // Snapshot previous value
+        const previousTourDetails = queryClient.getQueryData<TourDetailsDto>(["tour", tourId]);
+
+        // Optimistically update tour details
+        if (previousTourDetails) {
+          queryClient.setQueryData<TourDetailsDto>(["tour", tourId], {
+            ...previousTourDetails,
+            voting_locked: true,
+          });
+        }
+
+        return { previousTourDetails };
+      },
+      onError: (err, tourId, context) => {
+        // Rollback on error
+        if (context?.previousTourDetails) {
+          queryClient.setQueryData(["tour", tourId], context.previousTourDetails);
+        }
+      },
+      onSettled: (data, error, tourId) => {
+        // Refetch to ensure consistency
+        queryClient.invalidateQueries({ queryKey: ["tour", tourId] });
+      },
+    },
+    queryClient
+  );
+};
+
+/**
+ * React Query mutation hook for unlocking voting on a tour (owner only)
+ *
+ * @example
+ * ```tsx
+ * const { mutate, isPending } = useUnlockVotingMutation();
+ *
+ * const handleUnlockVoting = (tourId: string) => {
+ *   mutate(tourId, {
+ *     onSuccess: () => {
+ *       toast.success('Voting unlocked!');
+ *     }
+ *   });
+ * };
+ * ```
+ */
+export const useUnlockVotingMutation = () => {
+  return useMutation(
+    {
+      mutationFn: (tourId: string) => unlockVoting(tourId),
+      onMutate: async (tourId) => {
+        // Cancel outgoing refetches
+        await queryClient.cancelQueries({ queryKey: ["tour", tourId] });
+
+        // Snapshot previous value
+        const previousTourDetails = queryClient.getQueryData<TourDetailsDto>(["tour", tourId]);
+
+        // Optimistically update tour details
+        if (previousTourDetails) {
+          queryClient.setQueryData<TourDetailsDto>(["tour", tourId], {
+            ...previousTourDetails,
+            voting_locked: false,
+          });
+        }
+
+        return { previousTourDetails };
+      },
+      onError: (err, tourId, context) => {
+        // Rollback on error
+        if (context?.previousTourDetails) {
+          queryClient.setQueryData(["tour", tourId], context.previousTourDetails);
+        }
+      },
+      onSettled: (data, error, tourId) => {
+        // Refetch to ensure consistency
+        queryClient.invalidateQueries({ queryKey: ["tour", tourId] });
+      },
+    },
+    queryClient
+  );
+};

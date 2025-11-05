@@ -13,9 +13,9 @@
     "format": "prettier --write .",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "i18n:extract": "i18next-parser --config i18next-parser.config.cjs",
-    "i18n:extract:dry": "i18next-parser --config i18next-parser.config.cjs --fail-on-update",
-    "i18n:check": "i18next-parser --config i18next-parser.config.cjs --fail-on-warnings"
+    "i18n:extract": "npx i18next-parser --config i18next-parser.config.cjs",
+    "i18n:extract:dry": "npx i18next-parser --config i18next-parser.config.cjs --fail-on-update",
+    "i18n:check": "npx i18next-parser --config i18next-parser.config.cjs --fail-on-warnings"
   },
   "dependencies": {
     "@astrojs/node": "^9.4.3",

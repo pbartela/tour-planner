@@ -1,6 +1,8 @@
 import type { TourCardViewModel } from "@/types";
 import { useTranslation } from "react-i18next";
 import { Card } from "@/components/ui/Card";
+import { AvatarGroup } from "@/components/ui/AvatarGroup";
+import { ActivityIndicator } from "@/components/ui/ActivityIndicator";
 
 interface Props {
   tour: TourCardViewModel;
@@ -49,37 +51,11 @@ export const TourCard = ({ tour }: Props) => {
             <p className="text-base font-normal leading-normal text-base-content/60">{tour.dateRange}</p>
           </div>
 
-          {/* Participant Avatars */}
-          {avatars.length > 0 && (
-            <div className="flex items-center justify-start mt-2">
-              <div className="flex -space-x-3">
-                {avatars.map((avatar, index) => (
-                  <img
-                    key={index}
-                    src={avatar}
-                    alt={`Participant ${index + 1}`}
-                    className="h-9 w-9 rounded-full border-2 border-base-100 dark:border-base-300 object-cover"
-                  />
-                ))}
-              </div>
-              {tour.hasNewActivity && (
-                <span
-                  className="ml-2 flex h-3 w-3 rounded-full bg-primary"
-                  aria-label={t("tourList.newActivity")}
-                  title={t("tourList.newActivity")}
-                />
-              )}
-            </div>
-          )}
-
-          {/* New Activity Indicator (if no avatars) */}
-          {avatars.length === 0 && tour.hasNewActivity && (
-            <div className="flex items-center justify-start mt-2">
-              <span
-                className="flex h-3 w-3 rounded-full bg-primary"
-                aria-label={t("tourList.newActivity")}
-                title={t("tourList.newActivity")}
-              />
+          {/* Participant Avatars with Activity Indicator */}
+          {(avatars.length > 0 || tour.hasNewActivity) && (
+            <div className="flex items-center gap-2 mt-2">
+              {avatars.length > 0 && <AvatarGroup avatars={avatars} maxVisible={3} />}
+              <ActivityIndicator hasActivity={tour.hasNewActivity} label={t("tourList.newActivity")} />
             </div>
           )}
         </div>

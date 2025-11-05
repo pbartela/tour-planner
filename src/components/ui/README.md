@@ -11,16 +11,11 @@ A single date selection component with popover calendar.
 ```tsx
 import { DatePicker } from "@/components/ui/DatePicker";
 
-<DatePicker
-  value={date}
-  onChange={setDate}
-  placeholder="Pick a date"
-  variant="primary"
-  size="md"
-/>
+<DatePicker value={date} onChange={setDate} placeholder="Pick a date" variant="primary" size="md" />;
 ```
 
 **Props:**
+
 - `value?: Date` - Selected date
 - `onChange?: (date: Date | undefined) => void` - Callback when date changes
 - `placeholder?: string` - Placeholder text
@@ -46,10 +41,11 @@ import { DateRangePicker } from "@/components/ui/DateRangePicker";
   placeholder="Pick a date range"
   variant="secondary"
   size="md"
-/>
+/>;
 ```
 
 **Props:**
+
 - `value?: DateRange` - Selected date range
 - `onChange?: (range: DateRange | undefined) => void` - Callback when range changes
 - `placeholder?: string` - Placeholder text
@@ -69,16 +65,11 @@ A standalone calendar component with daisyUI styling.
 ```tsx
 import { DaisyCalendar } from "@/components/ui/DaisyCalendar";
 
-<DaisyCalendar
-  selected={date}
-  onSelect={setDate}
-  variant="bordered"
-  size="lg"
-  buttonVariant="primary"
-/>
+<DaisyCalendar selected={date} onSelect={setDate} variant="bordered" size="lg" buttonVariant="primary" />;
 ```
 
 **Props:**
+
 - `variant?: "default" | "bordered" | "dashed"` - DaisyUI card variant
 - `size?: "sm" | "md" | "lg" | "xl"` - DaisyUI card size
 - `buttonVariant?: "neutral" | "primary" | "secondary" | "accent" | "info" | "success" | "warning" | "error" | "ghost"` - Button variant for navigation
@@ -122,14 +113,7 @@ import { DatePicker } from "@/components/ui/DatePicker";
 function MyComponent() {
   const [date, setDate] = useState<Date | undefined>(undefined);
 
-  return (
-    <DatePicker
-      value={date}
-      onChange={setDate}
-      placeholder="Select a date"
-      variant="primary"
-    />
-  );
+  return <DatePicker value={date} onChange={setDate} placeholder="Select a date" variant="primary" />;
 }
 ```
 
@@ -144,12 +128,7 @@ function MyComponent() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   return (
-    <DateRangePicker
-      value={dateRange}
-      onChange={setDateRange}
-      placeholder="Select a date range"
-      variant="secondary"
-    />
+    <DateRangePicker value={dateRange} onChange={setDateRange} placeholder="Select a date range" variant="secondary" />
   );
 }
 ```
@@ -226,9 +205,8 @@ function MyComponent() {
 All components are documented in Storybook with interactive examples:
 
 - `DatePicker` stories
-- `DateRangePicker` stories  
+- `DateRangePicker` stories
 - `DaisyCalendar` stories
 - `DateComponents` overview
 
 Run `npm run storybook` to view the documentation and examples.
-

@@ -39,6 +39,13 @@
     "confirm": "Confirm",
     "redirecting": "Redirecting..."
   },
+  "editTrip": {
+    "error": "Failed to update tour",
+    "save": "Save Changes",
+    "saving": "Saving...",
+    "success": "Tour updated successfully",
+    "title": "Edit Trip"
+  },
   "emptyState": {
     "createTour": "Create a Tour",
     "description": "Get started by creating a new one.",
@@ -99,6 +106,11 @@
     "sentSuccess_other": "Invitations sent to {{count}} emails: {{emails}}",
     "skippedMessage_one": "Skipped {{count}} email (already participants or have pending invitations): {{emails}}",
     "skippedMessage_other": "Skipped {{count}} emails (already participants or have pending invitations): {{emails}}",
+    "status": {
+      "accepted": "Accepted",
+      "declined": "Declined",
+      "pending": "Pending"
+    },
     "tourTitle": "Tour",
     "unknownError": "Unknown error"
   },
@@ -116,7 +128,6 @@
       "deleting": "Deleting...",
       "message": "Are you sure you want to delete this tour? This action cannot be undone.",
       "title": "Delete Tour",
-      "toConfirm": "to confirm:",
       "typeTitlePrompt": "Please type"
     },
     "description": "Description",
@@ -139,8 +150,16 @@
   "voting": {
     "like": "Like",
     "liked": "Liked",
+    "lockVoting": "Lock Voting",
+    "lockVotingError": "Failed to lock voting",
+    "lockVotingSuccess": "Voting locked successfully",
     "title": "Likes",
+    "unlockVoting": "Unlock Voting",
+    "unlockVotingError": "Failed to unlock voting",
+    "unlockVotingSuccess": "Voting unlocked successfully",
     "votingDisabled": "Voting is currently disabled",
-    "votingDisabledAlert": "Voting is currently disabled for this tour."
+    "votingDisabledAlert": "Voting is currently disabled for this tour.",
+    "votingLocked": "Voting is locked",
+    "votingLockedMessage": "The tour owner has locked voting. No changes can be made."
   }
 }

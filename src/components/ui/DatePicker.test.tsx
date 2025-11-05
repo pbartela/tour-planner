@@ -131,14 +131,3 @@ describe("DaisyCalendar", () => {
   });
 });
 
-
-
-
-
-
-
-
-
-
-
-

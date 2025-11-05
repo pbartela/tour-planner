@@ -1,23 +1,27 @@
 # Webhook Debugging Summary
 
 ## Problem
+
 Profile creation webhook was not working for local Supabase setup. Users were getting "Profile not found" errors after signing up.
 
 ## Root Causes Identified
 
 ### 1. **HTTPS vs HTTP Issue** ✅ FIXED
+
 - Webhook was configured with `https://` URL
 - Local dev server runs on `http://`
 - Result: SSL handshake timeout (5000ms)
 - **Fix**: Changed webhook URL from `https://` to `http://`
 
 ### 2. **Network Connectivity Issue** ⚠️ NEEDS FIX
+
 - App is binding to `[::1]:3000` (localhost only)
 - Docker containers cannot reach localhost-bound services
 - Webhook requests from Supabase container time out
 - **Fix Required**: Restart dev server with `--host` flag
 
 ### 3. **Rate Limiting During Testing** ✅ FIXED
+
 - Magic link endpoint had strict rate limit: 3 requests per 15 minutes
 - Made testing difficult
 - **Fix**: Added development-mode detection with relaxed limits:
@@ -28,6 +32,7 @@ Profile creation webhook was not working for local Supabase setup. Users were ge
 ## Debugging Steps Performed
 
 1. **Verified webhook endpoint works**:
+
    ```bash
    curl -X POST http://localhost:3000/api/webhooks/profile-creation \
      -H "Content-Type: application/json" \
@@ -43,25 +48,31 @@ Profile creation webhook was not working for local Supabase setup. Users were ge
        "old_record": null
      }'
    ```
+
    Result: ✅ Successfully created profile
 
 2. **Checked Supabase webhook logs**:
+
    ```bash
    docker exec supabase_db_tour-planner psql -U postgres \
      -c "SELECT id, status_code, error_msg, created FROM net._http_response ORDER BY created DESC LIMIT 5;"
    ```
+
    Result: Timeout errors during SSL handshake
 
 3. **Verified webhook trigger configuration**:
+
    ```bash
    docker exec supabase_db_tour-planner psql -U postgres \
      -c "SELECT pg_get_triggerdef(oid) FROM pg_trigger WHERE tgname = 'profile-creation';"
    ```
 
 4. **Tested connectivity from Docker container**:
+
    ```bash
    docker exec supabase_db_tour-planner curl -v -m 2 http://host.docker.internal:3000/api/webhooks/profile-creation ...
    ```
+
    Result: Connection timeout
 
 5. **Checked app binding**:
@@ -73,6 +84,7 @@ Profile creation webhook was not working for local Supabase setup. Users were ge
 ## Files Modified
 
 ### `/home/turu/Repositories/tour-planner/src/lib/server/rate-limit.service.ts`
+
 - Added development mode detection
 - Increased rate limits for local development
 - Production limits remain strict
@@ -82,10 +94,12 @@ Profile creation webhook was not working for local Supabase setup. Users were ge
 ### To Complete the Fix:
 
 1. **Restart dev server with host binding**:
+
    ```bash
    # Stop current server (Ctrl+C)
    npm run dev -- --host
    ```
+
    This will bind to `0.0.0.0:3000` instead of `[::1]:3000`
 
 2. **Verify webhook works**:
@@ -105,6 +119,7 @@ Profile creation webhook was not working for local Supabase setup. Users were ge
 ## SQL Commands Reference
 
 ### Recreate Webhook Trigger (HTTP for local dev):
+
 ```sql
 -- Drop existing webhook trigger
 DROP TRIGGER IF EXISTS "profile-creation" ON auth.users;
@@ -128,6 +143,7 @@ WHERE tgname = 'profile-creation';
 ```
 
 ### Execute SQL in Local Supabase:
+
 ```bash
 docker exec supabase_db_tour-planner psql -U postgres -d postgres -c "
 DROP TRIGGER IF EXISTS \"profile-creation\" ON auth.users;
@@ -148,6 +164,7 @@ CREATE TRIGGER \"profile-creation\"
 **Note**: Replace the webhook secret if it changes in your `.env` file.
 
 ### For Production (HTTPS):
+
 ```sql
 CREATE TRIGGER "profile-creation"
   AFTER INSERT ON auth.users
@@ -172,24 +189,28 @@ CREATE TRIGGER "profile-creation"
 ## Useful Debugging Commands
 
 ### Check webhook delivery logs:
+
 ```bash
 docker exec supabase_db_tour-planner psql -U postgres \
   -c "SELECT id, status_code, error_msg, created FROM net._http_response ORDER BY created DESC LIMIT 10;"
 ```
 
 ### Check webhook trigger exists:
+
 ```bash
 docker exec supabase_db_tour-planner psql -U postgres \
   -c "SELECT tgname, tgrelid::regclass FROM pg_trigger WHERE tgname = 'profile-creation';"
 ```
 
 ### Check app is listening on all interfaces:
+
 ```bash
 ss -tlnp | grep :3000
 # Should show 0.0.0.0:3000 or :::3000, NOT [::1]:3000
 ```
 
 ### Test webhook from container:
+
 ```bash
 docker exec supabase_db_tour-planner curl -X POST \
   http://host.docker.internal:3000/api/webhooks/profile-creation \

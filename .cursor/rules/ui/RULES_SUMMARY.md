@@ -1,22 +1,29 @@
-# Component Implementation Rules 
+# Component Implementation Rules
+
 ## Key Architectural Decisions
 
 ### 1. Presentational Component Pattern
 
 **Rule**: Components should be purely presentational with parent-controlled logic.
 
-**Rationale**: 
+**Rationale**:
+
 - Maximum flexibility - any platform can be button or link based on parent needs
 - Easier testing - no side effects in components
 - Clear separation of concerns
 - Better reusability across different contexts
 
 **Implementation**:
+
 ```tsx
 // Component is presentational
 export const SocialShareButton = ({ href, icon, ariaLabel, onClick }) => {
   if (!href) return <button onClick={onClick}>{icon}</button>;
-  return <Link href={href} onClick={onClick}>{icon}</Link>;
+  return (
+    <Link href={href} onClick={onClick}>
+      {icon}
+    </Link>
+  );
 };
 
 // Parent controls logic
@@ -24,11 +31,13 @@ const ShareModal = ({ url, title }) => {
   const getShareUrl = (platform) => {
     // Parent generates URLs
     switch (platform) {
-      case "linkedin": return `https://linkedin.com/...${encodeURIComponent(url)}`;
-      case "copy": return undefined; // Button action
+      case "linkedin":
+        return `https://linkedin.com/...${encodeURIComponent(url)}`;
+      case "copy":
+        return undefined; // Button action
     }
   };
-  
+
   return <SocialShareButton href={getShareUrl("linkedin")} />;
 };
 ```
@@ -38,12 +47,14 @@ const ShareModal = ({ url, title }) => {
 **Rule**: Always use icons from `components/icons/icons.jsx` - never inline SVGs.
 
 **Process**:
+
 1. Save SVG to `components/icons/assets/icon-name.svg`
 2. Ensure SVG uses `currentColor` for theme compatibility
 3. Export from `icons.jsx` using `generateIconComponent` pattern
 4. Import and use in components
 
 **Example**:
+
 ```tsx
 // icons.jsx
 export const FacebookLogo = generateIconComponent({
@@ -53,7 +64,7 @@ export const FacebookLogo = generateIconComponent({
 
 // component.tsx
 import { FacebookLogo } from "components/icons/icons";
-<FacebookLogo className="h-6 w-6" />
+<FacebookLogo className="h-6 w-6" />;
 ```
 
 ### 3. No Direct Browser APIs in Components
@@ -61,12 +72,14 @@ import { FacebookLogo } from "components/icons/icons";
 **Rule**: Components should never directly call browser APIs like `navigator.clipboard`, `window.open`, or `document` methods.
 
 **Rationale**:
+
 - React-friendly approach
 - Easier to test (no mocking required)
 - Server-side rendering compatibility
 - Parent can control implementation details
 
 **Instead**:
+
 ```tsx
 // ❌ BAD - Component accesses browser API
 const Component = () => {
@@ -89,17 +102,15 @@ const Parent = () => {
 **Rule**: Use Next.js `Link` component instead of `<a>` tags.
 
 **For external URLs** (social sharing):
+
 ```tsx
-<Link 
-  href="https://external-site.com" 
-  target="_blank" 
-  rel="noopener noreferrer"
->
+<Link href="https://external-site.com" target="_blank" rel="noopener noreferrer">
   Share
 </Link>
 ```
 
 **For internal navigation**:
+
 ```tsx
 <Link href="/articles/example">Read Article</Link>
 ```
@@ -109,10 +120,12 @@ const Parent = () => {
 **Rule**: Use `href` prop to determine whether to render button or link.
 
 **Pattern**:
+
 - `href` is `undefined` → Render `<button>`
 - `href` is `string` → Render `<Link>`
 
 **Benefits**:
+
 - Single component handles both cases
 - Type-safe with TypeScript
 - Clear contract for parent components
@@ -129,7 +142,11 @@ export const Component: FC<Props> = ({ href, icon, onClick }) => {
   if (!href) {
     return <button onClick={onClick}>{icon}</button>;
   }
-  return <Link href={href} onClick={onClick}>{icon}</Link>;
+  return (
+    <Link href={href} onClick={onClick}>
+      {icon}
+    </Link>
+  );
 };
 ```
 
@@ -140,13 +157,14 @@ export const Component: FC<Props> = ({ href, icon, onClick }) => {
 **Why**: Different contexts may need different URL formats or tracking parameters.
 
 **Example**:
+
 ```tsx
 // Parent generates all URLs
 const ShareModal = ({ url, title }) => {
   const getShareUrl = (platform: SocialPlatform): string | undefined => {
     const encodedUrl = encodeURIComponent(url);
     const encodedTitle = encodeURIComponent(title);
-    
+
     switch (platform) {
       case "linkedin":
         return `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
@@ -159,13 +177,8 @@ const ShareModal = ({ url, title }) => {
         return undefined; // No direct share URLs
     }
   };
-  
-  return (
-    <SocialShareButton
-      platform="linkedin"
-      href={getShareUrl("linkedin")}
-    />
-  );
+
+  return <SocialShareButton platform="linkedin" href={getShareUrl("linkedin")} />;
 };
 ```
 
@@ -174,11 +187,13 @@ const ShareModal = ({ url, title }) => {
 **Rule**: Understand and document platform limitations.
 
 **Platforms with direct share URLs** (render as Links):
+
 - **LinkedIn**: `https://www.linkedin.com/sharing/share-offsite/?url={url}`
 - **X (Twitter)**: `https://twitter.com/intent/tweet?text={title}%20{url}`
 - **Facebook**: `https://www.facebook.com/sharer/sharer.php?u={url}`
 
 **Platforms without direct share URLs** (render as Buttons):
+
 - **Copy**: No URL - parent handles `navigator.clipboard.writeText()`
 - **Instagram**: No web share URL - parent handles custom logic (e.g., copy + show instructions)
 
@@ -187,6 +202,7 @@ const ShareModal = ({ url, title }) => {
 **Rule**: Write tests for all component behaviors and states.
 
 **Required test coverage**:
+
 1. Renders as button when `href` is undefined
 2. Renders as Link when `href` is provided
 3. Calls `onClick` callback correctly
@@ -194,18 +210,19 @@ const ShareModal = ({ url, title }) => {
 5. Tests flexibility (any platform can be button or link based on `href`)
 
 **Example**:
+
 ```tsx
 describe("SocialShareButton", () => {
   it("renders as button when href is undefined", () => {
     render(<SocialShareButton href={undefined} />);
     expect(screen.getByRole("button")).toBeInTheDocument();
   });
-  
+
   it("renders as Link when href is provided", () => {
     render(<SocialShareButton href="https://example.com" />);
     expect(screen.getByRole("link")).toBeInTheDocument();
   });
-  
+
   it("allows any platform to be rendered as button if no href", () => {
     // Proves flexibility - even linkedin can be a button
     render(<SocialShareButton platform="linkedin" href={undefined} />);
@@ -219,12 +236,14 @@ describe("SocialShareButton", () => {
 **Rule**: Create comprehensive Storybook stories with multiple examples.
 
 **Required stories**:
+
 1. Individual platform examples (Copy, LinkedIn, X, Facebook, Instagram)
 2. Combined layouts (AllPlatforms, ProfessionalNetworks)
 3. Custom styling examples
 4. Edge cases (empty states, loading, errors)
 
 **Story pattern**:
+
 ```tsx
 export const LinkedInLink: Story = {
   args: {
@@ -248,6 +267,7 @@ export const LinkedInLink: Story = {
 **Rule**: Every component directory should have a comprehensive README.
 
 **Required sections**:
+
 1. **Purpose**: What the component does
 2. **Architecture**: Presentational vs container pattern explanation
 3. **Props Table**: All props with types and descriptions
@@ -281,12 +301,14 @@ Use this checklist when implementing components from Figma:
 ## Evolution of the Architecture
 
 ### Initial Implementation
+
 - Components had inline SVGs
 - Components directly called browser APIs
 - Used native `<a>` tags
 - SocialShareButton had internal URL generation logic
 
 ### Final Implementation (After Refactoring)
+
 - Icons from centralized icon system (`components/icons/icons.jsx`)
 - All browser API calls delegated to parent
 - Uses Next.js Link components
@@ -294,9 +316,11 @@ Use this checklist when implementing components from Figma:
 - ShareModal (parent) generates all URLs via `getShareUrl()` function
 
 ### Key Insight
+
 > "All elements should be handled by a parent. All should be handled by a shareUrlFunction that is sent from parent and share modal is that parent."
 
 This led to the architectural shift where `href` became the control mechanism:
+
 - `href: undefined` → Component renders button
 - `href: string` → Component renders Link
 - Parent provides the `href` value, controlling the component's behavior
@@ -314,58 +338,65 @@ This led to the architectural shift where `href` became the control mechanism:
 ## Common Patterns Established
 
 ### 1. Modal Component Pattern
+
 ```tsx
 <Modal isOpen={isOpen} onOpenChange={setIsOpen}>
-  <ModalContent
-    onClose={() => setIsOpen(false)}
-    onAction={handleAction}
-  />
+  <ModalContent onClose={() => setIsOpen(false)} onAction={handleAction} />
 </Modal>
 ```
 
 ### 2. Share URL Generation Pattern
+
 ```tsx
 const getShareUrl = (platform: string): string | undefined => {
   const encodedUrl = encodeURIComponent(url);
-  
+
   switch (platform) {
-    case "linkedin": return `https://linkedin.com/...${encodedUrl}`;
-    case "x": return `https://twitter.com/...${encodedUrl}`;
-    case "copy": return undefined;
+    case "linkedin":
+      return `https://linkedin.com/...${encodedUrl}`;
+    case "x":
+      return `https://twitter.com/...${encodedUrl}`;
+    case "copy":
+      return undefined;
   }
 };
 ```
 
 ### 3. Conditional Element Rendering Pattern
+
 ```tsx
 if (!href) {
-  return <button type="button" {...commonProps}>{children}</button>;
+  return (
+    <button type="button" {...commonProps}>
+      {children}
+    </button>
+  );
 }
-return <Link href={href} {...commonProps}>{children}</Link>;
+return (
+  <Link href={href} {...commonProps}>
+    {children}
+  </Link>
+);
 ```
 
 ### 4. Icon Import Pattern
+
 ```tsx
-import { 
-  CopyIcon, 
-  LinkedInLogo, 
-  XLogo, 
-  FacebookLogo, 
-  InstagramLogo 
-} from "components/icons/icons";
+import { CopyIcon, LinkedInLogo, XLogo, FacebookLogo, InstagramLogo } from "components/icons/icons";
 ```
 
 ### 5. Test Organization Pattern
+
 ```tsx
 describe("Component", () => {
   describe("Button rendering (no href)", () => {
     // Button tests
   });
-  
+
   describe("Link rendering (with href)", () => {
     // Link tests
   });
-  
+
   describe("Flexibility", () => {
     // Tests proving any platform can be button or link
   });
@@ -395,6 +426,7 @@ describe("Component", () => {
 These rules represent a comprehensive approach to building maintainable, testable, and flexible React components. The key insight is that **presentational components with parent-controlled logic** provide the best balance between reusability and flexibility while maintaining clean separation of concerns.
 
 When implementing components from Figma designs, always ask:
+
 1. Is this presentational or does it contain business logic?
 2. Should the parent control this behavior?
 3. Can I make this more flexible for future use cases?

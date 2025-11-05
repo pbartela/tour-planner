@@ -5,7 +5,9 @@ This directory contains Claude Code slash commands and context files for the Tou
 ## Available Commands
 
 ### `/project-context`
+
 Foundational context about the Tour Planner project including:
+
 - Tech stack (Astro, React, TypeScript, Supabase, Tailwind, DaisyUI)
 - Project structure and directory organization
 - Key architectural patterns
@@ -14,7 +16,9 @@ Foundational context about the Tour Planner project including:
 **Use this when**: Starting work on the project or when you need to understand the project structure.
 
 ### `/review`
+
 Comprehensive code review checklist covering:
+
 - Architecture and patterns
 - React and Astro best practices
 - API and backend guidelines
@@ -29,7 +33,9 @@ Comprehensive code review checklist covering:
 **Use this when**: Reviewing pull requests, checking code quality, or before committing changes.
 
 ### `/migration`
+
 Guide for creating Supabase database migration files with:
+
 - Proper file naming convention (YYYYMMDDHHmmss_description.sql)
 - Migration structure and SQL guidelines
 - Row Level Security (RLS) implementation
@@ -39,7 +45,9 @@ Guide for creating Supabase database migration files with:
 **Use this when**: Creating new tables, altering schema, or adding database features.
 
 ### `/component`
+
 Instructions for creating Astro or React components including:
+
 - Decision guide (when to use Astro vs React)
 - Component templates and structure
 - Styling guidelines (DaisyUI, Tailwind)
@@ -50,7 +58,9 @@ Instructions for creating Astro or React components including:
 **Use this when**: Creating new UI components or refactoring existing ones.
 
 ### `/api`
+
 Template for creating Astro API endpoints with:
+
 - Proper endpoint structure
 - Zod validation
 - Authentication and authorization
@@ -61,7 +71,9 @@ Template for creating Astro API endpoints with:
 **Use this when**: Creating new API routes or refactoring existing endpoints.
 
 ### `/auth`
+
 Complete guide for Supabase authentication integration:
+
 - Magic link authentication setup
 - Middleware configuration
 - Auth API endpoints (login, callback, logout)
@@ -110,6 +122,7 @@ These files serve as specialized knowledge bases for Claude Code agents. When wo
 ## Maintenance
 
 When updating these files:
+
 1. Keep them synchronized with actual project patterns
 2. Update examples when introducing new conventions
 3. Add new commands as the project evolves
@@ -118,6 +131,7 @@ When updating these files:
 ## Related Files
 
 These Claude Code files complement the existing Cursor rules in `.cursor/rules/`:
+
 - `.cursor/rules/shared.mdc` - General project guidelines
 - `.cursor/rules/components/COMPONENTS_REFERENCE.md` - Component catalog
 - `.cursor/rules/ui/` - UI framework specific rules
@@ -127,6 +141,7 @@ These Claude Code files complement the existing Cursor rules in `.cursor/rules/`
 ## Tips
 
 1. **Chain commands**: Use multiple commands in sequence for complex tasks
+
    ```
    /project-context
    /component - create a tour detail card
@@ -142,6 +157,7 @@ These Claude Code files complement the existing Cursor rules in `.cursor/rules/`
 ## Contributing
 
 When adding new commands:
+
 1. Create a new `.md` file in `.claude/commands/`
 2. Include a description in the frontmatter
 3. Structure content with clear sections
@@ -151,6 +167,7 @@ When adding new commands:
 ## Support
 
 For issues or questions about these commands:
+
 - Check the related Cursor rules in `.cursor/rules/`
 - Review existing code for patterns
 - Consult the team for project-specific decisions

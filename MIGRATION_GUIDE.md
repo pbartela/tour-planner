@@ -8,6 +8,7 @@ This document tracks breaking changes and migration instructions for the Plan To
 
 **Date**: November 2024
 **Affected Files**:
+
 - ❌ `src/components/QueryProvider.tsx` (REMOVED)
 - ✅ `src/lib/queryClient.ts` (NEW)
 
@@ -18,28 +19,33 @@ Astro treats React components as "islands of interactivity" which don't share Re
 #### Migration Steps
 
 **Before** (Old Pattern - No longer works):
+
 ```tsx
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from "@tanstack/react-query";
 
 function MyComponent() {
   const { data } = useQuery({
-    queryKey: ['users'],
-    queryFn: fetchUsers
+    queryKey: ["users"],
+    queryFn: fetchUsers,
   });
   // This would fail because no QueryClientProvider wraps the component
 }
 ```
 
 **After** (New Pattern - Required):
+
 ```tsx
-import { useQuery } from '@tanstack/react-query';
-import { queryClient } from '@/lib/queryClient';
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 
 function MyComponent() {
-  const { data } = useQuery({
-    queryKey: ['users'],
-    queryFn: fetchUsers
-  }, queryClient); // Pass queryClient as second argument
+  const { data } = useQuery(
+    {
+      queryKey: ["users"],
+      queryFn: fetchUsers,
+    },
+    queryClient
+  ); // Pass queryClient as second argument
 
   // ✅ Works correctly in Astro islands
 }
@@ -48,22 +54,27 @@ function MyComponent() {
 #### For Mutations
 
 **Before**:
+
 ```tsx
-import { useMutation } from '@tanstack/react-query';
+import { useMutation } from "@tanstack/react-query";
 
 const mutation = useMutation({
-  mutationFn: createTour
+  mutationFn: createTour,
 });
 ```
 
 **After**:
-```tsx
-import { useMutation } from '@tanstack/react-query';
-import { queryClient } from '@/lib/queryClient';
 
-const mutation = useMutation({
-  mutationFn: createTour
-}, queryClient); // Pass queryClient as second argument
+```tsx
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+
+const mutation = useMutation(
+  {
+    mutationFn: createTour,
+  },
+  queryClient
+); // Pass queryClient as second argument
 ```
 
 #### For `useQueryClient` Hook
@@ -71,8 +82,9 @@ const mutation = useMutation({
 If you were using `useQueryClient()` to access the query client:
 
 **Before**:
+
 ```tsx
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from "@tanstack/react-query";
 
 function MyComponent() {
   const queryClient = useQueryClient();
@@ -81,12 +93,13 @@ function MyComponent() {
 ```
 
 **After**:
+
 ```tsx
-import { queryClient } from '@/lib/queryClient';
+import { queryClient } from "@/lib/queryClient";
 
 function MyComponent() {
   // Just import and use the singleton directly
-  queryClient.invalidateQueries({ queryKey: ['users'] });
+  queryClient.invalidateQueries({ queryKey: ["users"] });
 }
 ```
 
@@ -112,6 +125,7 @@ To update all components, search for these patterns:
 #### Examples in Codebase
 
 See these files for correct usage examples:
+
 - `src/lib/hooks/useTourDetails.ts` - useQuery example
 - `src/lib/hooks/useTourMutations.ts` - useMutation with optimistic updates
 - `src/lib/hooks/useVoteMutation.ts` - useMutation example

@@ -16,40 +16,47 @@ When a pull request is opened or updated, the GitHub Action at `.github/workflow
 The automated review covers:
 
 ### ✅ Architecture & Patterns
+
 - Project structure conventions
 - Logic separation (components vs services vs API routes)
 - Reuse of existing components
 
 ### ✅ React & Astro Best Practices
+
 - Proper component type usage (Astro for static, React for interactive)
 - Hook usage and memoization
 - No Next.js-specific directives
 
 ### ✅ API & Backend
+
 - Uppercase HTTP methods
 - Zod validation
 - Business logic in services
 - Error handling with early returns
 
 ### ✅ Database & Migrations
+
 - Proper file naming
 - RLS enabled on all tables
 - Granular policies
 - SQL best practices
 
 ### ✅ Styling & UI
+
 - DaisyUI component usage
 - Semantic colors
 - Responsive design
 - Accessibility
 
 ### ✅ Security
+
 - Input validation
 - Authentication checks
 - No sensitive data exposure
 - Proper cookie settings
 
 ### ✅ Performance
+
 - No unnecessary re-renders
 - Memoization where needed
 - Optimized assets
@@ -118,20 +125,25 @@ prompt: |
 The review comment will include:
 
 ### Summary
+
 Brief overview of changes and overall assessment
 
 ### Issues Found
+
 - **Critical**: Must be fixed before merge
 - **Important**: Should be addressed
 - **Minor**: Nice to have improvements
 
 ### Specific Feedback
+
 File-by-file feedback with line references (e.g., `src/components/MyComponent.tsx:42`)
 
 ### Positive Notes
+
 Recognition of good practices
 
 ### Recommendations
+
 Broader improvement suggestions
 
 ## Manual Review
@@ -151,6 +163,7 @@ claude-code "/review - check src/components/NewComponent.tsx"
 ### Review Not Running
 
 Check:
+
 - [ ] `CLAUDE_CODE_OAUTH_TOKEN` is set in repository secrets
 - [ ] Workflow has proper permissions (pull-requests: read)
 - [ ] PR matches trigger conditions (types, paths, author filters)
@@ -158,6 +171,7 @@ Check:
 ### Review Missing Context
 
 Ensure:
+
 - [ ] `fetch-depth: 0` in checkout step (gets all files)
 - [ ] `.claude/commands/` files are committed to repository
 - [ ] Review command references correct file paths
@@ -165,6 +179,7 @@ Ensure:
 ### Review Format Issues
 
 Verify:
+
 - [ ] `.claude/commands/review.md` exists and is properly formatted
 - [ ] Prompt in workflow correctly references `/review` command
 - [ ] GitHub CLI commands are properly allowed in `claude_args`
@@ -174,6 +189,7 @@ Verify:
 To temporarily disable automated reviews:
 
 1. Comment out the workflow trigger:
+
    ```yaml
    # on:
    #   pull_request:

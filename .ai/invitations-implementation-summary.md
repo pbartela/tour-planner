@@ -3,6 +3,7 @@
 ## Data: 2025-11-02
 
 ## Przegląd
+
 Zaimplementowano pełny system zapraszania użytkowników (zarówno zarejestrowanych, jak i nowych) do współtworzenia planów wycieczek. System wykorzystuje magic links Supabase Auth oraz automatyczną akceptację zaproszeń po logowaniu/rejestracji.
 
 ---
@@ -12,6 +13,7 @@ Zaimplementowano pełny system zapraszania użytkowników (zarówno zarejestrowa
 ### 1. Baza Danych
 
 #### Migracja: `20251102184243_add_invitation_token_expiry.sql`
+
 - **Dodane kolumny do tabeli `invitations`:**
   - `token` (TEXT, UNIQUE, NOT NULL) - unikalny token do linków zaproszeniowych
   - `expires_at` (TIMESTAMPTZ, NOT NULL) - data wygaśnięcia (domyślnie 7 dni od utworzenia)
@@ -40,11 +42,13 @@ Zaimplementowano pełny system zapraszania użytkowników (zarówno zarejestrowa
 #### Endpointy API:
 
 **`GET /api/tours/[tourId]/invitations`**
+
 - Zwraca listę wszystkich zaproszeń dla wycieczki
 - Tylko właściciel wycieczki może wyświetlić zaproszenia
 - Weryfikacja przez `tourService.getTourDetails()`
 
 **`POST /api/tours/[tourId]/invitations`**
+
 - Wysyła zaproszenia na podane adresy email
 - Walidacja inputu (Zod schema: `inviteParticipantsCommandSchema`)
 - Filtruje istniejących uczestników i pending invitations
@@ -52,15 +56,18 @@ Zaimplementowano pełny system zapraszania użytkowników (zarówno zarejestrowa
 - Zwraca: `{ sent: [], skipped: [], errors: [] }`
 
 **`DELETE /api/invitations/[invitationId]`**
+
 - Anuluje pending invitation
 - Tylko właściciel wycieczki może anulować
 
 **`GET /api/invitations?token={token}`**
+
 - Publiczny endpoint (bez autoryzacji)
 - Zwraca szczegóły zaproszenia po tokenie
 - Sprawdza wygaśnięcie i status
 
 **`POST /api/invitations/[invitationId]/accept`**
+
 - Akceptuje zaproszenie po ID
 - Wymaga autoryzacji użytkownika
 - Weryfikuje zgodność email
@@ -68,12 +75,14 @@ Zaimplementowano pełny system zapraszania użytkowników (zarówno zarejestrowa
 ### 3. Frontend - Komponenty React
 
 #### `InvitationForm.tsx`
+
 - Formularz do wysyłania zaproszeń
 - Pole tekstowe z obsługą wielu emaili (rozdzielone przecinkami)
 - Używa `useInvitationMutations.sendInvitations()`
 - Toast notifications dla sukcesu/błędu
 
 #### `InvitedUsersList.tsx`
+
 - Wyświetla listę zaproszonych użytkowników
 - Statusy: pending, accepted, declined
 - Przycisk do anulowania pending invitations (tylko dla właściciela)
@@ -81,6 +90,7 @@ Zaimplementowano pełny system zapraszania użytkowników (zarówno zarejestrowa
 - Używa `useInvitations()` hook
 
 #### `InviteAcceptanceView.tsx`
+
 - Strona akceptacji zaproszenia (`/invite?token=...`)
 - Obsługuje 3 scenariusze:
   1. Użytkownik zalogowany z tym samym emailem - może zaakceptować
@@ -90,22 +100,26 @@ Zaimplementowano pełny system zapraszania użytkowników (zarówno zarejestrowa
 - Po akceptacji: redirect na dashboard z parametrem `invitation_accepted`
 
 #### `TourDetailsView.tsx` (zmodyfikowany)
+
 - Dodano sekcje `InvitationForm` i `InvitedUsersList`
 - Widoczne tylko dla właściciela wycieczki
 
 ### 4. React Query Hooks
 
 #### `useInvitations(tourId)`
+
 - Hook do pobierania listy zaproszeń dla wycieczki
 - Query key: `["invitations", tourId]`
 
 #### `useInvitationMutations()`
+
 - `sendInvitations()` - wysyłanie zaproszeń
 - `cancelInvitation()` - anulowanie zaproszenia (z optimistic updates)
 - `acceptInvitation()` - akceptacja zaproszenia
   - Invaliduje cache: `["tour", tour_id]`, `["tours"]`, `["invitations", tour_id]`
 
 #### `useTourList()` (zmodyfikowany)
+
 - Dodano logikę wykrywania parametru `invitation_accepted` w URL
 - Automatyczne odświeżanie listy wycieczek po akceptacji zaproszenia
 - Toast notification po sukcesie
@@ -113,6 +127,7 @@ Zaimplementowano pełny system zapraszania użytkowników (zarówno zarejestrowa
 ### 5. Email Templates
 
 #### `supabase/templates/invite.html`
+
 - Uniwersalny szablon dla magic links i zaproszeń
 - Warunkowa treść w zależności od `Data.is_invitation`
 - Wyświetla nazwę zapraszającego (`Data.inviter_name`)
@@ -125,6 +140,7 @@ Zaimplementowano pełny system zapraszania użytkowników (zarówno zarejestrowa
 ### 6. Automatyczna Akceptacja Zaproszeń
 
 #### `src/pages/auth/confirm.astro`
+
 - Middleware automatycznie wykrywa token zaproszenia w `redirectPath`
 - Format: `/invite?token={token}`
 - Po udanym logowaniu/rejestracji:
@@ -135,6 +151,7 @@ Zaimplementowano pełny system zapraszania użytkowników (zarówno zarejestrowa
 ### 7. TypeScript Types
 
 #### Zaktualizowane w `src/types.ts`:
+
 - `InvitationDto` - dodano `token?` i `expires_at`
 - `InviteParticipantsCommand` - command do wysyłania zaproszeń
 - `SendInvitationsResponse` - response z podziałem na sent/skipped/errors
@@ -144,6 +161,7 @@ Zaimplementowano pełny system zapraszania użytkowników (zarówno zarejestrowa
 ### 8. Validatory
 
 #### `src/lib/validators/invitation.validators.ts`:
+
 - `inviteParticipantsCommandSchema` - walidacja listy emaili
 - `invitationIdSchema` - walidacja UUID
 - `invitationTokenSchema` - walidacja formatu tokenu (32-64 znaki)
@@ -151,6 +169,7 @@ Zaimplementowano pełny system zapraszania użytkowników (zarówno zarejestrowa
 ### 9. Internationalization
 
 #### Dodane klucze w `public/locales/*/tours.json`:
+
 - `invitations.sendSuccess` / `sendError`
 - `invitations.cancelSuccess` / `cancelError`
 - `invitations.acceptSuccess` / `acceptError`
@@ -163,6 +182,7 @@ Zaimplementowano pełny system zapraszania użytkowników (zarówno zarejestrowa
 ## Flow Użytkownika
 
 ### Scenariusz 1: Nowy użytkownik
+
 1. Właściciel wycieczki wysyła zaproszenie na email
 2. Użytkownik otrzymuje email z magic linkiem (spersonalizowanym jako zaproszenie)
 3. Kliknięcie linku → `/auth/confirm` → automatyczne utworzenie konta
@@ -170,6 +190,7 @@ Zaimplementowano pełny system zapraszania użytkowników (zarówno zarejestrowa
 5. Redirect na dashboard → wycieczka widoczna na liście
 
 ### Scenariusz 2: Istniejący użytkownik (ten sam email)
+
 1. Właściciel wysyła zaproszenie
 2. Użytkownik otrzymuje email z magic linkiem
 3. Kliknięcie linku → logowanie
@@ -177,6 +198,7 @@ Zaimplementowano pełny system zapraszania użytkowników (zarówno zarejestrowa
 5. Redirect na dashboard
 
 ### Scenariusz 3: Istniejący użytkownik (inny email)
+
 1. Właściciel wysyła zaproszenie na email X
 2. Użytkownik loguje się emailem Y
 3. Na stronie `/invite` widzi komunikat o niezgodności emaili
@@ -187,12 +209,14 @@ Zaimplementowano pełny system zapraszania użytkowników (zarówno zarejestrowa
 ## Konfiguracja
 
 ### `supabase/config.toml`
+
 - Template magic link: `./supabase/templates/invite.html`
 - Site URL: `http://localhost:3000`
 - Additional redirect URLs: zawiera `/invite` route
 - Email testing: Inbucket/Mailpit na porcie 54324
 
 ### Environment Variables
+
 - `PUBLIC_SUPABASE_URL` - używane do budowania URL-i zaproszeń
 - `SUPABASE_SERVICE_ROLE_KEY` - dla admin client (wysyłanie emaili)
 
@@ -201,6 +225,7 @@ Zaimplementowano pełny system zapraszania użytkowników (zarówno zarejestrowa
 ## Pliki Utworzone/Zmodyfikowane
 
 ### Nowe pliki:
+
 - `supabase/migrations/20251102184243_add_invitation_token_expiry.sql`
 - `src/lib/services/invitation.service.ts`
 - `src/lib/validators/invitation.validators.ts`
@@ -216,6 +241,7 @@ Zaimplementowano pełny system zapraszania użytkowników (zarówno zarejestrowa
 - `src/pages/[...locale]/invite.astro`
 
 ### Zmodyfikowane pliki:
+
 - `src/types.ts` - dodane DTOs dla zaproszeń
 - `src/components/tours/TourDetailsView.tsx` - dodano sekcje zaproszeń
 - `src/components/tours/TourList.tsx` - dodano auto-refresh po akceptacji
@@ -260,6 +286,7 @@ Zaimplementowano pełny system zapraszania użytkowników (zarówno zarejestrowa
 ## Testowanie
 
 ### Local Development:
+
 1. Uruchom `supabase start`
 2. Inbucket/Mailpit dostępny na `http://localhost:54324`
 3. Test flow:
@@ -270,6 +297,7 @@ Zaimplementowano pełny system zapraszania użytkowników (zarówno zarejestrowa
    - Sprawdź dashboard → wycieczka powinna być widoczna
 
 ### Edge Cases do Przetestowania:
+
 - Zaproszenie wygasłe (po 7 dniach)
 - Zaproszenie już zaakceptowane (próba ponownej akceptacji)
 - Email już jest uczestnikiem wycieczki
@@ -349,9 +377,8 @@ Zaimplementowano pełny system zapraszania użytkowników (zarówno zarejestrowa
 ## Kontakt / Wsparcie
 
 Jeśli potrzebujesz kontynuować pracę nad tym feature:
+
 1. Najpierw przetestuj obecny flow end-to-end
 2. Sprawdź czy email template faktycznie otrzymuje custom data
 3. Jeśli nie - sprawdź alternatywne rozwiązania w dokumentacji Supabase
 4. Zaktualizuj ten dokument po wprowadzeniu zmian
-
-

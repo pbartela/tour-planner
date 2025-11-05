@@ -20,7 +20,6 @@
       "message": "Wystąpił problem z żądaniem uwierzytelnienia. Spróbuj ponownie.",
       "title": "Błąd uwierzytelnienia"
     },
-    "helpText": "Jeśli nadal występują problemy, skontaktuj się z naszym zespołem wsparcia.",
     "invalidLink": {
       "action": "Poproś o nowy link",
       "message": "Ten link uwierzytelniający jest nieprawidłowy lub uszkodzony. Poproś o nowy.",

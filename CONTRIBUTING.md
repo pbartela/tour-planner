@@ -31,23 +31,27 @@ We are committed to providing a welcoming and inclusive environment for all cont
 1. **Fork the repository** on GitHub
 
 2. **Clone your fork:**
+
    ```sh
    git clone https://github.com/YOUR_USERNAME/tour-planner.git
    cd tour-planner
    ```
 
 3. **Add the upstream remote:**
+
    ```sh
    git remote add upstream https://github.com/turu/tour-planner.git
    ```
 
 4. **Install dependencies:**
+
    ```sh
    npm install
    ```
 
 5. **Set up environment variables:**
    Copy `.env.example` to `.env` and fill in your Supabase credentials:
+
    ```sh
    cp .env.example .env
    ```
@@ -62,10 +66,13 @@ The application should now be running at `http://localhost:4321`.
 ## Development Workflow
 
 1. **Create a new branch** for your feature or bug fix:
+
    ```sh
    git checkout -b feature/your-feature-name
    ```
+
    or
+
    ```sh
    git checkout -b fix/your-bug-fix
    ```
@@ -77,6 +84,7 @@ The application should now be running at `http://localhost:4321`.
 4. **Commit your changes** following the [Commit Message Guidelines](#commit-message-guidelines)
 
 5. **Push to your fork:**
+
    ```sh
    git push origin feature/your-feature-name
    ```
@@ -88,11 +96,13 @@ The application should now be running at `http://localhost:4321`.
 Use descriptive, kebab-case branch names that clearly indicate the type and scope of work:
 
 #### Branch Name Format
+
 ```
 <type>/<short-description>
 ```
 
 #### Branch Types
+
 - `feature/` - New feature implementation
 - `fix/` - Bug fixes
 - `refactor/` - Code refactoring without behavior changes
@@ -103,6 +113,7 @@ Use descriptive, kebab-case branch names that clearly indicate the type and scop
 - `security/` - Security-related changes
 
 #### Good Examples
+
 ✅ `feature/invitation-system` - Clear scope, single feature
 ✅ `fix/rate-limiting-invitations` - Specific fix
 ✅ `refactor/query-client-pattern` - Clear refactoring goal
@@ -110,6 +121,7 @@ Use descriptive, kebab-case branch names that clearly indicate the type and scop
 ✅ `security/csrf-protection` - Security enhancement
 
 #### Bad Examples
+
 ❌ `metada-cache` - Typo, unclear scope (metadata? what about it?)
 ❌ `updates` - Too vague
 ❌ `fix-stuff` - Not descriptive
@@ -119,6 +131,7 @@ Use descriptive, kebab-case branch names that clearly indicate the type and scop
 ### Pull Request Scope Guidelines
 
 **Golden Rule**: Each PR should represent ONE logical change that can be:
+
 - Reviewed independently
 - Deployed independently (when possible)
 - Reverted independently if issues arise
@@ -157,6 +170,7 @@ Use descriptive, kebab-case branch names that clearly indicate the type and scop
 #### When to Split a PR
 
 **Split if**:
+
 - PR has >500 lines of changes (unless mostly generated)
 - Changes span multiple unrelated features
 - Some changes could be deployed independently
@@ -164,6 +178,7 @@ Use descriptive, kebab-case branch names that clearly indicate the type and scop
 - Reviewers request splitting for clarity
 
 **Don't split if**:
+
 - Changes are tightly coupled (e.g., API + UI for same feature)
 - Splitting would break functionality
 - It's a large refactoring that must be atomic
@@ -178,6 +193,7 @@ Use descriptive, kebab-case branch names that clearly indicate the type and scop
 - **Interfaces Over Types**: Prefer interfaces for object shapes unless you need union/intersection types
 
 Example:
+
 ```typescript
 // Good
 export function calculateTotal(items: CartItem[]): number {
@@ -197,6 +213,7 @@ export function calculateTotal(items: any) {
 - **Return Types**: Explicitly type component return values as `React.JSX.Element`
 
 Example:
+
 ```typescript
 interface ButtonProps {
   label: string;
@@ -233,6 +250,7 @@ export function Button({ label, onClick, disabled = false }: ButtonProps): React
   4. Styles
 
 Example:
+
 ```typescript
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -250,6 +268,7 @@ import type { Tour } from "@/types";
 - **Component Documentation**: Consider adding Storybook stories for new UI components
 
 Example:
+
 ```typescript
 /**
  * Validates and processes a magic link authentication request.
@@ -258,10 +277,7 @@ Example:
  * @param redirectTo - Optional redirect path after authentication
  * @returns Response indicating success or failure
  */
-export async function sendMagicLink(
-  email: string,
-  redirectTo?: string
-): Promise<{ success: boolean; error?: string }> {
+export async function sendMagicLink(email: string, redirectTo?: string): Promise<{ success: boolean; error?: string }> {
   // Implementation
 }
 ```
@@ -293,6 +309,7 @@ Before submitting a pull request:
 Use the format: `<type>: <clear description>`
 
 **Types**:
+
 - `feat:` - New feature
 - `fix:` - Bug fix
 - `refactor:` - Code refactoring
@@ -303,12 +320,14 @@ Use the format: `<type>: <clear description>`
 - `security:` - Security fix
 
 **Good Examples**:
+
 - ✅ `feat: add invitation system with email notifications`
 - ✅ `fix: resolve rate limiting bypass in invitation API`
 - ✅ `refactor: convert Query Client to singleton for Astro compatibility`
 - ✅ `docs: add database rollback guide`
 
 **Bad Examples**:
+
 - ❌ `Metada cache` - Typo, vague, missing type
 - ❌ `Updates` - Too vague
 - ❌ `WIP` - Not ready for review (use draft PRs instead)
@@ -317,21 +336,26 @@ Use the format: `<type>: <clear description>`
 
 ```markdown
 ## Summary
+
 Brief description of what this PR does (1-2 sentences)
 
 ## Motivation
+
 Why is this change needed? What problem does it solve?
 
 ## Changes
+
 - Change 1
 - Change 2
 - Change 3
 
 ## Breaking Changes
+
 List any breaking changes and migration steps (if applicable)
 See MIGRATION_GUIDE.md if this introduces breaking changes.
 
 ## Type of Change
+
 - [ ] Bug fix (non-breaking change that fixes an issue)
 - [ ] New feature (non-breaking change that adds functionality)
 - [ ] Breaking change (fix or feature that causes existing functionality to change)
@@ -340,6 +364,7 @@ See MIGRATION_GUIDE.md if this introduces breaking changes.
 - [ ] Performance improvement
 
 ## Testing
+
 - [ ] Manual testing completed
 - [ ] Unit tests added/updated
 - [ ] Integration tests pass
@@ -347,15 +372,19 @@ See MIGRATION_GUIDE.md if this introduces breaking changes.
 - [ ] Database migrations tested (if applicable)
 
 ## Deployment Notes
+
 Any special considerations for deployment? Database migrations?
 
 ## Screenshots (if applicable)
+
 Visual changes should include before/after screenshots
 
 ## Related Issues
+
 Fixes #(issue number)
 
 ## Checklist
+
 - [ ] Code follows project style guidelines
 - [ ] Self-reviewed code
 - [ ] Commented complex logic

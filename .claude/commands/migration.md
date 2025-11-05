@@ -14,6 +14,7 @@ CRITICAL: The migration file MUST be named in this exact format:
 `YYYYMMDDHHmmss_short_description.sql`
 
 Where:
+
 - `YYYY` = Four-digit year (e.g., 2025)
 - `MM` = Two-digit month (01-12)
 - `DD` = Two-digit day (01-31)
@@ -30,6 +31,7 @@ Example: `20251029143045_create_profiles.sql`
 Every migration file should include:
 
 ### 1. Header Comment
+
 ```sql
 -- Migration: [Purpose of migration]
 -- Created: [Date]
@@ -47,6 +49,7 @@ Every migration file should include:
 ### 2. SQL Guidelines
 
 Write PostgreSQL-compatible SQL that:
+
 - Uses lowercase for all SQL keywords and identifiers
 - Includes detailed comments for each major step
 - Groups related operations logically
@@ -57,6 +60,7 @@ Write PostgreSQL-compatible SQL that:
 For **EVERY** new table:
 
 1. **Enable RLS** (mandatory, even for public tables):
+
 ```sql
 alter table table_name enable row level security;
 ```
@@ -67,6 +71,7 @@ alter table table_name enable row level security;
    - Do NOT combine policies even if logic is similar
 
 Example for a public table:
+
 ```sql
 -- RLS policies for anon role
 create policy "anon_select_table_name"
@@ -92,6 +97,7 @@ create policy "authenticated_insert_table_name"
 ```
 
 Example for user-owned data:
+
 ```sql
 -- RLS policies for authenticated users (own data only)
 create policy "users_select_own_data"
@@ -119,17 +125,20 @@ create policy "users_delete_own_data"
 ### 4. Common Table Patterns
 
 #### Timestamps
+
 ```sql
 created_at timestamptz default now() not null,
 updated_at timestamptz default now() not null
 ```
 
 #### User Foreign Key
+
 ```sql
 user_id uuid references auth.users(id) on delete cascade not null
 ```
 
 #### Auto-update Trigger
+
 ```sql
 -- Function to update updated_at timestamp
 create or replace function update_updated_at_column()
@@ -150,6 +159,7 @@ create trigger update_table_name_updated_at
 ### 5. Destructive Operations
 
 For DROP, TRUNCATE, or column alterations, add copious warnings:
+
 ```sql
 -- ⚠️ WARNING: DESTRUCTIVE OPERATION
 -- This will permanently delete all data in table_name
@@ -161,6 +171,7 @@ drop table if exists table_name cascade;
 ## Migration Checklist
 
 Before creating the migration, verify:
+
 - [ ] File name follows YYYYMMDDHHmmss_description.sql format
 - [ ] Header comment with metadata included
 - [ ] All SQL is lowercase
@@ -252,6 +263,7 @@ create trigger update_tours_updated_at
 ## After Creating the Migration
 
 Remind the user to:
+
 1. Review the migration file
 2. Test in local environment first: `npx supabase db reset`
 3. Apply to production with caution: `npx supabase db push`

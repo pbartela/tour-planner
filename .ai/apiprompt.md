@@ -3,8 +3,8 @@ You are an experienced software architect whose task is to create a detailed imp
 Before we begin, review the following information:
 
 1. Route API specification:
-<route_api_specification>
-REST API Plan
+   <route_api_specification>
+   REST API Plan
 
 This document outlines the REST API for the Tour Planner application. The API is designed to be RESTful, using standard HTTP methods and status codes. All endpoints are prefixed with `/api`.
 
@@ -28,7 +28,7 @@ These endpoints handle user authentication via Supabase's magic link (OTP) flow.
 
 ---
 
-#### Request Magic Link*
+#### Request Magic Link\*
 
 - **Method:** `POST`
 - **URL:** `/api/auth/magic-link`
@@ -506,7 +506,8 @@ Endpoints for managing tags on archived tours.
 </route_api_specification>
 
 2. Related database resources:
-<related_db_resources>
+   <related_db_resources>
+
 # Database Schema: Tour Planner
 
 This document outlines the PostgreSQL database schema for the Tour Planner application, designed for use with Supabase.
@@ -518,15 +519,15 @@ This document outlines the PostgreSQL database schema for the Tour Planner appli
 This table is managed by Supabase Aut
 Stores user profile information, extending the `auth.users` table.
 
-| Column                 | Type          | Constraints                                                                                         | Description                                                      |
-| :--------------------- | :------------ | :-------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
-| `id`                   | `uuid`        | Primary Key, Foreign Key to `auth.users.id`                                                         | References the user in Supabase's auth system.                   |
-| `display_name`         | `text`        |                                                                                                     | Optional display name (full name).                               |
-| `language`             | `text`        | Not Null, Default `'en'`                                                                            | User's preferred language.                                       |
-| `theme`                | `text`        | Not Null, Default `'system'`                                                                        | User's preferred theme (e.g., 'light', 'dark', 'system').        |
-| `onboarding_completed` | `boolean`     | Not Null, Default `false`                                                                           | Tracks if the user has completed the initial onboarding.         |
-| `created_at`           | `timestamptz` | Not Null, Default `now()`                                                                           | Timestamp of profile creation.                                   |
-| `updated_at`           | `timestamptz` | Not Null, Default `now()`                                                                           | Timestamp of the last profile update.                            |
+| Column                 | Type          | Constraints                                 | Description                                               |
+| :--------------------- | :------------ | :------------------------------------------ | :-------------------------------------------------------- |
+| `id`                   | `uuid`        | Primary Key, Foreign Key to `auth.users.id` | References the user in Supabase's auth system.            |
+| `display_name`         | `text`        |                                             | Optional display name (full name).                        |
+| `language`             | `text`        | Not Null, Default `'en'`                    | User's preferred language.                                |
+| `theme`                | `text`        | Not Null, Default `'system'`                | User's preferred theme (e.g., 'light', 'dark', 'system'). |
+| `onboarding_completed` | `boolean`     | Not Null, Default `false`                   | Tracks if the user has completed the initial onboarding.  |
+| `created_at`           | `timestamptz` | Not Null, Default `now()`                   | Timestamp of profile creation.                            |
+| `updated_at`           | `timestamptz` | Not Null, Default `now()`                   | Timestamp of the last profile update.                     |
 
 ---
 
@@ -747,236 +748,256 @@ The following environment variables are required:
 </related_db_resources>
 
 3. Type definitions:
-<type_definitions>
-import type { Tables, TablesInsert, TablesUpdate } from "./db/database.types";
+   <type_definitions>
+   import type { Tables, TablesInsert, TablesUpdate } from "./db/database.types";
 
 // ============================================================================
 // Generic & Helper Types
 // ============================================================================
 
-/**
- * Represents the structure of a paginated API response.
- * @template T The type of the data items in the response.
- */
-export interface PaginatedResponse<T> {
+/\*\*
+
+- Represents the structure of a paginated API response.
+- @template T The type of the data items in the response.
+  \*/
+  export interface PaginatedResponse<T> {
   data: T[];
   pagination: {
-    page: number;
-    limit: number;
-    total: number;
+  page: number;
+  limit: number;
+  total: number;
   };
-}
+  }
 
 // ============================================================================
 // Authentication
 // ============================================================================
 
-/**
- * Represents the authenticated user object, combining Supabase user data
- * with the application-specific profile. This is the shape of `Astro.locals.user`.
- */
-export interface User {
+/\*\*
+
+- Represents the authenticated user object, combining Supabase user data
+- with the application-specific profile. This is the shape of `Astro.locals.user`.
+  \*/
+  export interface User {
   id: string;
   email: string;
   profile: ProfileDto;
-}
+  }
 
 // ============================================================================
 // Profiles
 // ============================================================================
 
-/**
- * DTO for a user's profile.
- * Excludes `updated_at` as it's not exposed in the API.
- * Corresponds to the response body of `GET /api/profiles/me`.
- */
-export type ProfileDto = Omit<Tables<"profiles">, "updated_at">;
+/\*\*
 
-/**
- * Command model for updating a user's profile.
- * All fields are optional for partial updates (PATCH).
- * Corresponds to the request body of `PATCH /api/profiles/me`.
- */
-export type UpdateProfileCommand = Partial<
+- DTO for a user's profile.
+- Excludes `updated_at` as it's not exposed in the API.
+- Corresponds to the response body of `GET /api/profiles/me`.
+  \*/
+  export type ProfileDto = Omit<Tables<"profiles">, "updated_at">;
+
+/\*\*
+
+- Command model for updating a user's profile.
+- All fields are optional for partial updates (PATCH).
+- Corresponds to the request body of `PATCH /api/profiles/me`.
+  \*/
+  export type UpdateProfileCommand = Partial<
   Pick<Tables<"profiles">, "username" | "display_name" | "language" | "theme" | "onboarding_completed">
->;
+  > ;
 
 // ============================================================================
 // Tours
 // ============================================================================
 
-/**
- * DTO for a summarized view of a tour.
- * Used in lists where full details are not necessary.
- * Corresponds to an item in the response of `GET /api/tours`.
- */
-export type TourSummaryDto = Pick<
+/\*\*
+
+- DTO for a summarized view of a tour.
+- Used in lists where full details are not necessary.
+- Corresponds to an item in the response of `GET /api/tours`.
+  \*/
+  export type TourSummaryDto = Pick<
   Tables<"tours">,
   "id" | "title" | "destination" | "start_date" | "end_date" | "status"
-> & {
-  has_new_activity: boolean;
-};
+  > & {
+  > has_new_activity: boolean;
+  > };
 
-/**
- * DTO for a paginated list of tour summaries.
- * Corresponds to the full response of `GET /api/tours`.
- */
-export type PaginatedToursDto = PaginatedResponse<TourSummaryDto>;
+/\*\*
 
-/**
- * View model for the `TourCard.astro` component.
- * Represents the transformed data tailored for presentation.
- */
-export interface TourCardViewModel {
+- DTO for a paginated list of tour summaries.
+- Corresponds to the full response of `GET /api/tours`.
+  \*/
+  export type PaginatedToursDto = PaginatedResponse<TourSummaryDto>;
+
+/\*\*
+
+- View model for the `TourCard.astro` component.
+- Represents the transformed data tailored for presentation.
+  \*/
+  export interface TourCardViewModel {
   id: string;
   url: string;
   title: string;
   dateRange: string;
   hasNewActivity: boolean;
-}
+  }
 
-/**
- * Command model for creating a new tour.
- * Derives from the `Insert` type for the `tours` table.
- * Corresponds to the request body of `POST /api/tours`.
- */
-export type CreateTourCommand = Pick<
+/\*\*
+
+- Command model for creating a new tour.
+- Derives from the `Insert` type for the `tours` table.
+- Corresponds to the request body of `POST /api/tours`.
+  \*/
+  export type CreateTourCommand = Pick<
   TablesInsert<"tours">,
   "title" | "destination" | "description" | "start_date" | "end_date" | "participant_limit" | "like_threshold"
->;
+  > ;
 
-/**
- * DTO for the full details of a single tour.
- * Excludes `updated_at` as it's not exposed in the API.
- * Corresponds to the response of `GET /api/tours/{tourId}`.
- */
-export type TourDetailsDto = Omit<Tables<"tours">, "updated_at">;
+/\*\*
 
-/**
- * Command model for updating an existing tour.
- * All fields are optional for partial updates.
- * Corresponds to the request body of `PATCH /api/tours/{tourId}`.
- */
-export type UpdateTourCommand = Partial<
+- DTO for the full details of a single tour.
+- Excludes `updated_at` as it's not exposed in the API.
+- Corresponds to the response of `GET /api/tours/{tourId}`.
+  \*/
+  export type TourDetailsDto = Omit<Tables<"tours">, "updated_at">;
+
+/\*\*
+
+- Command model for updating an existing tour.
+- All fields are optional for partial updates.
+- Corresponds to the request body of `PATCH /api/tours/{tourId}`.
+  \*/
+  export type UpdateTourCommand = Partial<
   Pick<
-    Tables<"tours">,
-    | "title"
-    | "destination"
-    | "description"
-    | "start_date"
-    | "end_date"
-    | "participant_limit"
-    | "like_threshold"
-    | "are_votes_hidden"
-  >
->;
+  Tables<"tours">,
+  | "title"
+  | "destination"
+  | "description"
+  | "start_date"
+  | "end_date"
+  | "participant_limit"
+  | "like_threshold"
+  | "are_votes_hidden"
+  > ;
 
 // ============================================================================
 // Participants
 // ============================================================================
 
-/**
- * DTO for a tour participant.
- * Combines data from the `participants` and `profiles` tables.
- * Corresponds to an item in the response of `GET /api/tours/{tourId}/participants`.
- */
-export type ParticipantDto = Pick<Tables<"participants">, "user_id" | "joined_at"> &
+/\*\*
+
+- DTO for a tour participant.
+- Combines data from the `participants` and `profiles` tables.
+- Corresponds to an item in the response of `GET /api/tours/{tourId}/participants`.
+  \*/
+  export type ParticipantDto = Pick<Tables<"participants">, "user_id" | "joined_at"> &
   Pick<Tables<"profiles">, "username" | "display_name">;
 
 // ============================================================================
 // Invitations
 // ============================================================================
 
-/**
- * Command model for inviting users to a tour.
- * Corresponds to the request body of `POST /api/tours/{tourId}/invitations`.
- */
-export interface InviteParticipantsCommand {
+/\*\*
+
+- Command model for inviting users to a tour.
+- Corresponds to the request body of `POST /api/tours/{tourId}/invitations`.
+  \*/
+  export interface InviteParticipantsCommand {
   emails: string[];
-}
+  }
 
 // ============================================================================
 // Comments
 // ============================================================================
 
-/**
- * DTO for a comment on a tour.
- * Includes the commenter's username from the `profiles` table.
- * Corresponds to an item in the response of `GET /api/tours/{tourId}/comments`.
- */
-export type CommentDto = Tables<"comments"> & Pick<Tables<"profiles">, "username">;
+/\*\*
 
-/**
- * DTO for a paginated list of comments.
- * Corresponds to the full response of `GET /api/tours/{tourId}/comments`.
- */
-export type PaginatedCommentsDto = PaginatedResponse<CommentDto>;
+- DTO for a comment on a tour.
+- Includes the commenter's username from the `profiles` table.
+- Corresponds to an item in the response of `GET /api/tours/{tourId}/comments`.
+  \*/
+  export type CommentDto = Tables<"comments"> & Pick<Tables<"profiles">, "username">;
 
-/**
- * Command model for creating a new comment.
- * Corresponds to the request body of `POST /api/tours/{tourId}/comments`.
- */
-export type CreateCommentCommand = Pick<TablesInsert<"comments">, "content">;
+/\*\*
 
-/**
- * Command model for updating an existing comment.
- * Corresponds to the request body of `PATCH /api/tours/{tourId}/comments/{commentId}`.
- */
-export type UpdateCommentCommand = Pick<TablesUpdate<"comments">, "content">;
+- DTO for a paginated list of comments.
+- Corresponds to the full response of `GET /api/tours/{tourId}/comments`.
+  \*/
+  export type PaginatedCommentsDto = PaginatedResponse<CommentDto>;
+
+/\*\*
+
+- Command model for creating a new comment.
+- Corresponds to the request body of `POST /api/tours/{tourId}/comments`.
+  \*/
+  export type CreateCommentCommand = Pick<TablesInsert<"comments">, "content">;
+
+/\*\*
+
+- Command model for updating an existing comment.
+- Corresponds to the request body of `PATCH /api/tours/{tourId}/comments/{commentId}`.
+  \*/
+  export type UpdateCommentCommand = Pick<TablesUpdate<"comments">, "content">;
 
 // ============================================================================
 // Votes
 // ============================================================================
 
-/**
- * DTO representing the votes for a tour.
- * Includes the total count and a list of user IDs who voted.
- * Corresponds to the response of `GET /api/tours/{tourId}/votes`.
- */
-export interface TourVotesDto {
+/\*\*
+
+- DTO representing the votes for a tour.
+- Includes the total count and a list of user IDs who voted.
+- Corresponds to the response of `GET /api/tours/{tourId}/votes`.
+  \*/
+  export interface TourVotesDto {
   count: number;
   users: Tables<"votes">["user_id"][];
-}
+  }
 
-/**
- * DTO for the response of toggling a vote.
- * Corresponds to the response of `POST /api/tours/{tourId}/vote`.
- */
-export interface ToggleVoteResponseDto {
+/\*\*
+
+- DTO for the response of toggling a vote.
+- Corresponds to the response of `POST /api/tours/{tourId}/vote`.
+  \*/
+  export interface ToggleVoteResponseDto {
   message: "Vote added" | "Vote removed";
-}
+  }
 
 // ============================================================================
 // Tags
 // ============================================================================
 
-/**
- * Command model for adding tags to a tour.
- * Corresponds to the request body of `POST /api/tours/{tourId}/tags`.
- */
-export interface AddTagsCommand {
+/\*\*
+
+- Command model for adding tags to a tour.
+- Corresponds to the request body of `POST /api/tours/{tourId}/tags`.
+  \*/
+  export interface AddTagsCommand {
   tags: string[];
-}
+  }
 
 // ============================================================================
 // Error Handling
 // ============================================================================
 
-/**
- * Represents error information for user-facing error messages.
- * Used by the error mapping service to provide localized error details.
- */
-export interface ErrorInfo {
+/\*\*
+
+- Represents error information for user-facing error messages.
+- Used by the error mapping service to provide localized error details.
+  \*/
+  export interface ErrorInfo {
   title: string;
   message: string;
   action: string;
   errorCode: string;
-}
+  }
 
 </type_definitions>
 
 3. Tech stack:
-<tech_stack>
+   <tech_stack>
+
 ## Frontend - Astro with React for interactive components:
 
 - Astro 5 allows for the creation of fast, efficient pages and applications with minimal JavaScript.
@@ -1006,12 +1027,16 @@ export interface ErrorInfo {
 </tech_stack>
 
 4. Implementation rules:
-<implementation_rules>
+   <implementation_rules>
+
 ---
-description: 
-globs: src/db/*.ts,src/middleware/*.ts,src/lib/*.ts
+
+description:
+globs: src/db/_.ts,src/middleware/_.ts,src/lib/\*.ts
 alwaysApply: false
+
 ---
+
 ### Backend and Database
 
 - Use Supabase for backend services, including authentication and database interactions.
@@ -1019,17 +1044,21 @@ alwaysApply: false
 - Use Zod schemas to validate data exchanged with the backend.
 - Use supabase from context.locals in Astro routes instead of importing supabaseClient directly
 - Use SupabaseClient type from `src/db/supabase.client.ts`, not from `@supabase/supabase-js`
+
 ---
-description: 
-globs: *.astro
+
+description:
+globs: \*.astro
 alwaysApply: false
+
 ---
+
 ### Guidelines for Astro
 
 - Leverage View Transitions API for smooth page transitions (use ClientRouter)
 - Use content collections with type safety for blog posts, documentation, etc.
 - Leverage Server Endpoints for API routes
-- Use POST, GET  - uppercase format for endpoint handlers
+- Use POST, GET - uppercase format for endpoint handlers
 - Use `export const prerender = false` for API routes
 - Use zod for input validation in API routes
 - Extract logic into services in `src/lib/services`
@@ -1038,11 +1067,15 @@ alwaysApply: false
 - Implement hybrid rendering with server-side rendering where needed
 - Use Astro.cookies for server-side cookie management
 - Leverage import.meta.env for environment variables
+
 ---
-description: 
-globs: 
+
+description:
+globs:
 alwaysApply: true
+
 ---
+
 # AI Rules for {app-name}
 
 {project-description}
@@ -1068,7 +1101,7 @@ When introducing changes to the project, always follow the directory structure b
 - `./src/types.ts` - Shared types for backend and frontend (Entities, DTOs)
 - `./src/components` - Client-side components written in Astro (static) and React (dynamic)
 - `./src/components/ui` - Client-side components from Shadcn/ui
-- `./src/lib` - Services and helpers 
+- `./src/lib` - Services and helpers
 - `./src/assets` - static internal assets
 - `./public` - public assets
 
@@ -1113,6 +1146,7 @@ After conducting the analysis, create a detailed implementation plan in markdown
 8. Implementation Steps
 
 Throughout the plan, ensure that you:
+
 - Use correct API status codes:
   - 200 for successful read
   - 201 for successful creation
@@ -1126,12 +1160,15 @@ Throughout the plan, ensure that you:
 The final output should be a well-organized implementation plan in markdown format. Here's an example of what the output should look like:
 
 ``markdown
+
 # API Endpoint Implementation Plan: [Endpoint Name]
 
 ## 1. Endpoint Overview
+
 [Brief description of endpoint purpose and functionality]
 
 ## 2. Request Details
+
 - HTTP Method: [GET/POST/PUT/DELETE]
 - URL Structure: [URL pattern]
 - Parameters:
@@ -1140,30 +1177,39 @@ The final output should be a well-organized implementation plan in markdown form
 - Request Body: [Request body structure, if applicable]
 
 ## 3. Used Types
+
 [DTOs and Command Models necessary for implementation]
 
 ## 3. Response Details
+
 [Expected response structure and status codes]
 
 ## 4. Data Flow
+
 [Description of data flow, including interactions with external services or databases]
 
 ## 5. Security Considerations
+
 [Authentication, authorization, and data validation details]
 
 ## 6. Error Handling
+
 [List of potential errors and how to handle them]
 
 ## 7. Performance Considerations
+
 [Potential bottlenecks and optimization strategies]
 
 ## 8. Implementation Steps
+
 1. [Step 1]
 2. [Step 2]
 3. [Step 3]
-...
+   ...
+
 ```
 
 The final output should consist solely of the implementation plan in markdown format and should not duplicate or repeat any work done in the analysis section.
 
 Remember to save your implementation plan as .ai/view-implementation-plan.md. Ensure the plan is detailed, clear, and provides comprehensive guidance for the development team.
+```

@@ -1,39 +1,74 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { navigate } from "astro:transitions/client";
+import toast from "react-hot-toast";
 import { useTourDetails } from "@/lib/hooks/useTourDetails";
-import { useDeleteTourMutation } from "@/lib/hooks/useTourMutations";
+import { useDeleteTourMutation, useLockVotingMutation, useUnlockVotingMutation } from "@/lib/hooks/useTourMutations";
+import { useMarkTourAsViewedMutation } from "@/lib/hooks/useTourActivity";
 import { CommentsList } from "./CommentsList";
 import { VotingSection } from "./VotingSection";
 import { InvitationForm } from "./InvitationForm";
 import { InvitedUsersList } from "./InvitedUsersList";
+import { EditTourModal } from "./EditTourModal";
 import { Button } from "@/components/ui/button";
+import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 import { SkeletonLoader } from "@/components/shared/SkeletonLoader";
 
 interface TourDetailsViewProps {
   tourId: string;
   currentUserId: string;
-  onEdit?: () => void;
 }
 
-export const TourDetailsView = ({ tourId, currentUserId, onEdit }: TourDetailsViewProps) => {
+export const TourDetailsView = ({ tourId, currentUserId }: TourDetailsViewProps) => {
   const { t } = useTranslation("tours");
   const { data: tour, isLoading, isError, error } = useTourDetails(tourId);
   const deleteMutation = useDeleteTourMutation();
-  const [deleteConfirmInput, setDeleteConfirmInput] = useState("");
+  const lockVotingMutation = useLockVotingMutation();
+  const unlockVotingMutation = useUnlockVotingMutation();
+  const markAsViewedMutation = useMarkTourAsViewedMutation();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const isOwner = tour?.owner_id === currentUserId;
 
-  const handleDelete = () => {
-    if (deleteConfirmInput === tour?.title) {
-      deleteMutation.mutate(tourId, {
+  // Mark tour as viewed when component mounts
+  useEffect(() => {
+    if (tourId) {
+      markAsViewedMutation.mutate(tourId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tourId]);
+
+  const handleToggleVotingLock = () => {
+    if (tour?.voting_locked) {
+      unlockVotingMutation.mutate(tourId, {
         onSuccess: () => {
-          // Navigate to home page after successful deletion using Astro View Transitions
-          navigate("/");
+          toast.success(t("voting.unlockVotingSuccess"));
+        },
+        onError: () => {
+          toast.error(t("voting.unlockVotingError"));
+        },
+      });
+    } else {
+      lockVotingMutation.mutate(tourId, {
+        onSuccess: () => {
+          toast.success(t("voting.lockVotingSuccess"));
+        },
+        onError: () => {
+          toast.error(t("voting.lockVotingError"));
         },
       });
     }
+  };
+
+  const handleDelete = () => {
+    deleteMutation.mutate(tourId, {
+      onSuccess: () => {
+        setShowDeleteConfirm(false);
+        // Navigate to home page after successful deletion using Astro View Transitions
+        navigate("/");
+      },
+    });
   };
 
   if (isLoading) {
@@ -75,11 +110,9 @@ export const TourDetailsView = ({ tourId, currentUserId, onEdit }: TourDetailsVi
             </div>
             {isOwner && (
               <div className="flex gap-2">
-                {onEdit && (
-                  <Button variant="outline" onClick={onEdit}>
-                    {t("tourDetails.edit")}
-                  </Button>
-                )}
+                <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
+                  {t("tourDetails.edit")}
+                </Button>
                 <Button variant="outline" onClick={() => setShowDeleteConfirm(true)} className="text-error">
                   {t("tourDetails.delete")}
                 </Button>
@@ -138,7 +171,41 @@ export const TourDetailsView = ({ tourId, currentUserId, onEdit }: TourDetailsVi
       )}
 
       {/* Voting Section */}
-      <VotingSection tourId={tourId} currentUserId={currentUserId} areVotesHidden={tour.are_votes_hidden} />
+      <div className="space-y-4">
+        {isOwner && (
+          <div className="card bg-base-100 shadow-xl">
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold">
+                    {tour.voting_locked ? t("voting.unlockVoting") : t("voting.lockVoting")}
+                  </h3>
+                  <p className="text-sm text-base-content/60">
+                    {tour.voting_locked ? t("voting.votingLockedMessage") : "Allow participants to vote"}
+                  </p>
+                </div>
+                <Button
+                  variant={tour.voting_locked ? "error" : "default"}
+                  onClick={handleToggleVotingLock}
+                  disabled={lockVotingMutation.isPending || unlockVotingMutation.isPending}
+                >
+                  {lockVotingMutation.isPending || unlockVotingMutation.isPending
+                    ? "..."
+                    : tour.voting_locked
+                      ? `🔓 ${t("voting.unlockVoting")}`
+                      : `🔒 ${t("voting.lockVoting")}`}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        <VotingSection
+          tourId={tourId}
+          currentUserId={currentUserId}
+          areVotesHidden={tour.are_votes_hidden}
+          votingLocked={tour.voting_locked}
+        />
+      </div>
 
       {/* Comments Section */}
       <div className="card bg-base-100 shadow-xl">
@@ -147,47 +214,28 @@ export const TourDetailsView = ({ tourId, currentUserId, onEdit }: TourDetailsVi
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="modal modal-open">
-          <div className="modal-box">
-            <h3 className="text-lg font-bold">{t("tourDetails.deleteConfirm.title")}</h3>
-            <p className="py-4">
-              {t("tourDetails.deleteConfirm.message")}
-              <br />
-              <br />
-              {t("tourDetails.deleteConfirm.typeTitlePrompt")} <strong>{tour.title}</strong>{" "}
-              {t("tourDetails.deleteConfirm.toConfirm")}
-            </p>
-            <input
-              type="text"
-              className="input input-bordered w-full"
-              value={deleteConfirmInput}
-              onChange={(e) => setDeleteConfirmInput(e.target.value)}
-              placeholder={tour.title}
-            />
-            <div className="modal-action">
-              <Button
-                variant="neutral-outline"
-                onClick={() => {
-                  setShowDeleteConfirm(false);
-                  setDeleteConfirmInput("");
-                }}
-              >
-                {t("tourDetails.deleteConfirm.cancel")}
-              </Button>
-              <Button
-                variant="error"
-                onClick={handleDelete}
-                disabled={deleteConfirmInput !== tour.title || deleteMutation.isPending}
-              >
-                {deleteMutation.isPending
-                  ? t("tourDetails.deleteConfirm.deleting")
-                  : t("tourDetails.deleteConfirm.confirm")}
-              </Button>
-            </div>
-          </div>
-        </div>
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        title={t("tourDetails.deleteConfirm.title")}
+        message={t("tourDetails.deleteConfirm.message")}
+        confirmText={t("tourDetails.deleteConfirm.confirm")}
+        cancelText={t("tourDetails.deleteConfirm.cancel")}
+        variant="error"
+        isPending={deleteMutation.isPending}
+        pendingText={t("tourDetails.deleteConfirm.deleting")}
+        requireTextConfirmation={{
+          expectedText: tour.title,
+          placeholder: tour.title,
+          prompt: t("tourDetails.deleteConfirm.typeTitlePrompt"),
+        }}
+      />
+
+      {/* Edit Tour Modal */}
+      {isEditModalOpen && (
+        <EditTourModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} tour={tour} />
       )}
     </div>
   );

@@ -110,7 +110,8 @@ class TourService {
             destination,
             start_date,
             end_date,
-            status
+            status,
+            updated_at
           )
         `,
           { count: "exact" }
@@ -125,24 +126,89 @@ class TourService {
         throw new Error("Failed to fetch tours from the database.");
       }
 
-      // Extract metadata for each tour in parallel
+      // Get tour IDs for activity tracking
+      const tourIds = (tours || []).map((p) => p.tour.id);
+
+      // Batch fetch tour activity data for all tours
+      const { data: activityData } = await supabase
+        .from("tour_activity")
+        .select("tour_id, last_viewed_at")
+        .eq("user_id", userId)
+        .in("tour_id", tourIds);
+
+      // Create a map of tour_id -> last_viewed_at for quick lookup
+      const activityMap = new Map<string, string>();
+      (activityData || []).forEach((activity) => {
+        activityMap.set(activity.tour_id, activity.last_viewed_at);
+      });
+
+      // Batch fetch latest comment timestamps for all tours
+      const { data: commentsData } = await supabase
+        .from("comments")
+        .select("tour_id, created_at")
+        .in("tour_id", tourIds)
+        .order("created_at", { ascending: false });
+
+      // Create a map of tour_id -> latest comment timestamp
+      const latestCommentMap = new Map<string, string>();
+      (commentsData || []).forEach((comment) => {
+        if (!latestCommentMap.has(comment.tour_id)) {
+          latestCommentMap.set(comment.tour_id, comment.created_at);
+        }
+      });
+
+      // Batch fetch latest vote timestamps for all tours
+      const { data: votesData } = await supabase
+        .from("votes")
+        .select("tour_id, created_at")
+        .in("tour_id", tourIds)
+        .order("created_at", { ascending: false });
+
+      // Create a map of tour_id -> latest vote timestamp
+      const latestVoteMap = new Map<string, string>();
+      (votesData || []).forEach((vote) => {
+        if (!latestVoteMap.has(vote.tour_id)) {
+          latestVoteMap.set(vote.tour_id, vote.created_at);
+        }
+      });
+
+      // Extract metadata and determine new activity for each tour in parallel
       const toursWithMetadata = await Promise.all(
         (tours || []).map(async (p: { tour: Omit<TourSummaryDto, "has_new_activity" | "metadata"> }) => {
           const metadata = await this.extractMetadata(p.tour.destination);
+
+          // Determine if there's new activity
+          const lastViewedAt = activityMap.get(p.tour.id);
+          let hasNewActivity = false;
+
+          if (!lastViewedAt) {
+            // User has never viewed this tour - everything is new
+            hasNewActivity = true;
+          } else {
+            const lastViewedTimestamp = new Date(lastViewedAt).getTime();
+
+            // Check if tour was updated after last view
+            const tourUpdatedTimestamp = new Date(p.tour.updated_at).getTime();
+            if (tourUpdatedTimestamp > lastViewedTimestamp) {
+              hasNewActivity = true;
+            }
+
+            // Check if there are new comments
+            const latestCommentTimestamp = latestCommentMap.get(p.tour.id);
+            if (latestCommentTimestamp && new Date(latestCommentTimestamp).getTime() > lastViewedTimestamp) {
+              hasNewActivity = true;
+            }
+
+            // Check if there are new votes
+            const latestVoteTimestamp = latestVoteMap.get(p.tour.id);
+            if (latestVoteTimestamp && new Date(latestVoteTimestamp).getTime() > lastViewedTimestamp) {
+              hasNewActivity = true;
+            }
+          }
+
           return {
             ...p.tour,
-            has_new_activity: false, // TODO: Implement activity tracking
-            // Implementation plan:
-            // 1. Create a `tour_views` table to track when users last viewed each tour
-            //    Schema: { tour_id, user_id, last_viewed_at, created_at }
-            // 2. Track "view" events when user opens tour details page
-            // 3. Determine "new activity" by comparing last_viewed_at with:
-            //    - Latest comment created_at (from comments table)
-            //    - Latest vote created_at (from votes table)
-            //    - Tour updated_at timestamp
-            // 4. Add index on (tour_id, user_id) for performance
-            // 5. Update this query to LEFT JOIN with tour_views and check activity timestamps
-            // 6. Consider caching strategy for large numbers of tours
+            has_new_activity: hasNewActivity,
             metadata: metadata || undefined,
           };
         })
@@ -306,6 +372,64 @@ class TourService {
     } catch (error) {
       console.error("Unexpected error in deleteTour:", error);
       return { error: error instanceof Error ? error : new Error("An unexpected error occurred.") };
+    }
+  }
+
+  /**
+   * Locks voting for a tour (owner only)
+   * When locked, participants cannot vote or change their votes
+   */
+  public async lockVoting(
+    supabase: SupabaseClient,
+    tourId: string
+  ): Promise<{ data: TourDetailsDto | null; error: Error | null }> {
+    try {
+      const { data, error } = await supabase
+        .from("tours")
+        .update({ voting_locked: true })
+        .eq("id", tourId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error locking voting:", error);
+        // RLS will prevent update if the user is not the owner
+        throw new Error("Failed to lock voting. You may not have permission.");
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      console.error("Unexpected error in lockVoting:", error);
+      return { data: null, error: error instanceof Error ? error : new Error("An unexpected error occurred.") };
+    }
+  }
+
+  /**
+   * Unlocks voting for a tour (owner only)
+   * When unlocked, participants can vote and change their votes
+   */
+  public async unlockVoting(
+    supabase: SupabaseClient,
+    tourId: string
+  ): Promise<{ data: TourDetailsDto | null; error: Error | null }> {
+    try {
+      const { data, error } = await supabase
+        .from("tours")
+        .update({ voting_locked: false })
+        .eq("id", tourId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error unlocking voting:", error);
+        // RLS will prevent update if the user is not the owner
+        throw new Error("Failed to unlock voting. You may not have permission.");
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      console.error("Unexpected error in unlockVoting:", error);
+      return { data: null, error: error instanceof Error ? error : new Error("An unexpected error occurred.") };
     }
   }
 }

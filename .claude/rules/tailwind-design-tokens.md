@@ -56,43 +56,43 @@ The following patterns are acceptable:
 
 ### Sizing
 
-| Arbitrary Value | Design Token | Notes |
-|----------------|--------------|-------|
-| `w-[500px]` | `w-container-sm` | Custom token |
-| `w-[540px]` | `w-container-md` | Custom token |
-| `w-[600px]` | `w-xl` (576px) | Closest standard |
+| Arbitrary Value | Design Token       | Notes            |
+| --------------- | ------------------ | ---------------- |
+| `w-[500px]`     | `w-container-sm`   | Custom token     |
+| `w-[540px]`     | `w-container-md`   | Custom token     |
+| `w-[600px]`     | `w-xl` (576px)     | Closest standard |
 | `max-w-[425px]` | `max-w-md` (448px) | Closest standard |
-| `h-[100vh]` | `h-screen` | Standard token |
-| `min-h-[60vh]` | `min-h-screen-60` | Custom token |
-| `max-h-[90vh]` | `max-h-screen-90` | Custom token |
+| `h-[100vh]`     | `h-screen`         | Standard token   |
+| `min-h-[60vh]`  | `min-h-screen-60`  | Custom token     |
+| `max-h-[90vh]`  | `max-h-screen-90`  | Custom token     |
 
 ### Typography
 
-| Arbitrary Value | Design Token | Notes |
-|----------------|--------------|-------|
-| `text-[32px]` | `text-4.5xl` | Custom token |
+| Arbitrary Value | Design Token         | Notes            |
+| --------------- | -------------------- | ---------------- |
+| `text-[32px]`   | `text-4.5xl`         | Custom token     |
 | `text-[0.8rem]` | `text-sm` (0.875rem) | Closest standard |
 
 ### Positioning
 
-| Arbitrary Value | Design Token | Notes |
-|----------------|--------------|-------|
-| `top-[50%]` | `top-1/2` | Standard fractional |
-| `left-[50%]` | `left-1/2` | Standard fractional |
+| Arbitrary Value      | Design Token       | Notes                  |
+| -------------------- | ------------------ | ---------------------- |
+| `top-[50%]`          | `top-1/2`          | Standard fractional    |
+| `left-[50%]`         | `left-1/2`         | Standard fractional    |
 | `translate-x-[-50%]` | `-translate-x-1/2` | Standard with negative |
 | `translate-y-[-50%]` | `-translate-y-1/2` | Standard with negative |
 
 ### Effects
 
-| Arbitrary Value | Design Token | Notes |
-|----------------|--------------|-------|
-| `ring-[3px]` | `ring-4` (4px) | Closest standard |
+| Arbitrary Value | Design Token   | Notes            |
+| --------------- | -------------- | ---------------- |
+| `ring-[3px]`    | `ring-4` (4px) | Closest standard |
 
 ### Z-Index
 
-| Arbitrary Value | Design Token | Notes |
-|----------------|--------------|-------|
-| `z-[1]` | `z-10` | Standard token |
+| Arbitrary Value | Design Token | Notes          |
+| --------------- | ------------ | -------------- |
+| `z-[1]`         | `z-10`       | Standard token |
 
 ## Adding New Design Tokens
 
@@ -117,6 +117,7 @@ When you need a value that doesn't have a close standard Tailwind token:
 ## Enforcement
 
 This rule is enforced through:
+
 - Code review process
 - Regular codebase audits
 - Claude Code following this guideline when making changes

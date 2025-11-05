@@ -108,6 +108,7 @@ For production, use the Supabase Dashboard SQL Editor.
 **Changes**: Creates initial database schema including tours, profiles, votes, comments, and invitations tables.
 
 **Rollback SQL**:
+
 ```sql
 -- WARNING: This will delete ALL data in the application!
 -- Only use in development or if you're absolutely certain
@@ -134,6 +135,7 @@ DROP TYPE IF EXISTS invitation_status;
 **Changes**: Adds `token_expires_at` column to invitations table and updates invitation token generation.
 
 **Rollback SQL**:
+
 ```sql
 -- Remove the token_expires_at column
 ALTER TABLE public.invitations
@@ -144,11 +146,13 @@ DROP COLUMN IF EXISTS token_expires_at;
 ```
 
 **Impact**:
+
 - Low risk if no invitations have been created with expiry tokens
 - Existing invitations with `token_expires_at` will lose that data
 - May need to regenerate invitation tokens
 
 **Data Check Before Rollback**:
+
 ```sql
 -- Check if any invitations have expiry data
 SELECT COUNT(*) FROM public.invitations WHERE token_expires_at IS NOT NULL;
@@ -161,6 +165,7 @@ SELECT COUNT(*) FROM public.invitations WHERE token_expires_at IS NOT NULL;
 **Changes**: Adds "declined" status to invitation_status enum and updates related policies/functions.
 
 **Rollback SQL**:
+
 ```sql
 -- WARNING: Rolling back enum changes is complex and requires special handling
 
@@ -185,11 +190,13 @@ ALTER TYPE invitation_status_new RENAME TO invitation_status;
 ```
 
 **Impact**:
+
 - High risk if any invitations have been declined
 - Cannot rollback if declined invitations exist without data loss
 - RLS policies may need adjustment
 
 **Data Check Before Rollback**:
+
 ```sql
 -- Check for declined invitations
 SELECT id, email, tour_id, status
@@ -209,6 +216,7 @@ WHERE status = 'declined';
 **Changes**: Adds or modifies RLS policies for updating invitations.
 
 **Rollback SQL**:
+
 ```sql
 -- Drop the added policy
 DROP POLICY IF EXISTS "Users can update their own invitations" ON public.invitations;
@@ -218,6 +226,7 @@ DROP POLICY IF EXISTS "Users can update their own invitations" ON public.invitat
 ```
 
 **Impact**:
+
 - Low risk - only affects permissions
 - Users won't be able to update invitations after rollback
 - No data loss
@@ -236,6 +245,7 @@ DROP POLICY IF EXISTS "Users can update their own invitations" ON public.invitat
    - Can it wait for a proper fix?
 
 2. **Immediate Response**
+
    ```bash
    # Put application in maintenance mode if possible
    # This prevents new data from being written
@@ -250,6 +260,7 @@ DROP POLICY IF EXISTS "Users can update their own invitations" ON public.invitat
    - Monitor for errors
 
 4. **Verify**
+
    ```sql
    -- Check table structure
    \d+ table_name
@@ -357,9 +368,7 @@ For application changes that depend on schema changes:
 const status = tour.new_column; // May fail if rolled back
 
 // Use feature flags
-const status = featureFlags.newTourStatus
-  ? tour.new_column
-  : tour.old_column;
+const status = featureFlags.newTourStatus ? tour.new_column : tour.old_column;
 ```
 
 This allows the application to work with both old and new schemas during rollback.
@@ -383,7 +392,7 @@ In each migration file, add comments about dependencies:
 Maintain a matrix of compatible versions:
 
 | Application Version | Migration Version | Compatible? |
-|---------------------|-------------------|-------------|
+| ------------------- | ----------------- | ----------- |
 | v1.0.0              | 20251014100000    | ✅          |
 | v1.1.0              | 20251102184243    | ✅          |
 | v1.1.0              | 20251014100000    | ⚠️ Degraded |

@@ -18,6 +18,7 @@ You are a React and Astro expert creating components for the Tour Planner projec
 Choose the component type based on interactivity:
 
 ### Use Astro (.astro) when:
+
 - Component is primarily static content
 - No client-side state management needed
 - No event handlers or interactivity
@@ -25,6 +26,7 @@ Choose the component type based on interactivity:
 - Static content pages
 
 ### Use React (.tsx) when:
+
 - Component needs client-side state
 - Event handlers required (onClick, onChange, etc.)
 - Real-time updates needed
@@ -38,11 +40,11 @@ Choose the component type based on interactivity:
 ### React Component Template
 
 ```tsx
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 // Import UI components
-import { Button } from '@/components/ui/button';
-import { Dialog } from '@/components/ui/dialog';
+import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 
 /**
  * [Component Name] - Brief description
@@ -64,12 +66,8 @@ interface ComponentNameProps {
   className?: string;
 }
 
-export function ComponentName({
-  prop1,
-  onAction,
-  className = ''
-}: ComponentNameProps) {
-  const { t } = useTranslation('namespace');
+export function ComponentName({ prop1, onAction, className = "" }: ComponentNameProps) {
+  const { t } = useTranslation("namespace");
   const [state, setState] = useState<Type>(initialValue);
 
   // Event handlers
@@ -81,9 +79,7 @@ export function ComponentName({
   return (
     <div className={`base-classes ${className}`}>
       {/* Component content */}
-      <Button onClick={handleClick}>
-        {t('button.label')}
-      </Button>
+      <Button onClick={handleClick}>{t("button.label")}</Button>
     </div>
   );
 }
@@ -103,7 +99,7 @@ interface Props {
   className?: string;
 }
 
-const { title, description, className = '' } = Astro.props;
+const { title, description, className = "" } = Astro.props;
 ---
 
 <div class={`base-classes ${className}`}>
@@ -120,6 +116,7 @@ const { title, description, className = '' } = Astro.props;
 ## Styling Guidelines
 
 ### 1. Use DaisyUI Components First
+
 ```tsx
 // Good: Use DaisyUI classes
 <button className="btn btn-primary">Click me</button>
@@ -129,6 +126,7 @@ const { title, description, className = '' } = Astro.props;
 ```
 
 ### 2. Use Semantic Colors
+
 ```tsx
 // Good: Semantic DaisyUI colors (theme-aware)
 <div className="bg-base-100 text-base-content">
@@ -142,16 +140,18 @@ const { title, description, className = '' } = Astro.props;
 ```
 
 ### 3. Responsive Design
+
 ```tsx
 // Good: Mobile-first responsive
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 ```
 
 ### 4. Use Existing UI Components
+
 ```tsx
-import { Button } from '@/components/ui/button';
-import { Dialog } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
+import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 ```
 
 ## Accessibility Checklist
@@ -168,15 +168,15 @@ import { Input } from '@/components/ui/input';
 ## Internationalization
 
 ```tsx
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 
 function Component() {
-  const { t } = useTranslation('namespace');
+  const { t } = useTranslation("namespace");
 
   return (
     <div>
-      <h1>{t('heading.title')}</h1>
-      <p>{t('description', { name: userName })}</p>
+      <h1>{t("heading.title")}</h1>
+      <p>{t("description", { name: userName })}</p>
     </div>
   );
 }
@@ -198,6 +198,7 @@ Place components in the appropriate directory:
 ## Component Patterns
 
 ### Form Components
+
 ```tsx
 interface FormData {
   field1: string;
@@ -205,7 +206,7 @@ interface FormData {
 }
 
 function FormComponent({ onSubmit }: { onSubmit: (data: FormData) => Promise<void> }) {
-  const [formData, setFormData] = useState<FormData>({ field1: '', field2: 0 });
+  const [formData, setFormData] = useState<FormData>({ field1: "", field2: 0 });
   const [errors, setErrors] = useState<Partial<FormData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -214,7 +215,7 @@ function FormComponent({ onSubmit }: { onSubmit: (data: FormData) => Promise<voi
 
     // Validate
     const newErrors: Partial<FormData> = {};
-    if (!formData.field1) newErrors.field1 = 'Required';
+    if (!formData.field1) newErrors.field1 = "Required";
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -231,15 +232,12 @@ function FormComponent({ onSubmit }: { onSubmit: (data: FormData) => Promise<voi
     }
   };
 
-  return (
-    <form onSubmit={handleSubmit}>
-      {/* Form fields */}
-    </form>
-  );
+  return <form onSubmit={handleSubmit}>{/* Form fields */}</form>;
 }
 ```
 
 ### Modal/Dialog Components
+
 ```tsx
 interface ModalProps {
   isOpen: boolean;
@@ -265,6 +263,7 @@ function Modal({ isOpen, onClose, title, children }: ModalProps) {
 ```
 
 ### List Components with Loading States
+
 ```tsx
 function ListComponent() {
   const [data, setData] = useState<Item[]>([]);
@@ -281,7 +280,7 @@ function ListComponent() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {data.map(item => (
+      {data.map((item) => (
         <ItemCard key={item.id} item={item} />
       ))}
     </div>
@@ -292,7 +291,7 @@ function ListComponent() {
 ## Performance Optimization
 
 ```tsx
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo } from "react";
 
 // Memoize expensive components
 export const ExpensiveComponent = memo(({ data }: Props) => {
@@ -317,6 +316,7 @@ function ParentComponent() {
 ## Testing Considerations
 
 When creating components, consider:
+
 - Edge cases (empty states, error states, loading states)
 - Responsive behavior across screen sizes
 - Accessibility with keyboard and screen readers
@@ -338,6 +338,7 @@ When creating components, consider:
 ## Output
 
 Provide:
+
 1. The complete component code
 2. Explanation of design decisions
 3. Usage example
