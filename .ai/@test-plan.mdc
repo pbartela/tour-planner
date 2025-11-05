@@ -1,0 +1,166 @@
+# Plan Testów dla Aplikacji "Plan Tour"
+
+## 1. Wprowadzenie i Cele Testowania
+
+### 1.1 Wprowadzenie
+
+Niniejszy dokument opisuje kompleksowy plan testów dla aplikacji internetowej "Plan Tour", przeznaczonej do planowania podróży grupowych. Plan ten obejmuje strategię, zakres, zasoby oraz harmonogram działań testowych mających na celu zapewnienie najwyższej jakości produktu końcowego. Projekt oparty jest o nowoczesny stos technologiczny, w skład którego wchodzą m.in. Astro, React, Supabase i TypeScript.
+
+### 1.2 Cele Testowania
+
+Główne cele procesu testowego to:
+
+*   **Weryfikacja zgodności:** Upewnienie się, że aplikacja działa zgodnie z założeniami biznesowymi i wymaganiami funkcjonalnymi.
+*   **Zapewnienie bezpieczeństwa:** Potwierdzenie, że dane użytkowników są chronione, a mechanizmy autoryzacji (w szczególności RLS w Supabase) działają poprawnie.
+*   **Gwarancja stabilności i wydajności:** Sprawdzenie, czy aplikacja działa stabilnie i wydajnie pod oczekiwanym obciążeniem.
+*   **Zapewnienie jakości User Experience (UX):** Weryfikacja, czy aplikacja jest intuicyjna, responsywna i wolna od błędów wizualnych na kluczowych urządzeniach i przeglądarkach.
+*   **Wykrywanie i raportowanie błędów:** Systematyczne identyfikowanie, dokumentowanie i śledzenie defektów w celu ich naprawy przed wdrożeniem produkcyjnym.
+
+## 2. Zakres Testów
+
+### 2.1 Funkcjonalności objęte testami
+
+*   **Moduł Uwierzytelniania:**
+    *   Proces logowania bezhasłowego (magic link).
+    *   Zarządzanie sesją użytkownika (wygasanie, wylogowywanie).
+    *   Ochrona tras wymagających uwierzytelnienia.
+*   **Zarządzanie Profilem Użytkownika:**
+    *   Tworzenie i aktualizacja danych profilowych.
+*   **Zarządzanie Wycieczkami (kluczowy moduł):**
+    *   Tworzenie, edycja i usuwanie propozycji wycieczek.
+    *   Zapraszanie uczestników przez e-mail.
+    *   System głosowania na propozycje.
+    *   System komentarzy.
+*   **API:**
+    *   Wszystkie endpointy w `src/pages/api/`.
+    *   Walidacja danych wejściowych i format odpowiedzi.
+*   **Internacjonalizacja (i18n):**
+    *   Poprawność wyświetlania treści w języku polskim (`pl-PL`) i angielskim (`en-US`).
+    *   Przełączanie języków.
+
+### 2.2 Funkcjonalności wyłączone z testów
+
+*   Testy integracji z zewnętrznymi dostawcami usług AI (Openrouter.ai), jeśli nie są zaimplementowane kluczowe funkcjonalności.
+*   Testy wydajnościowe serwerów pocztowych.
+
+## 3. Typy Testów do Przeprowadzenia
+
+Strategia testowania będzie wielopoziomowa i obejmie następujące typy testów:
+
+*   **Testy Jednostkowe (Unit Tests):**
+    *   **Cel:** Weryfikacja pojedynczych funkcji, komponentów React i schematów walidacji Zod w izolacji.
+    *   **Zakres:** Logika w serwisach (`src/lib/services`), customowe hooki React, funkcje pomocnicze, walidatory.
+*   **Testy Integracyjne (Integration Tests):**
+    *   **Cel:** Sprawdzenie współpracy między modułami.
+    *   **Zakres:** Testowanie warstwy serwisowej w połączeniu z (testową) bazą danych Supabase. Weryfikacja przepływu danych między komponentami React.
+*   **Testy End-to-End (E2E Tests):**
+    *   **Cel:** Symulacja rzeczywistych scenariuszy użytkownika w przeglądarce.
+    *   **Zakres:** Pełne ścieżki użytkownika, np. rejestracja -> logowanie -> stworzenie wycieczki -> zaproszenie znajomego -> głosowanie.
+*   **Testy API:**
+    *   **Cel:** Weryfikacja logiki, bezpieczeństwa i wydajności endpointów API.
+    *   **Zakres:** Testowanie kontraktów (żądanie/odpowiedź), kodów statusu HTTP, obsługi błędów, rate limitingu.
+*   **Testy Bezpieczeństwa:**
+    *   **Cel:** Identyfikacja podatności w aplikacji.
+    *   **Zakres:** Testowanie polityk Row Level Security (RLS) pod kątem wycieku danych, weryfikacja ochrony CSRF, sprawdzanie bezpieczeństwa sesji.
+*   **Testy Wydajnościowe:**
+    *   **Cel:** Ocena szybkości i responsywności aplikacji pod obciążeniem.
+    *   **Zakres:** Czas ładowania stron (SSR), wydajność zapytań do bazy danych przy dużej ilości danych testowych.
+*   **Testy Wizualnej Regresji:**
+    *   **Cel:** Automatyczne wykrywanie niezamierzonych zmian w interfejsie użytkownika.
+    *   **Zakres:** Porównywanie zrzutów ekranu komponentów (np. w Storybook) przed i po zmianach w kodzie.
+*   **Testy Użyteczności i Kompatybilności:**
+    *   **Cel:** Zapewnienie dobrego UX na różnych platformach.
+    *   **Zakres:** Ręczne testy na popularnych przeglądarkach (Chrome, Firefox, Safari) i urządzeniach (desktop, tablet, mobile). Weryfikacja responsywności i dostępności (a11y).
+
+## 4. Scenariusze Testowe dla Kluczowych Funkcjonalności
+
+| ID | Funkcjonalność | Scenariusz Testowy | Oczekiwany Rezultat | Priorytet |
+| :-- | :--- | :--- | :--- | :---: |
+| **AUTH-01** | Uwierzytelnianie | Użytkownik podaje poprawny adres e-mail i klika w link logowania otrzymany w wiadomości. | Użytkownik zostaje pomyślnie zalogowany i przekierowany na stronę główną. | Krytyczny |
+| **AUTH-02** | Uwierzytelnianie | Niezalogowany użytkownik próbuje uzyskać dostęp do chronionej strony (np. `/tours`). | Użytkownik zostaje przekierowany na stronę logowania. | Krytyczny |
+| **TOUR-01** | Zarządzanie Wycieczkami | Zalogowany użytkownik tworzy nową propozycję wycieczki, wypełniając wszystkie wymagane pola. | Propozycja jest widoczna na liście wycieczek. Użytkownik jest oznaczony jako twórca. | Wysoki |
+| **TOUR-02** | Zarządzanie Wycieczkami | Twórca wycieczki zaprasza innego zarejestrowanego użytkownika do udziału. | Zaproszony użytkownik otrzymuje powiadomienie e-mail i widzi wycieczkę na swojej liście. | Wysoki |
+| **TOUR-03** | Zarządzanie Wycieczkami | Zaproszony użytkownik głosuje "TAK" na propozycję wycieczki. | Głos zostaje zapisany. Inni uczestnicy widzą zaktualizowany wynik głosowania. | Wysoki |
+| **SEC-01** | Bezpieczeństwo (RLS) | Użytkownik A próbuje uzyskać dostęp do szczegółów prywatnej wycieczki użytkownika B poprzez bezpośrednie wywołanie API z ID tej wycieczki. | API zwraca błąd 404 (lub 403/401). Użytkownik A nie widzi danych wycieczki B. | Krytyczny |
+| **I18N-01** | Internacjonalizacja | Użytkownik zmienia język z angielskiego na polski na dowolnej stronie. | Interfejs użytkownika natychmiast przełącza się na język polski. URL zostaje zaktualizowany (`/en-US/...` -> `/pl-PL/...`). | Średni |
+| **UI-01** | Responsywność | Strona z listą wycieczek jest wyświetlana na urządzeniu mobilnym. | Layout strony dostosowuje się do szerokości ekranu, wszystkie elementy są czytelne i klikalne. | Średni |
+
+## 5. Środowisko Testowe
+
+*   **Środowisko deweloperskie lokalne:** Używane do testów jednostkowych i integracyjnych, uruchamiane za pomocą `npm run dev` i `npx supabase start`.
+*   **Środowisko Staging:** Osobna, w pełni skonfigurowana instancja aplikacji z własną bazą danych Supabase, odzwierciedlająca środowisko produkcyjne. Na tym środowisku będą przeprowadzane testy E2E, testy API oraz testy manualne (UAT). Baza danych na stagingu będzie regularnie zasilana danymi testowymi.
+*   **Przeglądarki:** Ostatnie dwie wersje Chrome, Firefox, Safari.
+*   **Urządzenia:** Desktop (rozdzielczość >1280px), Tablet (ok. 768px), Mobile (ok. 360px).
+
+## 6. Narzędzia do Testowania
+
+| Typ Testu | Narzędzie |
+| :--- | :--- |
+| **Testy Jednostkowe / Integracyjne** | Vitest (lub Jest) + React Testing Library |
+| **Testy E2E** | Playwright lub Cypress |
+| **Testy API** | Postman (manualne) / Playwright (automatyczne) |
+| **Testy Wydajnościowe** | Google Lighthouse / `k6` |
+| **Testy Wizualnej Regresji** | Chromatic (integracja ze Storybook) |
+| **Zarządzanie Testami / Raportowanie Błędów** | Jira, GitHub Issues lub podobne narzędzie |
+| **CI/CD** | GitHub Actions (do automatycznego uruchamiania testów) |
+
+## 7. Harmonogram Testów
+
+Proces testowania będzie prowadzony w sposób ciągły, zintegrowany z cyklem deweloperskim (CI/CD).
+
+*   **Testy jednostkowe i integracyjne:** Uruchamiane automatycznie przy każdym `push` do repozytorium na serwerze CI.
+*   **Testy E2E i API:** Uruchamiane automatycznie po każdym wdrożeniu na środowisko Staging.
+*   **Testy regresji (manualne i automatyczne):** Przeprowadzane przed każdym planowanym wdrożeniem produkcyjnym (np. raz na sprint).
+*   **Testy dymne (Smoke Tests):** Krótki zestaw kluczowych testów E2E uruchamiany po każdym wdrożeniu na produkcję w celu weryfikacji jej stabilności.
+
+## 8. Kryteria Akceptacji Testów
+
+### 8.1 Kryteria Wejścia
+
+*   Zakończony rozwój danej funkcjonalności.
+*   Pomyślne przejście testów jednostkowych i integracyjnych w CI.
+*   Wdrożenie funkcjonalności na środowisku Staging.
+*   Dostępna dokumentacja techniczna i wymagania.
+
+### 8.2 Kryteria Wyjścia (dla wdrożenia produkcyjnego)
+
+*   100% testów jednostkowych i integracyjnych zakończonych sukcesem.
+*   Co najmniej 95% krytycznych i wysokopriorytetowych scenariuszy E2E zakończonych sukcesem.
+*   Brak otwartych błędów o priorytecie krytycznym lub blokującym.
+*   Wszystkie zidentyfikowane problemy z bezpieczeństwem zostały rozwiązane.
+*   Wyniki testów wydajnościowych mieszczą się w zdefiniowanych progach (np. LCP < 2.5s).
+
+## 9. Role i Odpowiedzialności w Procesie Testowania
+
+*   **Deweloperzy:**
+    *   Odpowiedzialni za pisanie testów jednostkowych i integracyjnych dla swojego kodu.
+    *   Naprawianie błędów zgłoszonych przez zespół QA.
+    *   Utrzymywanie jakości kodu (linting, formatowanie).
+*   **Inżynier QA:**
+    *   Projektowanie i utrzymanie planu testów.
+    *   Tworzenie i automatyzacja scenariuszy testowych E2E, API i bezpieczeństwa.
+    *   Przeprowadzanie testów manualnych i eksploracyjnych.
+    *   Zarządzanie procesem raportowania błędów.
+    *   Końcowa akceptacja funkcjonalności przed wdrożeniem.
+*   **Product Owner / Manager:**
+    *   Definiowanie wymagań i kryteriów akceptacji.
+    *   Uczestnictwo w testach akceptacyjnych użytkownika (UAT).
+    *   Priorytetyzacja naprawy błędów.
+
+## 10. Procedury Raportowania Błędów
+
+Wszystkie znalezione błędy będą raportowane w systemie do śledzenia zadań (np. GitHub Issues) i powinny zawierać:
+
+1.  **Tytuł:** Krótki, zwięzły opis problemu.
+2.  **Środowisko:** Gdzie błąd wystąpił (np. Staging, Przeglądarka Chrome v115).
+3.  **Kroki do odtworzenia:** Numerowana lista kroków potrzebnych do wywołania błędu.
+4.  **Zachowanie oczekiwane:** Co powinno się wydarzyć.
+5.  **Zachowanie aktualne:** Co faktycznie się wydarzyło.
+6.  **Zrzuty ekranu / Nagrania wideo:** W miarę możliwości.
+7.  **Priorytet:**
+    *   **Krytyczny (Blocker):** Błąd uniemożliwia korzystanie z kluczowej funkcjonalności, brak obejścia.
+    *   **Wysoki (High):** Błąd znacząco utrudnia korzystanie z ważnej funkcjonalności.
+    *   **Średni (Medium):** Błąd powoduje nieprawidłowe działanie, ale istnieje obejście lub dotyczy mniej istotnej funkcji.
+    *   **Niski (Low):** Błąd kosmetyczny, literówka, drobny problem z UI.
+
+Każdy zgłoszony błąd będzie analizowany, przypisywany do odpowiedniego dewelopera i śledzony aż do jego rozwiązania i weryfikacji.
