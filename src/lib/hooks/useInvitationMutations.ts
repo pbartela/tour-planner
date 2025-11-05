@@ -122,6 +122,8 @@ export const useAcceptInvitationMutation = () => {
         queryClient.invalidateQueries({ queryKey: ["tours"] });
         // Also invalidate invitations for that tour (if user navigates back)
         queryClient.invalidateQueries({ queryKey: ["invitations", data.tour_id] });
+        // Invalidate user's pending invitations to update the indicator
+        queryClient.invalidateQueries({ queryKey: ["user-invitations", "pending"] });
       },
     },
     queryClient
@@ -139,6 +141,8 @@ export const useDeclineInvitationMutation = () => {
       onSuccess: (data) => {
         // Invalidate invitations list for that tour
         queryClient.invalidateQueries({ queryKey: ["invitations", data.tour_id] });
+        // Invalidate user's pending invitations to update the indicator
+        queryClient.invalidateQueries({ queryKey: ["user-invitations", "pending"] });
       },
     },
     queryClient
