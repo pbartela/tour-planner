@@ -95,14 +95,14 @@ When: Your helper function...
 Example:
 code Jsx
 
-    
+
 // ✅ DO: Good for pure functions, stable references
 const formatDateTime = (date) => new Date(date).toLocaleString();
 
 function MyComponent({ timestamp, onClick }) {
   const formatted = formatDateTime(timestamp); // Uses external helper
   return <button onClick={onClick}>{formatted}</button>;
-}  
+}
 
 ❌ DON'T: Declare Helper Function OUTSIDE your Component
 
@@ -121,7 +121,7 @@ When: Your helper function...
 Example:
 code Jsx
 
-    
+
 // ❌ DON'T (declare outside if it needs state/props):
 // This helper needs `setCount` and `step` from component scope.
 // It must be defined inside.
@@ -144,12 +144,12 @@ function Counter({ step = 1 }) {
   );
 }
 
-    
+
 // 💡 Use useCallback for stable internal functions
 const memoizedCallback = useCallback(() => {
   // ... logic using state/props ...
 }, [dependency1, dependency2]); // List all component-scope dependencies here
-    
+
 ```
 
 ### 7. **Static Objects and Constants**
@@ -180,23 +180,27 @@ const MyComponent = () => {
     facebook: "Share on Facebook",
     instagram: "Share on Instagram",
   };
-  
+
   return <ShareButtons labels={shareLabels} />;
 };
 
 // ✅ DO: Use useMemo ONLY if the object depends on props/state
 const MyComponent = ({ platform }) => {
-  const shareLabels = useMemo(() => ({
-    copy: `Copy ${platform} link`,
-    linkedin: `Share ${platform} on LinkedIn`,
-    // ... dynamic values based on props
-  }), [platform]);
-  
+  const shareLabels = useMemo(
+    () => ({
+      copy: `Copy ${platform} link`,
+      linkedin: `Share ${platform} on LinkedIn`,
+      // ... dynamic values based on props
+    }),
+    [platform]
+  );
+
   return <ShareButtons labels={shareLabels} />;
 };
 ```
 
 **Rule of thumb:**
+
 - Static data (no props/state) → Declare outside component as `const`
 - Dynamic data (uses props/state) → Use `useMemo` with proper dependencies
 - Never create objects/arrays directly in component body or render
@@ -235,24 +239,13 @@ export interface ComponentProps {
   className?: string;
 }
 
-export const Component: React.FC<ComponentProps> = ({
-  href,
-  icon,
-  ariaLabel,
-  onClick,
-  className,
-}) => {
+export const Component: React.FC<ComponentProps> = ({ href, icon, ariaLabel, onClick, className }) => {
   const baseClasses = classNames("base-styles", className);
 
   // Button when href is undefined
   if (!href) {
     return (
-      <button
-        type="button"
-        onClick={onClick}
-        className={baseClasses}
-        aria-label={ariaLabel}
-      >
+      <button type="button" onClick={onClick} className={baseClasses} aria-label={ariaLabel}>
         {icon}
       </button>
     );

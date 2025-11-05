@@ -37,12 +37,14 @@ Use this as foundational context when working on the Tour Planner codebase.
 ## Key Architectural Patterns
 
 ### Component Guidelines
+
 - Use Astro components (.astro) for static content and layouts
 - Use React components (.tsx) only when interactivity is needed
 - Never use "use client" directives (Next.js specific)
 - Check `.cursor/rules/components/COMPONENTS_REFERENCE.md` before creating new components
 
 ### API Routes
+
 - Use POST, GET (uppercase) for endpoint handlers
 - Set `export const prerender = false` for dynamic API routes
 - Use Zod for input validation
@@ -50,24 +52,28 @@ Use this as foundational context when working on the Tour Planner codebase.
 - Access Supabase via `context.locals.supabase` not direct imports
 
 ### Database
+
 - Use Supabase for all backend services
 - Create migrations in `supabase/migrations/` with format: `YYYYMMDDHHmmss_description.sql`
 - Always enable Row Level Security (RLS) on new tables
 - Use `SupabaseClient` type from `src/db/supabase.client.ts`
 
 ### Styling
+
 - Prefer DaisyUI component classes when available
 - Use Tailwind utilities for custom styling
 - Use semantic DaisyUI color names (primary, secondary, etc.) not Tailwind colors
 - Follow accessibility best practices (ARIA attributes, keyboard navigation)
 
 ### Error Handling
+
 - Handle errors and edge cases at the beginning of functions
 - Use early returns for error conditions
 - Implement proper error logging and user-friendly messages
 - Use guard clauses for preconditions
 
 ### React Patterns
+
 - Use functional components with hooks
 - Extract logic into custom hooks in `src/components/hooks`
 - Use React.memo() for expensive components
@@ -77,6 +83,7 @@ Use this as foundational context when working on the Tour Planner codebase.
 ## Environment Variables
 
 Required in `.env`:
+
 - `PUBLIC_SUPABASE_URL` - Supabase project URL
 - `SUPABASE_KEY` - Supabase anonymous key
 

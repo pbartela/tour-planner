@@ -15,13 +15,6 @@
     "tripUrl": "URL wycieczki",
     "tripUrlPlaceholder": "np. airbnb.com/rooms/..."
   },
-  "editTrip": {
-    "error": "Nie udało się zaktualizować wycieczki",
-    "save": "Zapisz zmiany",
-    "saving": "Zapisywanie...",
-    "success": "Wycieczka zaktualizowana pomyślnie",
-    "title": "Edytuj wycieczkę"
-  },
   "comments": {
     "addLabel": "Dodaj komentarz",
     "addPlaceholder": "Dodaj komentarz...",
@@ -45,6 +38,13 @@
     "cancel": "Anuluj",
     "confirm": "Potwierdź",
     "redirecting": "Przekierowywanie..."
+  },
+  "editTrip": {
+    "error": "Nie udało się zaktualizować wycieczki",
+    "save": "Zapisz zmiany",
+    "saving": "Zapisywanie...",
+    "success": "Wycieczka zaktualizowana pomyślnie",
+    "title": "Edytuj wycieczkę"
   },
   "emptyState": {
     "createTour": "Utwórz wycieczkę",
@@ -153,12 +153,12 @@
     "like": "Lubię to",
     "liked": "Polubiono",
     "lockVoting": "Zablokuj głosowanie",
-    "lockVotingSuccess": "Głosowanie zablokowane pomyślnie",
     "lockVotingError": "Nie udało się zablokować głosowania",
+    "lockVotingSuccess": "Głosowanie zablokowane pomyślnie",
     "title": "Polubienia",
     "unlockVoting": "Odblokuj głosowanie",
-    "unlockVotingSuccess": "Głosowanie odblokowane pomyślnie",
     "unlockVotingError": "Nie udało się odblokować głosowania",
+    "unlockVotingSuccess": "Głosowanie odblokowane pomyślnie",
     "votingDisabled": "Głosowanie jest obecnie wyłączone",
     "votingDisabledAlert": "Głosowanie jest obecnie wyłączone dla tej wycieczki.",
     "votingLocked": "Głosowanie jest zablokowane",

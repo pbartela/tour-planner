@@ -11,8 +11,8 @@ All API endpoints go in `src/pages/api/` and follow Astro's file-based routing.
 ## Template
 
 ```typescript
-import type { APIRoute } from 'astro';
-import { z } from 'zod';
+import type { APIRoute } from "astro";
+import { z } from "zod";
 
 // REQUIRED: Set prerender to false for dynamic routes
 export const prerender = false;
@@ -26,9 +26,9 @@ export const prerender = false;
 
 // Define request schema with Zod
 const RequestSchema = z.object({
-  field1: z.string().min(1, 'Field1 is required'),
+  field1: z.string().min(1, "Field1 is required"),
   field2: z.number().positive().optional(),
-  field3: z.string().email('Invalid email format').optional(),
+  field3: z.string().email("Invalid email format").optional(),
 });
 
 type RequestData = z.infer<typeof RequestSchema>;
@@ -42,13 +42,10 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return new Response(
-      JSON.stringify({ error: 'Unauthorized' }),
-      {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   // 2. PARSE REQUEST BODY
@@ -56,13 +53,10 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
   try {
     body = await request.json();
   } catch (error) {
-    return new Response(
-      JSON.stringify({ error: 'Invalid JSON' }),
-      {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   // 3. VALIDATE INPUT
@@ -70,12 +64,12 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
   if (!validationResult.success) {
     return new Response(
       JSON.stringify({
-        error: 'Validation failed',
+        error: "Validation failed",
         details: validationResult.error.flatten(),
       }),
       {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       }
     );
   }
@@ -87,25 +81,22 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
     // Call service layer for business logic
     const result = await someService.doSomething(supabase, user.id, data);
 
-    return new Response(
-      JSON.stringify(result),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
-    console.error('Error in endpoint:', error);
+    console.error("Error in endpoint:", error);
 
     // Return user-friendly error
     return new Response(
       JSON.stringify({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error",
       }),
       {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       }
     );
   }
@@ -115,12 +106,14 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
 ## Key Guidelines
 
 ### 1. Always Set Prerender
+
 ```typescript
 // REQUIRED at top of file
 export const prerender = false;
 ```
 
 ### 2. Use Uppercase HTTP Methods
+
 ```typescript
 // Good
 export const GET: APIRoute = async ({ locals }) => { ... };
@@ -132,25 +125,28 @@ export const get: APIRoute = ...;  // lowercase not recommended
 ```
 
 ### 3. Validate with Zod
+
 ```typescript
-import { z } from 'zod';
+import { z } from "zod";
 
 // Simple schema
 const Schema = z.object({
-  name: z.string().min(1, 'Name required'),
+  name: z.string().min(1, "Name required"),
   age: z.number().int().positive(),
 });
 
 // Complex schema with transformations
-const ComplexSchema = z.object({
-  email: z.string().email().toLowerCase(),
-  tags: z.array(z.string()).min(1).max(10),
-  metadata: z.record(z.unknown()).optional(),
-  createdAt: z.string().datetime().or(z.date()),
-}).transform(data => ({
-  ...data,
-  createdAt: new Date(data.createdAt),
-}));
+const ComplexSchema = z
+  .object({
+    email: z.string().email().toLowerCase(),
+    tags: z.array(z.string()).min(1).max(10),
+    metadata: z.record(z.unknown()).optional(),
+    createdAt: z.string().datetime().or(z.date()),
+  })
+  .transform((data) => ({
+    ...data,
+    createdAt: new Date(data.createdAt),
+  }));
 
 // Validate
 const result = Schema.safeParse(data);
@@ -161,29 +157,25 @@ if (!result.success) {
 ```
 
 ### 4. Access Supabase via Locals
+
 ```typescript
 // Good: Use context.locals.supabase
 const supabase = locals.supabase;
-const { data, error } = await supabase
-  .from('table_name')
-  .select('*');
+const { data, error } = await supabase.from("table_name").select("*");
 
 // Bad: Don't import supabaseClient directly
-import { supabaseClient } from '@/db/supabase.client';  // ❌
+import { supabaseClient } from "@/db/supabase.client"; // ❌
 ```
 
 ### 5. Extract Business Logic to Services
+
 ```typescript
 // src/lib/services/tour.service.ts
 export class TourService {
-  static async createTour(
-    supabase: SupabaseClient,
-    userId: string,
-    data: CreateTourData
-  ): Promise<Tour> {
+  static async createTour(supabase: SupabaseClient, userId: string, data: CreateTourData): Promise<Tour> {
     // Business logic here
     const { data: tour, error } = await supabase
-      .from('tours')
+      .from("tours")
       .insert({ ...data, user_id: userId })
       .select()
       .single();
@@ -196,30 +188,24 @@ export class TourService {
 // API endpoint
 export const POST: APIRoute = async ({ locals, request }) => {
   // ... validation ...
-  const result = await TourService.createTour(
-    locals.supabase,
-    user.id,
-    validatedData
-  );
+  const result = await TourService.createTour(locals.supabase, user.id, validatedData);
   return jsonResponse(result, 200);
 };
 ```
 
 ### 6. Consistent Error Handling
+
 ```typescript
 // Helper function for consistent responses
 function jsonResponse(data: unknown, status: number = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { "Content-Type": "application/json" },
   });
 }
 
 function errorResponse(status: number, error: string | object) {
-  return jsonResponse(
-    typeof error === 'string' ? { error } : error,
-    status
-  );
+  return jsonResponse(typeof error === "string" ? { error } : error, status);
 }
 
 // Usage in endpoint
@@ -228,8 +214,8 @@ export const POST: APIRoute = async (context) => {
     // ... logic ...
     return jsonResponse({ success: true, data: result });
   } catch (error) {
-    console.error('Endpoint error:', error);
-    return errorResponse(500, 'Internal server error');
+    console.error("Endpoint error:", error);
+    return errorResponse(500, "Internal server error");
   }
 };
 ```
@@ -237,20 +223,21 @@ export const POST: APIRoute = async (context) => {
 ## Common Patterns
 
 ### GET Endpoint (Query Parameters)
+
 ```typescript
 export const GET: APIRoute = async ({ url, locals }) => {
   const searchParams = url.searchParams;
-  const limit = parseInt(searchParams.get('limit') || '10');
-  const offset = parseInt(searchParams.get('offset') || '0');
+  const limit = parseInt(searchParams.get("limit") || "10");
+  const offset = parseInt(searchParams.get("offset") || "0");
 
   // Validate query params
   if (limit < 1 || limit > 100) {
-    return errorResponse(400, 'Limit must be between 1 and 100');
+    return errorResponse(400, "Limit must be between 1 and 100");
   }
 
   const { data, error } = await locals.supabase
-    .from('items')
-    .select('*')
+    .from("items")
+    .select("*")
     .range(offset, offset + limit - 1);
 
   if (error) {
@@ -262,6 +249,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
 ```
 
 ### POST Endpoint (Create Resource)
+
 ```typescript
 const CreateSchema = z.object({
   title: z.string().min(1).max(200),
@@ -269,12 +257,12 @@ const CreateSchema = z.object({
 });
 
 export const POST: APIRoute = async ({ request, locals }) => {
-  const user = await requireAuth(locals);  // Helper function
-  const body = await parseAndValidate(request, CreateSchema);  // Helper function
+  const user = await requireAuth(locals); // Helper function
+  const body = await parseAndValidate(request, CreateSchema); // Helper function
 
   try {
     const result = await Service.create(locals.supabase, user.id, body);
-    return jsonResponse(result, 201);  // 201 Created
+    return jsonResponse(result, 201); // 201 Created
   } catch (error) {
     return errorResponse(500, error);
   }
@@ -282,28 +270,27 @@ export const POST: APIRoute = async ({ request, locals }) => {
 ```
 
 ### PUT/PATCH Endpoint (Update Resource)
+
 ```typescript
-const UpdateSchema = z.object({
-  id: z.string().uuid(),
-  title: z.string().min(1).max(200).optional(),
-  description: z.string().optional(),
-}).refine(data => data.title || data.description, {
-  message: 'At least one field must be provided',
-});
+const UpdateSchema = z
+  .object({
+    id: z.string().uuid(),
+    title: z.string().min(1).max(200).optional(),
+    description: z.string().optional(),
+  })
+  .refine((data) => data.title || data.description, {
+    message: "At least one field must be provided",
+  });
 
 export const PATCH: APIRoute = async ({ request, locals }) => {
   const user = await requireAuth(locals);
   const body = await parseAndValidate(request, UpdateSchema);
 
   // Verify ownership
-  const { data: existing } = await locals.supabase
-    .from('items')
-    .select('user_id')
-    .eq('id', body.id)
-    .single();
+  const { data: existing } = await locals.supabase.from("items").select("user_id").eq("id", body.id).single();
 
   if (!existing || existing.user_id !== user.id) {
-    return errorResponse(404, 'Resource not found');
+    return errorResponse(404, "Resource not found");
   }
 
   const result = await Service.update(locals.supabase, body.id, body);
@@ -312,28 +299,25 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 ```
 
 ### DELETE Endpoint
+
 ```typescript
 export const DELETE: APIRoute = async ({ url, locals }) => {
   const user = await requireAuth(locals);
-  const id = url.searchParams.get('id');
+  const id = url.searchParams.get("id");
 
   if (!id) {
-    return errorResponse(400, 'ID parameter required');
+    return errorResponse(400, "ID parameter required");
   }
 
   // Verify ownership before delete
-  const { data: existing } = await locals.supabase
-    .from('items')
-    .select('user_id')
-    .eq('id', id)
-    .single();
+  const { data: existing } = await locals.supabase.from("items").select("user_id").eq("id", id).single();
 
   if (!existing || existing.user_id !== user.id) {
-    return errorResponse(404, 'Resource not found');
+    return errorResponse(404, "Resource not found");
   }
 
   await Service.delete(locals.supabase, id);
-  return jsonResponse({ success: true }, 204);  // 204 No Content
+  return jsonResponse({ success: true }, 204); // 204 No Content
 };
 ```
 
@@ -342,8 +326,8 @@ export const DELETE: APIRoute = async ({ url, locals }) => {
 Create reusable helpers in `src/lib/api-helpers.ts`:
 
 ```typescript
-import type { SupabaseClient } from '@supabase/supabase-js';
-import type { z } from 'zod';
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { z } from "zod";
 
 export async function requireAuth(locals: App.Locals) {
   const {
@@ -351,27 +335,24 @@ export async function requireAuth(locals: App.Locals) {
   } = await locals.supabase.auth.getUser();
 
   if (!user) {
-    throw new AuthError('Unauthorized');
+    throw new AuthError("Unauthorized");
   }
 
   return user;
 }
 
-export async function parseAndValidate<T extends z.ZodTypeAny>(
-  request: Request,
-  schema: T
-): Promise<z.infer<T>> {
+export async function parseAndValidate<T extends z.ZodTypeAny>(request: Request, schema: T): Promise<z.infer<T>> {
   let body: unknown;
 
   try {
     body = await request.json();
   } catch {
-    throw new ValidationError('Invalid JSON');
+    throw new ValidationError("Invalid JSON");
   }
 
   const result = schema.safeParse(body);
   if (!result.success) {
-    throw new ValidationError('Validation failed', result.error.flatten());
+    throw new ValidationError("Validation failed", result.error.flatten());
   }
 
   return result.data;
@@ -380,22 +361,19 @@ export async function parseAndValidate<T extends z.ZodTypeAny>(
 export function jsonResponse(data: unknown, status: number = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { "Content-Type": "application/json" },
   });
 }
 
 export function errorResponse(status: number, error: string | object) {
-  return jsonResponse(
-    typeof error === 'string' ? { error } : error,
-    status
-  );
+  return jsonResponse(typeof error === "string" ? { error } : error, status);
 }
 
 // Custom error classes
 export class AuthError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'AuthError';
+    this.name = "AuthError";
   }
 }
 
@@ -403,7 +381,7 @@ export class ValidationError extends Error {
   details?: unknown;
   constructor(message: string, details?: unknown) {
     super(message);
-    this.name = 'ValidationError';
+    this.name = "ValidationError";
     this.details = details;
   }
 }
@@ -425,6 +403,7 @@ export class ValidationError extends Error {
 ## Testing Considerations
 
 When creating endpoints, consider:
+
 - Valid request handling
 - Invalid request handling (validation errors)
 - Missing authentication
@@ -448,6 +427,7 @@ When creating endpoints, consider:
 ## Output
 
 Provide:
+
 1. The complete API endpoint code
 2. Service layer code if needed
 3. Type definitions if needed

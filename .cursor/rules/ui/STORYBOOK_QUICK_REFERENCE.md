@@ -186,17 +186,11 @@ When a story needs state or demonstrates how to compose multiple components, use
 
 ```tsx
 export const InteractiveForm: Story = {
-  render: function Render(args) { // Name the function to satisfy hook rules
+  render: function Render(args) {
+    // Name the function to satisfy hook rules
     const [value, setValue] = React.useState("");
-    
-    return (
-      <ComponentName
-        {...args}
-        value={value}
-        onChange={setValue}
-        placeholder="Type something..."
-      />
-    );
+
+    return <ComponentName {...args} value={value} onChange={setValue} placeholder="Type something..." />;
   },
 };
 ```
@@ -208,7 +202,8 @@ export const InteractiveForm: Story = {
 export const LongContent: Story = {
   args: {
     ...Default.args,
-    title: "This is an extremely long title that might wrap to multiple lines and could potentially break the layout if not handled properly",
+    title:
+      "This is an extremely long title that might wrap to multiple lines and could potentially break the layout if not handled properly",
     description: "Lorem ipsum dolor sit amet...".repeat(10),
   },
 };
@@ -292,7 +287,9 @@ export const Default: Story = {
 // Only if it breaks layout (edge case)
 export const VeryLongText: Story = {
   args: {
-    text: "This is an extremely long text that demonstrates how the component handles text wrapping and overflow scenarios".repeat(3),
+    text: "This is an extremely long text that demonstrates how the component handles text wrapping and overflow scenarios".repeat(
+      3
+    ),
   },
 };
 ```
@@ -305,8 +302,8 @@ export const ShowIcon: Story = { args: { showIcon: true } };
 export const HideIcon: Story = { args: { showIcon: false } };
 export const ShowDescription: Story = { args: { showDescription: true } };
 export const HideDescription: Story = { args: { showDescription: false } };
-export const ShowIconAndDescription: Story = { 
-  args: { showIcon: true, showDescription: true } 
+export const ShowIconAndDescription: Story = {
+  args: { showIcon: true, showDescription: true },
 };
 // ... 2^n combinations 💀
 
@@ -345,7 +342,8 @@ const MyComponentWithState = () => {
 
 // ✅ DO THIS INSTEAD - Storybook generates the source automatically
 export const MyStory: Story = {
-  render: function Render(args) { // Name the function to satisfy hook rules
+  render: function Render(args) {
+    // Name the function to satisfy hook rules
     const [value, setValue] = React.useState("");
     return <MyComponent {...args} value={value} onChange={setValue} />;
   },
@@ -468,34 +466,34 @@ const meta = {
 argTypes: {
   // Text input
   title: { control: "text" },
-  
+
   // Number input
   count: { control: "number" },
-  
+
   // Boolean toggle
   disabled: { control: "boolean" },
-  
+
   // Select dropdown
   variant: {
     control: "select",
     options: ["primary", "secondary", "tertiary"],
   },
-  
+
   // Radio buttons
   size: {
     control: "radio",
     options: ["sm", "md", "lg"],
   },
-  
+
   // Color picker
   color: { control: "color" },
-  
+
   // Date picker
   date: { control: "date" },
-  
+
   // Object editor
   config: { control: "object" },
-  
+
   // Disable control (for readonly props)
   id: { control: false },
 }
@@ -640,10 +638,10 @@ export const Disabled: Story = {
 // No need for: SmallLinkedIn, MediumLinkedIn, LargeLinkedIn, SmallFacebook, etc.
 ```
 
-##  Remember
+## Remember
 
 > **Stories are examples, not test suites.**
-> 
+>
 > If you can change it with a dropdown in the Docs tab, you don't need a separate story for it.
 
 **The golden question:** "Does this variation teach something new about how to use the component, or is it just showing the same thing with different values?"

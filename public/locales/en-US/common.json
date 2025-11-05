@@ -20,7 +20,6 @@
       "message": "There was a problem with your authentication request. Please try again.",
       "title": "Authentication Error"
     },
-    "helpText": "If you continue to experience issues, please contact our support team.",
     "invalidLink": {
       "action": "Request New Link",
       "message": "This authentication link is invalid or malformed. Please request a new one.",

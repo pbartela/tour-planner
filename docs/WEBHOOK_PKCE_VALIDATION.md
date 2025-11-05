@@ -17,6 +17,7 @@ The webhook integration is **authentication-method-agnostic**. Here's why:
 ### Flow Comparison
 
 #### Implicit Flow (Old)
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ 1. User clicks magic link                                       │
@@ -30,6 +31,7 @@ The webhook integration is **authentication-method-agnostic**. Here's why:
 ```
 
 #### PKCE Flow (New)
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ 1. User clicks magic link                                       │
@@ -46,11 +48,13 @@ The webhook integration is **authentication-method-agnostic**. Here's why:
 ### Important Discovery
 
 Looking at the old implicit flow, I realize there may have been an issue:
+
 - In the implicit flow, the user was created when `signInWithOtp()` was called (sending the email)
 - By the time the user clicked the link and called `setSession()`, the user already existed
 - This means the webhook would fire when the email was sent, NOT when the user clicked the link
 
 In the PKCE flow:
+
 - The user is created when `verifyOtp()` succeeds (after clicking the link)
 - This is MORE reliable because the webhook fires only after successful authentication
 
@@ -59,40 +63,46 @@ In the PKCE flow:
 ### New User Signup (First Time)
 
 **Step 1: User Requests Magic Link**
+
 ```javascript
 // POST /api/auth/magic-link
 await supabaseAdmin.auth.signInWithOtp({
-  email: 'new-user@example.com',
+  email: "new-user@example.com",
   options: {
-    emailRedirectTo: 'http://localhost:3000/auth/confirm?next=/dashboard'
-  }
+    emailRedirectTo: "http://localhost:3000/auth/confirm?next=/dashboard",
+  },
 });
 ```
+
 - Email sent with magic link
 - **No user created yet** (unlike implicit flow)
 - No webhook fires yet
 
 **Step 2: User Clicks Magic Link**
+
 ```
 URL: http://localhost:3000/auth/confirm?token_hash=abc123&type=email&next=/dashboard
 ```
 
 **Step 3: Server-Side Verification**
+
 ```javascript
 // In /auth/confirm.astro
 const { data, error } = await supabase.auth.verifyOtp({
-  token_hash: 'abc123',
-  type: 'email'
+  token_hash: "abc123",
+  type: "email",
 });
 ```
 
 **Step 4: Supabase Creates User**
+
 ```sql
 -- Supabase internally executes:
 INSERT INTO auth.users (id, email, ...) VALUES (...)
 ```
 
 **Step 5: Webhook Triggers**
+
 ```
 POST http://localhost:4321/api/webhooks/profile-creation
 {
@@ -108,16 +118,14 @@ POST http://localhost:4321/api/webhooks/profile-creation
 ```
 
 **Step 6: Profile Created**
+
 ```javascript
 // In webhook handler
-const { data: profile } = await adminClient
-  .from('profiles')
-  .insert({ id: userId })
-  .select('*')
-  .single();
+const { data: profile } = await adminClient.from("profiles").insert({ id: userId }).select("*").single();
 ```
 
 **Step 7: User Redirected**
+
 ```
 HTTP 302 Redirect to /dashboard
 ```
@@ -127,6 +135,7 @@ HTTP 302 Redirect to /dashboard
 **Step 1-3: Same as above**
 
 **Step 4: Supabase Validates Token**
+
 ```
 - Token is valid
 - User already exists in auth.users
@@ -135,6 +144,7 @@ HTTP 302 Redirect to /dashboard
 ```
 
 **Step 5: No Webhook**
+
 ```
 - No INSERT into auth.users
 - No webhook fires
@@ -142,6 +152,7 @@ HTTP 302 Redirect to /dashboard
 ```
 
 **Step 6: User Redirected**
+
 ```
 HTTP 302 Redirect to /dashboard
 ```
@@ -151,22 +162,25 @@ HTTP 302 Redirect to /dashboard
 ### Webhook Endpoint Validation
 
 ✅ **Endpoint Path**: `/api/webhooks/profile-creation`
+
 - File: [src/pages/api/webhooks/profile-creation.ts](../src/pages/api/webhooks/profile-creation.ts)
 - Method: POST
 - Security: Bearer token authentication
 
 ✅ **Trigger Configuration**:
+
 - Table: `auth.users`
 - Event: `INSERT` only
 - When: New user created via `verifyOtp()`
 
 ✅ **Webhook Logic**:
+
 ```typescript
 // Extracts user ID from webhook payload
 const userId = payload.record?.id;
 
 // Creates profile using admin client (bypasses RLS)
-await adminClient.from('profiles').insert({ id: userId });
+await adminClient.from("profiles").insert({ id: userId });
 
 // Handles duplicates gracefully (code 23505)
 ```
@@ -174,16 +188,19 @@ await adminClient.from('profiles').insert({ id: userId });
 ### PKCE Endpoint Validation
 
 ✅ **Endpoint Path**: `/auth/confirm`
+
 - File: [src/pages/auth/confirm.astro](../src/pages/auth/confirm.astro)
 - Type: Server-side Astro page
 - Parameters: `token_hash`, `type`, `next` (optional)
 
 ✅ **Security Features**:
+
 - Server-side token verification
 - Open redirect protection
 - Proper error handling with user-friendly redirects
 
 ✅ **Session Handling**:
+
 - Session established via `verifyOtp()`
 - Cookies set automatically by Supabase client
 - No client-side token exposure
@@ -193,6 +210,7 @@ await adminClient.from('profiles').insert({ id: userId });
 ✅ **Session Validation Service**: [src/lib/server/session-validation.service.ts](../src/lib/server/session-validation.service.ts)
 
 The service expects profiles to exist and will return `null` if missing:
+
 ```typescript
 if (profileError || !profile) {
   console.error(`Profile not found for user ${serverUser.id}. Webhook may have failed.`);
@@ -201,6 +219,7 @@ if (profileError || !profile) {
 ```
 
 **Race Condition Consideration**:
+
 - User created in `auth.users` (by `verifyOtp()`)
 - Webhook fired asynchronously to create profile
 - User immediately redirected
@@ -209,12 +228,14 @@ if (profileError || !profile) {
 **Potential Issue**: What if webhook hasn't completed when middleware runs?
 
 **Analysis**:
+
 1. Webhook fires immediately on INSERT
 2. Supabase webhooks typically complete in < 100ms
 3. User redirect happens after `verifyOtp()` completes
 4. Network latency (redirect + page load) provides buffer time
 
 **Mitigation** (already in place):
+
 - If profile not found, user is logged out (session returns null)
 - User can re-authenticate, profile will exist (duplicate handling)
 - Webhook retries on failure (Supabase feature)
@@ -224,6 +245,7 @@ if (profileError || !profile) {
 ### Local Testing
 
 **Prerequisites**:
+
 ```bash
 # Start Supabase
 supabase start
@@ -237,6 +259,7 @@ npm run dev
 ```
 
 **Test Case 1: New User Signup**
+
 ```bash
 # 1. Request magic link
 curl -X POST http://localhost:4321/api/auth/magic-link \
@@ -257,6 +280,7 @@ curl http://localhost:4321/api/profiles/me \
 ```
 
 **Test Case 2: Existing User Login**
+
 ```bash
 # 1. Use same email as Test Case 1
 # 2. Request new magic link
@@ -268,6 +292,7 @@ curl http://localhost:4321/api/profiles/me \
 ```
 
 **Test Case 3: Webhook Failure Handling**
+
 ```bash
 # 1. Temporarily break webhook (wrong secret)
 # 2. Signup new user
@@ -285,21 +310,25 @@ curl http://localhost:4321/api/profiles/me \
 ### Production Testing
 
 **Phase 1: Monitoring Setup**
+
 - Enable detailed logging in webhook endpoint
 - Monitor Supabase webhook delivery logs
 - Set up alerts for webhook failures
 
 **Phase 2: Gradual Rollout**
+
 - Deploy to staging environment
 - Test with internal users
 - Monitor for 24-48 hours
 
 **Phase 3: Production Deployment**
+
 - Deploy during low-traffic period
 - Monitor first 10-20 signups closely
 - Check webhook delivery success rate
 
 **Phase 4: Validation**
+
 - Verify all new users have profiles
 - Check webhook delivery logs (should be 100% success rate)
 - Monitor authentication error rates
@@ -309,11 +338,13 @@ curl http://localhost:4321/api/profiles/me \
 ### Issue 1: Webhook Doesn't Fire
 
 **Symptoms**:
+
 - New users created in `auth.users`
 - No profiles created
 - Logs show: "Profile not found for user..."
 
 **Debugging**:
+
 ```bash
 # Check Supabase webhook config
 # Dashboard → Database → Webhooks → profile-creation
@@ -329,6 +360,7 @@ curl -X POST http://your-domain.com/api/webhooks/profile-creation \
 ```
 
 **Solutions**:
+
 - Verify webhook URL is correct
 - Ensure Authorization header matches `SUPABASE_WEBHOOK_SECRET`
 - Check firewall/network allows Supabase to reach your server
@@ -337,12 +369,14 @@ curl -X POST http://your-domain.com/api/webhooks/profile-creation \
 ### Issue 2: Race Condition (Profile Not Ready)
 
 **Symptoms**:
+
 - User authenticated successfully
 - Immediately redirected to error page
 - Logs show: "Profile not found"
 - Profile exists when checked later
 
 **Debugging**:
+
 ```typescript
 // Add timing logs in /auth/confirm.astro
 console.log('[1] verifyOtp called:', new Date().toISOString());
@@ -356,6 +390,7 @@ console.log('[4] Validation complete:', new Date().toISOString());
 ```
 
 **Solutions**:
+
 - Add retry logic in session validation (wait for profile)
 - Increase redirect delay (not recommended)
 - Use polling in middleware (check profile exists before validating)
@@ -364,15 +399,18 @@ console.log('[4] Validation complete:', new Date().toISOString());
 ### Issue 3: Duplicate Profile Creation
 
 **Symptoms**:
+
 - Webhook logs show "Profile already exists"
 - This is actually NORMAL and handled correctly
 
 **Why It Happens**:
+
 - Webhook retries on timeout/failure
 - Multiple webhook instances fired (Supabase bug)
 - User re-authenticated quickly
 
 **Current Handling** (already implemented):
+
 ```typescript
 if (insertError.code === "23505") {
   console.log(`Profile already exists for user ${userId}, skipping creation`);
@@ -387,16 +425,19 @@ if (insertError.code === "23505") {
 ### Summary of Findings
 
 ✅ **Webhooks are fully compatible with PKCE flow**
+
 - Webhook trigger point unchanged
 - Profile creation logic unchanged
 - Security improved (no token exposure)
 
 ✅ **Implementation is correct**
+
 - Email template updated to use `{{ .TokenHash }}`
 - Server-side verification endpoint created
 - Proper error handling and security
 
 ✅ **Session validation works**
+
 - Validates user exists in `auth.users`
 - Validates profile exists (created by webhook)
 - Handles missing profiles gracefully
@@ -415,12 +456,14 @@ if (insertError.code === "23505") {
 **Risk Level**: ⚠️ **Medium-Low**
 
 **Why Medium-Low**:
+
 - ✅ Webhook logic unchanged
 - ✅ Backward compatible (old sessions still work)
 - ⚠️ New authentication flow (needs testing)
 - ⚠️ Potential race condition (unlikely but possible)
 
 **Mitigation**:
+
 - Test thoroughly in staging
 - Deploy during low-traffic period
 - Monitor closely for first 24 hours

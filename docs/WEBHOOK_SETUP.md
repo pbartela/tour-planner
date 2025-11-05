@@ -31,6 +31,7 @@ SUPABASE_WEBHOOK_SECRET=your_generated_secret_here
 ### 2. Deploy Your Application
 
 Ensure your application is deployed with the new webhook endpoint:
+
 - Endpoint: `https://your-domain.com/api/webhooks/profile-creation`
 - Method: `POST`
 
@@ -65,11 +66,13 @@ Ensure your application is deployed with the new webhook endpoint:
 You can test the webhook in two ways:
 
 #### Option A: Using Supabase Dashboard
+
 1. In the webhook configuration, click the **Send test request** button
 2. Supabase will send a test payload to your endpoint
 3. Check your application logs to verify the webhook was received
 
 #### Option B: Create a Test User
+
 1. Go to your application and sign up with a new email
 2. After the magic link authentication completes, check:
    - Your application logs should show: `Successfully created profile for user {userId}`
@@ -91,6 +94,7 @@ Supabase provides webhook delivery logs:
 If you're running Supabase locally with Docker:
 
 1. **Start local Supabase**:
+
    ```bash
    supabase start
    ```
@@ -110,12 +114,14 @@ If you're running Supabase locally with Docker:
 ### Checking Local Supabase Webhook Logs
 
 #### Via Supabase Studio:
+
 1. Open Supabase Studio (`http://localhost:54323`)
 2. Navigate to **Database** → **Webhooks**
 3. Click on your webhook
 4. View the **Deliveries** tab for delivery status
 
 #### Via Docker Logs:
+
 ```bash
 # View all Supabase logs
 supabase status
@@ -126,6 +132,7 @@ docker logs -f supabase_db_[project-name]
 ```
 
 #### Via PostgreSQL Logs:
+
 ```bash
 # Connect to local Supabase PostgreSQL
 supabase db psql
@@ -135,7 +142,9 @@ SELECT * FROM net._http_response ORDER BY created_at DESC LIMIT 10;
 ```
 
 #### Via Your Application Logs:
+
 The most reliable way is to check your application console:
+
 - Successful webhook: `Successfully created profile for user {userId}`
 - Failed webhook: Error logs with details
 - Unauthorized: `Unauthorized webhook attempt - invalid secret`
@@ -143,12 +152,14 @@ The most reliable way is to check your application console:
 ### Testing Webhooks Locally
 
 **Method 1: Create a test user**
+
 ```bash
 # Use your local app to sign up with a test email
 # Check your application logs for webhook processing
 ```
 
 **Method 2: Manual webhook trigger**
+
 ```bash
 # Send a manual POST request to test the endpoint
 curl -X POST http://localhost:4321/api/webhooks/profile-creation \
@@ -167,6 +178,7 @@ curl -X POST http://localhost:4321/api/webhooks/profile-creation \
 ```
 
 **Method 3: Supabase Studio test webhook**
+
 1. In Studio, go to your webhook configuration
 2. Click **Send test request**
 3. Check your application logs
@@ -190,6 +202,7 @@ For the smoothest local development experience:
 **Cause**: The webhook secret doesn't match
 
 **Solution**:
+
 1. Verify your `.env` file has the correct `SUPABASE_WEBHOOK_SECRET`
 2. Verify the `Authorization` header in Supabase webhook config matches: `Bearer YOUR_SECRET`
 3. Redeploy your application after updating the secret
@@ -199,6 +212,7 @@ For the smoothest local development experience:
 **Cause**: Error creating the profile in the database
 
 **Solution**:
+
 1. Check your application logs for detailed error messages
 2. Verify `SUPABASE_SERVICE_ROLE_KEY` is correctly set in your environment variables
 3. Ensure the `profiles` table schema is correct (run migrations)
@@ -208,6 +222,7 @@ For the smoothest local development experience:
 **Cause**: Webhook may not be firing or failing silently
 
 **Solution**:
+
 1. Check Supabase webhook delivery logs (Dashboard → Database → Webhooks → Deliveries)
 2. Verify the webhook is enabled and configured for `INSERT` events on `auth.users`
 3. Check if your application endpoint is accessible from the internet (not localhost)
@@ -231,6 +246,7 @@ For the smoothest local development experience:
 If you're migrating from the old trigger-based approach:
 
 1. Apply the migration to remove the old trigger:
+
    ```bash
    supabase db push
    ```

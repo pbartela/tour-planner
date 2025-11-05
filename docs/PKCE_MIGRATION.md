@@ -7,6 +7,7 @@ This document describes the migration from **implicit flow** (insecure, client-s
 ## What Changed
 
 ### Before (Implicit Flow)
+
 1. User clicks magic link → redirected to `/auth-callback`
 2. Tokens (`access_token`, `refresh_token`) exposed in URL fragment (`#access_token=...`)
 3. Client-side JavaScript extracts tokens from URL
@@ -14,6 +15,7 @@ This document describes the migration from **implicit flow** (insecure, client-s
 5. **Security Issue**: Tokens exposed to browser, potentially logged in history, analytics, etc.
 
 ### After (PKCE Flow)
+
 1. User clicks magic link → redirected to `/auth/confirm?token_hash=...&type=email`
 2. Server-side Astro page receives `token_hash` in query params
 3. Server calls `supabase.auth.verifyOtp()` to exchange hash for session
@@ -24,14 +26,17 @@ This document describes the migration from **implicit flow** (insecure, client-s
 ## Files Changed
 
 ### Created
+
 - [src/pages/auth/confirm.astro](../src/pages/auth/confirm.astro) - Server-side PKCE token verification endpoint
 
 ### Modified
+
 - [supabase/templates/invite.html](../supabase/templates/invite.html) - Email template now uses `{{ .TokenHash }}` instead of `{{ .ConfirmationURL }}`
 - [src/pages/api/auth/magic-link.ts](../src/pages/api/auth/magic-link.ts) - Redirect URL changed from `/auth-callback` to `/auth/confirm`
 - [supabase/config.toml](../supabase/config.toml) - Added `/auth/confirm` to `additional_redirect_urls`
 
 ### Deprecated
+
 - `src/pages/auth-callback.astro` - Renamed to `.deprecated`, no longer used
 
 ## Webhook Compatibility
@@ -43,6 +48,7 @@ The webhook integration is **fully compatible** with PKCE flow because:
 1. **Webhook Trigger Point**: The webhook triggers on `INSERT` into `auth.users` table
 2. **When User is Created**: Supabase creates the user record in `auth.users` when `verifyOtp()` succeeds
 3. **Flow Comparison**:
+
    ```
    Implicit Flow:
    verifyOtp (client) → user created in auth.users → webhook fires → profile created
@@ -50,11 +56,13 @@ The webhook integration is **fully compatible** with PKCE flow because:
    PKCE Flow:
    verifyOtp (server) → user created in auth.users → webhook fires → profile created
    ```
+
 4. **Key Insight**: The webhook doesn't care HOW the user was authenticated (implicit vs PKCE), it only cares that a new user was inserted into `auth.users`
 
 ### Verification Points
 
 The webhook will continue to:
+
 - ✅ Trigger when new users sign up via magic link
 - ✅ Receive the `user.id` from the `auth.users` INSERT event
 - ✅ Create a profile in the `profiles` table using the admin client
@@ -79,18 +87,22 @@ The webhook will continue to:
 ## Testing Locally
 
 ### 1. Start Supabase and App
+
 ```bash
 supabase start
 npm run dev
 ```
 
 ### 2. Configure Webhook (if not already configured)
+
 Follow [WEBHOOK_SETUP.md](./WEBHOOK_SETUP.md) to configure the webhook to point to:
+
 ```
 http://host.docker.internal:4321/api/webhooks/profile-creation
 ```
 
 ### 3. Test New User Signup
+
 ```bash
 # Request magic link via the API
 curl -X POST http://localhost:4321/api/auth/magic-link \
@@ -104,12 +116,15 @@ curl -X POST http://localhost:4321/api/auth/magic-link \
 ```
 
 ### 4. Verify Webhook Fired
+
 Check application logs for:
+
 ```
 Successfully created profile for user {userId}
 ```
 
 Or query the database:
+
 ```sql
 SELECT * FROM profiles WHERE id = (
   SELECT id FROM auth.users WHERE email = 'test@example.com'

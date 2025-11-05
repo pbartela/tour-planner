@@ -9,15 +9,15 @@ This document outlines the PostgreSQL database schema for the Tour Planner appli
 This table is managed by Supabase Aut
 Stores user profile information, extending the `auth.users` table.
 
-| Column                 | Type          | Constraints                                                                                         | Description                                                      |
-| :--------------------- | :------------ | :-------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
-| `id`                   | `uuid`        | Primary Key, Foreign Key to `auth.users.id`                                                         | References the user in Supabase's auth system.                   |
-| `display_name`         | `text`        |                                                                                                     | Optional display name (full name).                               |
-| `language`             | `text`        | Not Null, Default `'en'`                                                                            | User's preferred language.                                       |
-| `theme`                | `text`        | Not Null, Default `'system'`                                                                        | User's preferred theme (e.g., 'light', 'dark', 'system').        |
-| `onboarding_completed` | `boolean`     | Not Null, Default `false`                                                                           | Tracks if the user has completed the initial onboarding.         |
-| `created_at`           | `timestamptz` | Not Null, Default `now()`                                                                           | Timestamp of profile creation.                                   |
-| `updated_at`           | `timestamptz` | Not Null, Default `now()`                                                                           | Timestamp of the last profile update.                            |
+| Column                 | Type          | Constraints                                 | Description                                               |
+| :--------------------- | :------------ | :------------------------------------------ | :-------------------------------------------------------- |
+| `id`                   | `uuid`        | Primary Key, Foreign Key to `auth.users.id` | References the user in Supabase's auth system.            |
+| `display_name`         | `text`        |                                             | Optional display name (full name).                        |
+| `language`             | `text`        | Not Null, Default `'en'`                    | User's preferred language.                                |
+| `theme`                | `text`        | Not Null, Default `'system'`                | User's preferred theme (e.g., 'light', 'dark', 'system'). |
+| `onboarding_completed` | `boolean`     | Not Null, Default `false`                   | Tracks if the user has completed the initial onboarding.  |
+| `created_at`           | `timestamptz` | Not Null, Default `now()`                   | Timestamp of profile creation.                            |
+| `updated_at`           | `timestamptz` | Not Null, Default `now()`                   | Timestamp of the last profile update.                     |
 
 ---
 

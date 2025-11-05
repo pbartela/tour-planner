@@ -130,15 +130,3 @@ describe("DaisyCalendar", () => {
     expect(handleSelect).toHaveBeenCalledWith(expect.any(Date));
   });
 });
-
-
-
-
-
-
-
-
-
-
-
-

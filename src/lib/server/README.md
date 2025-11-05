@@ -10,6 +10,7 @@ This directory contains server-side only functions and utilities that are used i
 ## Usage
 
 These utilities are designed to be imported and used in:
+
 - Astro pages (`.astro` files)
 - API routes (`src/pages/api/`)
 - Middleware (`src/middleware/`)

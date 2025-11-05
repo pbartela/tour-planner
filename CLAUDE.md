@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Plan Tour is a web application for simplifying group trip planning. Users can create trip proposals, invite participants via email, vote on trips, discuss via comments, and manage all aspects of group travel in one centralized location.
 
 **Tech Stack:**
+
 - Astro 5 (SSR mode with Node adapter)
 - React 19 (for interactive components)
 - TypeScript 5 (strict mode enabled)
@@ -18,6 +19,7 @@ Plan Tour is a web application for simplifying group trip planning. Users can cr
 ## Development Commands
 
 ### Essential Commands
+
 ```bash
 # Development server (runs on port 3000)
 npm run dev
@@ -44,6 +46,7 @@ npm run designs       # Serves designs/ on port 8080
 ```
 
 ### Supabase Local Development
+
 ```bash
 # Start local Supabase (requires Docker)
 npx supabase start
@@ -65,6 +68,7 @@ npx supabase db reset
 ```
 
 Local Supabase runs on:
+
 - API: `http://localhost:54321`
 - Database: `localhost:54322`
 - Studio: `http://localhost:54323`
@@ -72,6 +76,7 @@ Local Supabase runs on:
 ## Architecture & Project Structure
 
 ### Directory Layout
+
 ```
 src/
 ├── components/          # Client-side components
@@ -100,7 +105,9 @@ src/
 ### Key Architectural Patterns
 
 #### 1. Service Layer Pattern
+
 Business logic is extracted into services (`src/lib/services/`):
+
 - `auth.service.ts` - Authentication logic
 - `profile.service.ts` - User profile management
 - `tour.service.ts` - Tour CRUD operations
@@ -108,7 +115,9 @@ Business logic is extracted into services (`src/lib/services/`):
 Services receive a `SupabaseClient` instance and user ID, never import clients directly.
 
 #### 2. API Route Pattern
+
 All API routes (`src/pages/api/`) follow this structure:
+
 ```typescript
 export const prerender = false;
 
@@ -118,7 +127,7 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
   // 1. Validate session
   const user = await validateSession(supabase);
   if (!user) {
-    return new Response(JSON.stringify({ error: { code: "UNAUTHORIZED", message: "..." }}), { status: 401 });
+    return new Response(JSON.stringify({ error: { code: "UNAUTHORIZED", message: "..." } }), { status: 401 });
   }
 
   // 2. Rate limiting
@@ -127,7 +136,9 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
 
   // 3. Validate input with Zod
   const parsed = schema.safeParse(/* input */);
-  if (!parsed.success) { /* return 400 */ }
+  if (!parsed.success) {
+    /* return 400 */
+  }
 
   // 4. Call service layer
   const result = await service.method(supabase, user.id, parsed.data);
@@ -140,19 +151,24 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
 Use **uppercase** HTTP method names: `GET`, `POST`, `PATCH`, `DELETE`.
 
 #### 3. Type Safety with DTOs and Commands
+
 All API contracts are defined in `src/types.ts`:
+
 - **DTOs** (Data Transfer Objects): Response shapes (e.g., `ProfileDto`, `TourDetailsDto`)
 - **Commands**: Request payloads (e.g., `CreateTourCommand`, `UpdateProfileCommand`)
 - Derived from `database.types.ts` (generated from Supabase schema)
 
 #### 4. Supabase Client Management
+
 Two types of clients:
+
 - **Browser Client** (`supabaseBrowserClient`): Singleton for client-side components
 - **Server Client** (`createSupabaseServerClient`): Request-scoped, created per request
 
 **IMPORTANT**: In Astro routes and API endpoints, always use `context.locals.supabase`, never import clients directly.
 
 #### 5. Security Services (`src/lib/server/`)
+
 - `session-validation.service.ts` - Validates user sessions securely
 - `csrf.service.ts` - CSRF token generation and validation
 - `rate-limit.service.ts` - In-memory rate limiting
@@ -160,7 +176,9 @@ Two types of clients:
 - `env-validation.service.ts` - Runtime environment validation
 
 #### 6. Middleware Flow (`src/middleware/index.ts`)
+
 For every request:
+
 1. Create Supabase server client
 2. Determine locale from URL (`en-US` or `pl-PL`)
 3. Set i18next language for SSR
@@ -169,6 +187,7 @@ For every request:
 6. Redirect logic for protected/auth routes
 
 #### 7. Error Handling Pattern
+
 ```typescript
 // Early returns for errors (guard clauses)
 if (!valid) {
@@ -193,12 +212,14 @@ return new Response(
 ## Important Coding Conventions
 
 ### Astro-Specific
+
 - Use `export const prerender = false` for API routes and SSR pages
 - Access env vars via `import.meta.env` or the validated `ENV` constant
 - Use `Astro.cookies` for server-side cookie management
 - Leverage View Transitions API for page navigation
 
 ### React Components
+
 - Use functional components with hooks (no class components)
 - **NEVER** use Next.js directives like `"use client"`
 - Extract custom hooks to `src/lib/hooks/`
@@ -207,6 +228,7 @@ return new Response(
 - Use `useCallback` and `useMemo` appropriately
 
 ### Styling
+
 - Use Tailwind utility classes (v4 syntax)
 - DaisyUI components where appropriate
 - Shadcn/ui components in `src/components/ui/`
@@ -214,6 +236,7 @@ return new Response(
 - Reference existing components before creating new ones
 
 ### Database & Supabase
+
 - All data access uses Row Level Security (RLS)
 - Never bypass RLS in application code
 - Use migrations for schema changes (`supabase/migrations/`)
@@ -221,10 +244,12 @@ return new Response(
 - Import `SupabaseClient` type from `@/db/supabase.client.ts`, not `@supabase/supabase-js`
 
 ### Validation
+
 - All API inputs validated with Zod schemas (`src/lib/validators/`)
 - Schemas colocated by feature: `auth.validators.ts`, `tour.validators.ts`, etc.
 
 ### Path Aliases
+
 - `@/*` maps to `src/*` (configured in `tsconfig.json` and `astro.config.mjs`)
 
 ## Environment Variables
@@ -232,16 +257,19 @@ return new Response(
 Required environment variables (see `.env.example`):
 
 **Public (client-accessible):**
+
 - `PUBLIC_SUPABASE_URL` - Supabase project URL
 - `PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
 - `PUBLIC_DEFAULT_LOCALE` - Default locale (e.g., `en-US`)
 
 **Server-only (secret):**
+
 - `SUPABASE_URL` - Same as public URL
 - `SUPABASE_SERVICE_ROLE_KEY` - Service role key for admin operations
 - `OPENROUTER_API_KEY` - Optional AI API key
 
 Environment validation happens at both:
+
 1. Build time (Astro config: `astro.config.mjs`)
 2. Runtime (Zod validation: `src/lib/server/env-validation.service.ts`)
 

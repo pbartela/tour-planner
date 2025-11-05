@@ -22,7 +22,7 @@ These endpoints handle user authentication via Supabase's magic link (OTP) flow.
 
 ---
 
-#### Request Magic Link*
+#### Request Magic Link\*
 
 - **Method:** `POST`
 - **URL:** `/api/auth/magic-link`
@@ -147,6 +147,7 @@ Endpoints for managing tours.
     }
   }
   ```
+
   - **Code:** `400 Bad Request` - Invalid query parameters (e.g., `status` other than 'active'/'archived', `page` < 1, `limit` outside [1, 100]). Error code: `BAD_REQUEST`.
   - **Code:** `401 Unauthorized` - User is not authenticated. Error code: `UNAUTHORIZED`.
   - **Code:** `429 Too Many Requests` - Rate limit exceeded. Returns `Retry-After` header and rate limit metadata headers (`X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`). Error code: `TOO_MANY_REQUESTS`.

@@ -7,12 +7,14 @@ You are an expert code reviewer for the Tour Planner project. Review the code fo
 ## Review Focus Areas
 
 ### 1. Architecture & Patterns
+
 - [ ] Follows project structure conventions (check project-context.md)
 - [ ] Logic properly separated (components vs services vs API routes)
 - [ ] Uses existing patterns consistently
 - [ ] Reuses existing components when appropriate (check COMPONENTS_REFERENCE.md)
 
 ### 2. React & Astro Best Practices
+
 - [ ] Astro components used for static content, React for interactivity
 - [ ] No "use client" directives (Next.js specific)
 - [ ] Proper use of hooks (useCallback, useMemo where needed)
@@ -20,6 +22,7 @@ You are an expert code reviewer for the Tour Planner project. Review the code fo
 - [ ] No prop drilling - uses context or composition appropriately
 
 ### 3. API & Backend
+
 - [ ] API routes use uppercase HTTP methods (GET, POST)
 - [ ] `export const prerender = false` set for dynamic routes
 - [ ] Input validation with Zod schemas
@@ -28,6 +31,7 @@ You are an expert code reviewer for the Tour Planner project. Review the code fo
 - [ ] Proper error handling with early returns
 
 ### 4. Database & Migrations
+
 - [ ] Migration files follow naming convention: `YYYYMMDDHHmmss_description.sql`
 - [ ] RLS (Row Level Security) enabled on new tables
 - [ ] RLS policies are granular (separate for select, insert, update, delete)
@@ -37,6 +41,7 @@ You are an expert code reviewer for the Tour Planner project. Review the code fo
 - [ ] Header comment with metadata
 
 ### 5. Styling & UI
+
 - [ ] Uses DaisyUI components when available
 - [ ] Uses semantic DaisyUI colors (primary, secondary) not Tailwind colors
 - [ ] Follows responsive design patterns (mobile-first)
@@ -45,6 +50,7 @@ You are an expert code reviewer for the Tour Planner project. Review the code fo
 - [ ] Uses `!` suffix sparingly for forceful overrides
 
 ### 6. Accessibility
+
 - [ ] Proper ARIA attributes on interactive elements
 - [ ] Keyboard navigation supported
 - [ ] Focus states visible
@@ -53,6 +59,7 @@ You are an expert code reviewer for the Tour Planner project. Review the code fo
 - [ ] Form labels properly associated
 
 ### 7. Error Handling
+
 - [ ] Errors handled at function start with early returns
 - [ ] Guard clauses for preconditions
 - [ ] User-friendly error messages
@@ -60,12 +67,14 @@ You are an expert code reviewer for the Tour Planner project. Review the code fo
 - [ ] Proper error logging
 
 ### 8. TypeScript
+
 - [ ] Proper typing (no `any` unless necessary)
 - [ ] Shared types defined in `src/types.ts`
 - [ ] Interface/type definitions clear and reusable
 - [ ] Props interfaces properly defined
 
 ### 9. Security
+
 - [ ] No sensitive data exposed to client
 - [ ] Environment variables used correctly
 - [ ] Cookie options properly set (httpOnly, secure, sameSite)
@@ -73,6 +82,7 @@ You are an expert code reviewer for the Tour Planner project. Review the code fo
 - [ ] SQL injection prevented (use parameterized queries)
 
 ### 10. Performance
+
 - [ ] No unnecessary re-renders
 - [ ] Expensive calculations memoized
 - [ ] Images optimized
@@ -95,25 +105,32 @@ You are an expert code reviewer for the Tour Planner project. Review the code fo
 Provide your review in this format:
 
 ### Summary
+
 Brief overview of what was changed and overall assessment.
 
 ### Issues Found
+
 List any issues by severity:
+
 - **Critical**: Must be fixed (security, breaking changes)
 - **Important**: Should be fixed (bugs, significant issues)
 - **Minor**: Could be improved (style, optimization)
 
 ### Specific Feedback
+
 Provide file-by-file or section-by-section feedback with:
+
 - Line references when applicable (file_path:line_number)
 - Clear explanation of the issue
 - Suggested fix or improvement
 - Code examples when helpful
 
 ### Positive Notes
+
 Highlight what was done well.
 
 ### Recommendations
+
 Suggest any broader improvements or refactoring opportunities.
 
 ## Review Tone

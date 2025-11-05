@@ -1,9 +1,11 @@
 ## API Endpoint Implementation Plan: GET /api/tours
 
 ### 1. Endpoint Overview
+
 Returns a paginated list of tours the authenticated user participates in. Authorization is enforced by PostgreSQL RLS via a request-scoped Supabase client. Supports filtering by status (active or archived).
 
 ### 2. Request Details
+
 - **HTTP Method**: GET
 - **URL**: `/api/tours`
 - **Query Parameters**:
@@ -18,11 +20,13 @@ Returns a paginated list of tours the authenticated user participates in. Author
   - Validate inputs with zod
 
 ### 3. Used Types
+
 - `PaginatedResponse<T>` from `src/types.ts`
 - `TourSummaryDto` from `src/types.ts`
 - `PaginatedToursDto` from `src/types.ts`
 
 Response shape:
+
 ```
 PaginatedToursDto = {
   data: TourSummaryDto[];
@@ -41,11 +45,13 @@ TourSummaryDto = {
 ```
 
 ### 4. Response Details
+
 - **200 OK** with body `PaginatedToursDto`
 - Empty `data: []` if no tours
 - Error responses in JSON with `{ error: { code: string, message: string } }`
 
 ### 5. Data Flow
+
 1. Middleware/session extraction ensures request has a Supabase session (JWT) or the handler verifies it using `session-validation.service.ts`.
 2. Parse and validate query parameters with zod (`status`, `page`, `limit`). On failure → 400.
 3. Create a request-scoped Supabase client (`src/db/supabase.client.ts`) bound to the incoming request cookies/Authorization header.
@@ -59,6 +65,7 @@ TourSummaryDto = {
 6. Log unexpected errors with `logger.service.ts`. Map to 500 with safe message.
 
 ### 6. Security Considerations
+
 - **Authentication**: Require valid Supabase session; return 401 if absent/invalid.
 - **Authorization**: Depend on Postgres RLS; never use admin/service role key from this route.
 - **Input validation**: Strict zod schema; coerce and clamp pagination.
@@ -67,11 +74,13 @@ TourSummaryDto = {
 - **No enumeration**: On errors, avoid revealing presence/absence of specific tours.
 
 ### 7. Error Handling
+
 - 400 Bad Request: zod validation errors for `status`, `page`, `limit`.
 - 401 Unauthorized: missing/invalid session/JWT.
 - 500 Internal Server Error: Supabase SDK/network/database failures.
 
 Error body example:
+
 ```
 {
   error: {
@@ -84,6 +93,7 @@ Error body example:
 Use `error-mapping.service.ts` if there is a predefined mapping; otherwise standardize messages.
 
 ### 8. Performance Considerations
+
 - Database:
   - Rely on existing indexes: `participants(user_id)`, `idx_tours_status(status)`.
   - Filter by status at DB level.
@@ -94,6 +104,7 @@ Use `error-mapping.service.ts` if there is a predefined mapping; otherwise stand
   - Consider HTTP caching headers (short-lived) if user-specific caching is desired; otherwise skip due to per-user results.
 
 ### 9. Implementation Steps
+
 1. Create zod schema for query params in `src/lib/validators/tour.validators.ts` (or extend existing):
    - `status: z.enum(['active','archived']).default('active')`
    - `page: z.coerce.number().int().min(1).default(1)`
@@ -117,6 +128,7 @@ Use `error-mapping.service.ts` if there is a predefined mapping; otherwise stand
 6. Documentation: Ensure public API is consistent with `.ai/api-plan.md` (status defaults, pagination). Update any API reference if needed.
 
 ### 10. Example Pseudocode (Service)
+
 ```
 async function listToursForUser({ supabase, userId, status, page, limit }) {
   const from = (page - 1) * limit;
@@ -153,10 +165,6 @@ async function listToursForUser({ supabase, userId, status, page, limit }) {
 ```
 
 Notes:
+
 - If PostgREST relationship filter is not configured, fall back to selecting tours whose `id` is in a subquery of participant tour_ids fetched first (two queries) — still RLS-safe.
 - Keep the service implementation self-contained and unit-testable.
-
-
-
-
-

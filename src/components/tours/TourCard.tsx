@@ -1,6 +1,7 @@
 import type { TourCardViewModel } from "@/types";
 import { useTranslation } from "react-i18next";
 import { Card } from "@/components/ui/Card";
+import { Sparkles } from "lucide-react";
 
 interface Props {
   tour: TourCardViewModel;
@@ -64,10 +65,12 @@ export const TourCard = ({ tour }: Props) => {
               </div>
               {tour.hasNewActivity && (
                 <span
-                  className="ml-2 flex h-3 w-3 rounded-full bg-primary"
+                  className="badge badge-md badge-primary animate-pulse ml-2 flex items-center justify-center"
                   aria-label={t("tourList.newActivity")}
                   title={t("tourList.newActivity")}
-                />
+                >
+                  <Sparkles className="h-4 w-4" />
+                </span>
               )}
             </div>
           )}
@@ -76,10 +79,12 @@ export const TourCard = ({ tour }: Props) => {
           {avatars.length === 0 && tour.hasNewActivity && (
             <div className="flex items-center justify-start mt-2">
               <span
-                className="flex h-3 w-3 rounded-full bg-primary"
+                className="badge badge-md badge-primary animate-pulse flex items-center justify-center"
                 aria-label={t("tourList.newActivity")}
                 title={t("tourList.newActivity")}
-              />
+              >
+                <Sparkles className="h-4 w-4" />
+              </span>
             </div>
           )}
         </div>

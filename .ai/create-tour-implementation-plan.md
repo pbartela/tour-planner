@@ -5,6 +5,7 @@
 This endpoint allows authenticated users to create a new tour. Upon successful creation, the user is automatically assigned as the tour owner and added as the first participant. The endpoint handles the creation of both the tour record and the initial participant relationship in a transactional manner to maintain data consistency.
 
 **Key Features:**
+
 - Authenticated users can create tours with custom details
 - Creator is automatically set as owner (based on JWT)
 - Creator is automatically added as the first participant
@@ -21,12 +22,14 @@ This endpoint allows authenticated users to create a new tour. Upon successful c
 ### Parameters:
 
 **Required:**
+
 - `title` (string): Tour title, must be non-empty
 - `destination` (string): Tour destination, must be non-empty
 - `start_date` (ISO 8601 timestamp): When the tour begins
 - `end_date` (ISO 8601 timestamp): When the tour ends
 
 **Optional:**
+
 - `description` (string): Detailed description of the tour
 - `participant_limit` (integer): Maximum number of participants, must be > 0 if provided
 - `like_threshold` (integer): Number of votes needed to confirm the tour, must be > 0 if provided
@@ -48,6 +51,7 @@ This endpoint allows authenticated users to create a new tour. Upon successful c
 ## 3. Used Types
 
 ### Command Model (Request):
+
 - **`CreateTourCommand`**: Defined in `src/types.ts`
   ```typescript
   type CreateTourCommand = Pick<
@@ -57,12 +61,14 @@ This endpoint allows authenticated users to create a new tour. Upon successful c
   ```
 
 ### Response DTO:
+
 - **`TourDetailsDto`**: Defined in `src/types.ts`
   ```typescript
   type TourDetailsDto = Omit<Tables<"tours">, "updated_at">;
   ```
 
 ### Database Types:
+
 - **`Tables<"tours">`**: From `src/db/database.types.ts`
 - **`TablesInsert<"participants">`**: For adding the creator as a participant
 
@@ -90,6 +96,7 @@ This endpoint allows authenticated users to create a new tour. Upon successful c
 ### Error Responses:
 
 **401 Unauthorized:**
+
 ```json
 {
   "error": "Authentication required"
@@ -97,6 +104,7 @@ This endpoint allows authenticated users to create a new tour. Upon successful c
 ```
 
 **400 Bad Request:**
+
 ```json
 {
   "error": "Validation error",
@@ -108,6 +116,7 @@ This endpoint allows authenticated users to create a new tour. Upon successful c
 ```
 
 **500 Internal Server Error:**
+
 ```json
 {
   "error": "Failed to create tour"
@@ -156,50 +165,53 @@ This endpoint allows authenticated users to create a new tour. Upon successful c
 ## 6. Security Considerations
 
 ### Authentication:
+
 - **Requirement:** User must be authenticated
 - **Implementation:** Middleware checks `Astro.locals.user` existence
 - **Failure Response:** 401 Unauthorized if user is not authenticated
 
 ### Authorization:
+
 - **Tour Creation:** All authenticated users can create tours (enforced by RLS policy)
 - **Owner Assignment:** `owner_id` is set server-side from JWT, cannot be spoofed by client
 - **RLS Policies:** Database-level INSERT policy allows any authenticated user to create tours
 
 ### Data Validation:
+
 - **Input Sanitization:** Zod schemas validate and type-check all inputs
 - **SQL Injection Prevention:** Supabase client uses parameterized queries
 - **XSS Prevention:** Output encoding handled by frontend when rendering user content
 
 ### Threats & Mitigations:
 
-| Threat | Mitigation |
-|--------|-----------|
-| Unauthorized tour creation | Middleware enforces authentication |
-| Owner ID spoofing | Server-side assignment from JWT |
-| Invalid date ranges | Zod validation with custom refinements |
-| Excessive participant limits | Validation constraints in schema |
-| SQL injection | Parameterized queries via Supabase SDK |
-| Mass tour creation (spam) | Rate limiting (to be implemented in middleware) |
+| Threat                       | Mitigation                                      |
+| ---------------------------- | ----------------------------------------------- |
+| Unauthorized tour creation   | Middleware enforces authentication              |
+| Owner ID spoofing            | Server-side assignment from JWT                 |
+| Invalid date ranges          | Zod validation with custom refinements          |
+| Excessive participant limits | Validation constraints in schema                |
+| SQL injection                | Parameterized queries via Supabase SDK          |
+| Mass tour creation (spam)    | Rate limiting (to be implemented in middleware) |
 
 ## 7. Error Handling
 
 ### Client Errors (4xx):
 
-| Status Code | Scenario | Response |
-|-------------|----------|----------|
-| 400 Bad Request | Missing required fields | Validation error with field details |
-| 400 Bad Request | Invalid data types | Validation error with type information |
-| 400 Bad Request | end_date before start_date | Validation error with message |
-| 400 Bad Request | Negative limits/thresholds | Validation error with constraint details |
-| 401 Unauthorized | Missing or invalid JWT | Authentication error message |
+| Status Code      | Scenario                   | Response                                 |
+| ---------------- | -------------------------- | ---------------------------------------- |
+| 400 Bad Request  | Missing required fields    | Validation error with field details      |
+| 400 Bad Request  | Invalid data types         | Validation error with type information   |
+| 400 Bad Request  | end_date before start_date | Validation error with message            |
+| 400 Bad Request  | Negative limits/thresholds | Validation error with constraint details |
+| 401 Unauthorized | Missing or invalid JWT     | Authentication error message             |
 
 ### Server Errors (5xx):
 
-| Status Code | Scenario | Response | Logging |
-|-------------|----------|----------|---------|
+| Status Code               | Scenario                    | Response              | Logging                         |
+| ------------------------- | --------------------------- | --------------------- | ------------------------------- |
 | 500 Internal Server Error | Database connection failure | Generic error message | Log full error with stack trace |
-| 500 Internal Server Error | Supabase insert failure | Generic error message | Log Supabase error details |
-| 500 Internal Server Error | Unexpected exception | Generic error message | Log exception with context |
+| 500 Internal Server Error | Supabase insert failure     | Generic error message | Log Supabase error details      |
+| 500 Internal Server Error | Unexpected exception        | Generic error message | Log exception with context      |
 
 ### Error Response Format:
 
@@ -248,6 +260,7 @@ interface ErrorResponse {
 ## 9. Implementation Steps
 
 ### Step 1: Create Validation Schema
+
 - **File:** `src/lib/server/validation/tour.schemas.ts` (new file)
 - **Action:** Define Zod schema for `CreateTourCommand`
 - **Details:**
@@ -262,6 +275,7 @@ interface ErrorResponse {
   - Export schema
 
 ### Step 2: Create Tour Service
+
 - **File:** `src/lib/server/tour.service.ts` (new file)
 - **Action:** Implement `TourService` class with `createTour` method
 - **Details:**
@@ -276,6 +290,7 @@ interface ErrorResponse {
   - Use TypeScript strict mode for type safety
 
 ### Step 3: Implement API Endpoint
+
 - **File:** `src/pages/api/tours.ts` (new file)
 - **Action:** Create POST handler for `/api/tours`
 - **Details:**
@@ -292,6 +307,7 @@ interface ErrorResponse {
   - Return appropriate error responses based on error type
 
 ### Step 4: Handle Error Responses
+
 - **File:** `src/pages/api/tours.ts`
 - **Action:** Add comprehensive error handling
 - **Details:**
@@ -302,6 +318,7 @@ interface ErrorResponse {
   - Log errors with context for debugging
 
 ### Step 5: Add Type Safety
+
 - **Files:** Check `src/types.ts`
 - **Action:** Verify `CreateTourCommand` and `TourDetailsDto` are properly defined
 - **Details:**
@@ -310,6 +327,7 @@ interface ErrorResponse {
   - Update if necessary to match current implementation
 
 ### Step 6: Test Authentication Flow
+
 - **Action:** Verify middleware authentication works correctly
 - **Details:**
   - Check `src/middleware/index.ts` properly sets `Astro.locals.user`
@@ -318,6 +336,7 @@ interface ErrorResponse {
   - Ensure 401 is returned when not authenticated
 
 ### Step 7: Verify Database Setup
+
 - **Action:** Confirm RLS policies allow tour creation
 - **Details:**
   - Review database schema and RLS policies
@@ -326,6 +345,7 @@ interface ErrorResponse {
   - Test with actual database if possible
 
 ### Step 8: Create Integration Tests (Optional but Recommended)
+
 - **File:** `tests/api/tours.test.ts` (if tests exist)
 - **Action:** Add tests for tour creation endpoint
 - **Details:**
@@ -336,6 +356,7 @@ interface ErrorResponse {
   - Test participant auto-creation
 
 ### Step 9: Update API Documentation
+
 - **File:** `.ai/db-plan.md` or relevant documentation
 - **Action:** Mark endpoint as implemented
 - **Details:**

@@ -1,4 +1,4 @@
-import { UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form";
+import type { UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DatePicker, getDateFormatHint } from "@/components/ui/DatePicker";

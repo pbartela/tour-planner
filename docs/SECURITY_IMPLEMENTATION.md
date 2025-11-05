@@ -20,6 +20,7 @@ The application implements multiple layers of security to protect against common
 Location: `src/lib/server/rate-limit.service.ts`
 
 **Key Features**:
+
 - In-memory rate limit store with automatic cleanup
 - Configurable limits per endpoint
 - Client identification using IP + User-Agent
@@ -35,18 +36,15 @@ export const POST: APIRoute = async ({ request }) => {
   const rateLimitResult = checkRateLimit(clientId, RATE_LIMIT_CONFIGS.MAGIC_LINK);
 
   if (!rateLimitResult.allowed) {
-    return new Response(
-      JSON.stringify({ error: "Too many requests" }),
-      {
-        status: 429,
-        headers: {
-          "Retry-After": String(Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)),
-          "X-RateLimit-Limit": String(RATE_LIMIT_CONFIGS.MAGIC_LINK.maxRequests),
-          "X-RateLimit-Remaining": "0",
-          "X-RateLimit-Reset": String(Math.floor(rateLimitResult.resetAt / 1000)),
-        },
-      }
-    );
+    return new Response(JSON.stringify({ error: "Too many requests" }), {
+      status: 429,
+      headers: {
+        "Retry-After": String(Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)),
+        "X-RateLimit-Limit": String(RATE_LIMIT_CONFIGS.MAGIC_LINK.maxRequests),
+        "X-RateLimit-Remaining": "0",
+        "X-RateLimit-Reset": String(Math.floor(rateLimitResult.resetAt / 1000)),
+      },
+    });
   }
   // ... rest of endpoint logic
 };
@@ -54,11 +52,11 @@ export const POST: APIRoute = async ({ request }) => {
 
 ### Current Configurations
 
-| Endpoint Type | Limit | Window |
-|--------------|-------|--------|
-| Magic Link Auth | 3 requests | 15 minutes |
-| General Auth | 5 requests | 1 minute |
-| General API | 100 requests | 1 minute |
+| Endpoint Type   | Limit        | Window     |
+| --------------- | ------------ | ---------- |
+| Magic Link Auth | 3 requests   | 15 minutes |
+| General Auth    | 5 requests   | 1 minute   |
+| General API     | 100 requests | 1 minute   |
 
 ### Applied Endpoints
 
@@ -71,6 +69,7 @@ export const POST: APIRoute = async ({ request }) => {
 Location: `src/lib/server/csrf.service.ts`
 
 **Key Features**:
+
 - Cryptographically secure token generation (32 bytes)
 - HttpOnly cookie storage
 - Timing-safe token comparison
@@ -101,9 +100,11 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
 ### Protected Endpoints
 
 CSRF protection is applied to all state-changing methods (POST, PUT, PATCH, DELETE) except:
+
 - `/api/auth/*` endpoints (use other security measures)
 
 **Currently Protected**:
+
 - `/api/profiles/me` (PATCH)
 - `/api/tours` (POST)
 - `/api/tours/:id` (PATCH, DELETE)
@@ -112,7 +113,7 @@ CSRF protection is applied to all state-changing methods (POST, PUT, PATCH, DELE
 
 ```typescript
 // Fetch CSRF token
-const { token } = await fetch("/api/csrf-token").then(r => r.json());
+const { token } = await fetch("/api/csrf-token").then((r) => r.json());
 
 // Include in requests
 await fetch("/api/tours", {
@@ -132,6 +133,7 @@ await fetch("/api/tours", {
 Location: `astro.config.mjs` (Astro's built-in validation)
 
 **Key Features**:
+
 - Validates at build time and runtime
 - Type checking (URL format, minimum length)
 - Secret protection (server-only variables never exposed to client)
@@ -166,11 +168,13 @@ env: {
 ### Validated Variables
 
 **Public (Client-Accessible)**:
+
 - `PUBLIC_SUPABASE_URL` (URL format)
 - `PUBLIC_SUPABASE_ANON_KEY` (non-empty)
 - `PUBLIC_DEFAULT_LOCALE` (default: "en-US")
 
 **Server-Only (Never Exposed)**:
+
 - `SUPABASE_URL` (URL format)
 - `SUPABASE_SERVICE_ROLE_KEY` (non-empty)
 - `SUPABASE_WEBHOOK_SECRET` (minimum 32 characters)
@@ -212,20 +216,16 @@ export const POST: APIRoute = async ({ request }) => {
 ### Magic Link Authentication
 
 **Security Features**:
+
 - Passwordless (no password storage/leakage risk)
 - Email verification required
 - Rate limited (3 requests per 15 minutes)
 - Redirect URL validation (whitelist-based)
 
 **Allowed Redirect Paths**:
+
 ```typescript
-const ALLOWED_REDIRECT_PATHS = [
-  '/',
-  '/dashboard',
-  '/tours',
-  '/profile',
-  '/settings',
-];
+const ALLOWED_REDIRECT_PATHS = ["/", "/dashboard", "/tours", "/profile", "/settings"];
 ```
 
 ### Session Management
@@ -233,6 +233,7 @@ const ALLOWED_REDIRECT_PATHS = [
 Location: `src/lib/server/session-validation.service.ts`
 
 **Security Features**:
+
 - Secure session validation
 - HttpOnly cookies for token storage
 - Automatic token refresh
@@ -241,6 +242,7 @@ Location: `src/lib/server/session-validation.service.ts`
 ### Authorization (RLS)
 
 **Supabase Row-Level Security Policies**:
+
 - Users can only access their own data
 - Tour ownership is enforced at the database level
 - Participant relationships are validated
@@ -251,15 +253,17 @@ Location: `src/lib/server/session-validation.service.ts`
 ### Error Handling
 
 **Generic Error Messages**:
+
 ```typescript
 // Bad: Information leakage
-"User with email john@example.com already exists"
+"User with email john@example.com already exists";
 
 // Good: Generic message
-"Failed to create account. Please try again."
+"Failed to create account. Please try again.";
 ```
 
 **Detailed Server Logging**:
+
 ```typescript
 console.error("Detailed error for debugging:", error);
 return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500 });
@@ -268,6 +272,7 @@ return new Response(JSON.stringify({ error: "Internal Server Error" }), { status
 ### HTTP Headers
 
 **Production Headers** (should be configured in deployment):
+
 - `Strict-Transport-Security: max-age=31536000; includeSubDomains`
 - `X-Frame-Options: DENY`
 - `X-Content-Type-Options: nosniff`

@@ -123,6 +123,7 @@ Last Updated: 2025-11-05
 **Why**: Improves engagement by showing users where new activity happened
 
 **Backend**:
+
 - Migration: `supabase/migrations/20251105120107_add_tour_activity_tracking.sql`
   - Created `tour_activity` table with fields: id, tour_id, user_id, last_viewed_at, created_at
   - Added unique constraint on (tour_id, user_id)
@@ -139,6 +140,7 @@ Last Updated: 2025-11-05
   - If user never viewed tour OR (tour updated/new comment/new vote after last view) → has_new_activity = true
 
 **Frontend**:
+
 - `TourCard.tsx` already had activity indicator UI (lines 65-84)
   - Displays primary-colored dot badge when hasNewActivity is true
   - Accessible with aria-label and title attributes
@@ -153,12 +155,14 @@ Last Updated: 2025-11-05
   - pl-PL: "Nowa aktywność"
 
 **Files Created**:
+
 - `supabase/migrations/20251105120107_add_tour_activity_tracking.sql` (NEW - 43 lines)
 - `src/lib/services/tour-activity.service.ts` (NEW - 47 lines)
 - `src/pages/api/tours/[tourId]/mark-viewed.ts` (NEW - 90 lines)
 - `src/lib/hooks/useTourActivity.ts` (NEW - 42 lines)
 
 **Files Modified**:
+
 - `src/lib/services/tour.service.ts` (lines 107-114, 128-214)
   - Added updated_at to query
   - Implemented batch activity tracking logic
@@ -530,14 +534,14 @@ Complete status of all User Stories from `prd.md`:
 
 ### Tour Management
 
-| ID     | Title                           | Status             | Notes                                      |
-| ------ | ------------------------------- | ------------------ | ------------------------------------------ |
-| US-009 | Creating a new tour             | ✅ Complete        | AddTripModal (refactored)                  |
-| US-010 | Displaying the tour list        | ✅ Complete        | **NEW** Activity Indicator (2025-11-05)    |
-| US-011 | Displaying tour details         | ✅ Complete        | TourDetailsView component                  |
-| US-012 | Editing a tour by the owner     | ✅ Complete        | **NEW** EditTourModal (2025-01-05)         |
-| US-013 | Deleting a tour by the owner    | ✅ Complete        | With confirmation dialog                   |
-| US-014 | Leaving a tour by a participant | ❌ Not Implemented | Backend exists, missing UI                 |
+| ID     | Title                           | Status             | Notes                                   |
+| ------ | ------------------------------- | ------------------ | --------------------------------------- |
+| US-009 | Creating a new tour             | ✅ Complete        | AddTripModal (refactored)               |
+| US-010 | Displaying the tour list        | ✅ Complete        | **NEW** Activity Indicator (2025-11-05) |
+| US-011 | Displaying tour details         | ✅ Complete        | TourDetailsView component               |
+| US-012 | Editing a tour by the owner     | ✅ Complete        | **NEW** EditTourModal (2025-01-05)      |
+| US-013 | Deleting a tour by the owner    | ✅ Complete        | With confirmation dialog                |
+| US-014 | Leaving a tour by a participant | ❌ Not Implemented | Backend exists, missing UI              |
 
 ### Participants and Invitations
 

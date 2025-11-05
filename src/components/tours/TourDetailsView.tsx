@@ -36,7 +36,8 @@ export const TourDetailsView = ({ tourId, currentUserId }: TourDetailsViewProps)
     if (tourId) {
       markAsViewedMutation.mutate(tourId);
     }
-  }, [tourId, markAsViewedMutation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tourId]);
 
   const handleToggleVotingLock = () => {
     if (tour?.voting_locked) {
