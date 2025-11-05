@@ -25,3 +25,9 @@ pnpm-debug.log*
 
 *storybook.log
 storybook-static
+
+# testing
+/test-results/
+/playwright-report/
+/playwright/.cache/
+.chromatic.config.json

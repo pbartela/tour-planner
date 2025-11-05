@@ -15,7 +15,15 @@
     "build-storybook": "storybook build",
     "i18n:extract": "npx i18next-parser --config i18next-parser.config.cjs",
     "i18n:extract:dry": "npx i18next-parser --config i18next-parser.config.cjs --fail-on-update",
-    "i18n:check": "npx i18next-parser --config i18next-parser.config.cjs --fail-on-warnings"
+    "i18n:check": "npx i18next-parser --config i18next-parser.config.cjs --fail-on-warnings",
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:smoke": "playwright test tests/e2e/smoke.spec.ts",
+    "test:auth": "playwright test tests/e2e/auth",
+    "test:chromatic": "chromatic --exit-zero-on-changes",
+    "test:debug": "playwright test --debug",
+    "test:report": "playwright show-report"
   },
   "dependencies": {
     "@astrojs/node": "^9.4.3",
@@ -55,6 +63,7 @@
   "devDependencies": {
     "@eslint/compat": "1.2.7",
     "@eslint/js": "9.23.0",
+    "@playwright/test": "^1.56.1",
     "@storybook/addon-a11y": "^9.1.13",
     "@storybook/addon-docs": "^9.1.13",
     "@storybook/addon-onboarding": "^9.1.13",
@@ -63,6 +72,7 @@
     "@tailwindcss/typography": "^0.5.19",
     "@typescript-eslint/eslint-plugin": "8.28.0",
     "@typescript-eslint/parser": "8.28.0",
+    "chromatic": "^13.3.3",
     "daisyui": "^5.3.1",
     "eslint": "^9.37.0",
     "eslint-config-prettier": "10.1.1",

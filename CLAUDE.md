@@ -43,6 +43,16 @@ npm run build-storybook
 
 # View static design files
 npm run designs       # Serves designs/ on port 8080
+
+# Testing (E2E with Playwright)
+npm run test          # Run all Playwright tests
+npm run test:ui       # Run tests in interactive UI mode
+npm run test:smoke    # Run smoke tests only
+npm run test:chromatic # Run Chromatic visual regression tests
+
+# Test utilities
+npm run test:debug    # Debug tests with Playwright Inspector
+npm run test:report   # Show HTML test report
 ```
 
 ### Supabase Local Development
@@ -100,6 +110,15 @@ src/
 │   └── [...locale]/    # Localized routes
 ├── styles/             # Global styles
 └── types.ts            # Shared types (DTOs, Commands)
+
+tests/
+├── e2e/                # End-to-End tests (Playwright)
+│   ├── auth/           # Authentication tests
+│   ├── tours/          # Tour management tests
+│   ├── i18n/           # Internationalization tests
+│   ├── ui/             # UI and responsiveness tests
+│   └── smoke.spec.ts   # Smoke tests
+└── helpers/            # Test helper functions
 ```
 
 ### Key Architectural Patterns
@@ -337,10 +356,44 @@ Environment validation happens at both:
 
 ## Testing & Quality
 
+### Code Quality
+
 - Husky pre-commit hooks run `lint-staged`
 - TypeScript in strict mode with all strict flags enabled
 - Lint errors must be fixed before committing
 - Use `npm run lint:fix` to auto-fix most issues
+
+### Testing Strategy
+
+The project follows a comprehensive testing strategy defined in `.ai/@test-plan.mdc`:
+
+**E2E Testing (Playwright):**
+- Tests located in `tests/e2e/`
+- Run with `npm run test` or `npm run test:ui` (interactive mode)
+- Covers: authentication, tours, i18n, responsiveness
+- Smoke tests for critical paths: `npm run test:smoke`
+- Configured for Chromium, Firefox, and WebKit
+- See `TESTING.md` for detailed documentation
+
+**Visual Regression (Chromatic):**
+- Automatic visual testing for all Storybook components
+- Run with `npm run test:chromatic`
+- Requires Chromatic project token (see `docs/CHROMATIC_SETUP.md`)
+- Integrated with GitHub Actions for PR checks
+
+**CI/CD (GitHub Actions):**
+- `.github/workflows/test.yml` runs on every push/PR
+- Lint + TypeScript check
+- Playwright E2E tests (multi-browser)
+- Chromatic visual tests
+- Smoke tests on main/develop branches
+
+**Test Files:**
+- E2E tests: `*.spec.ts` in `tests/e2e/`
+- Storybook stories: `*.stories.tsx` in component directories
+- Test helpers: `tests/helpers/`
+
+For full testing documentation, see [TESTING.md](./TESTING.md)
 
 ## Authentication Flow
 
