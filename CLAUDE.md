@@ -44,14 +44,19 @@ npm run build-storybook
 # View static design files
 npm run designs       # Serves designs/ on port 8080
 
-# Testing (E2E with Playwright)
-npm run test          # Run all Playwright tests
-npm run test:ui       # Run tests in interactive UI mode
-npm run test:smoke    # Run smoke tests only
-npm run test:chromatic # Run Chromatic visual regression tests
+# Testing
+npm run test              # Run all tests (unit + E2E)
+npm run test:unit         # Run unit tests with Vitest
+npm run test:unit:watch   # Run unit tests in watch mode
+npm run test:unit:ui      # Run unit tests with UI
+npm run test:unit:coverage # Run unit tests with coverage
+npm run test:e2e          # Run E2E tests with Playwright
+npm run test:e2e:ui       # Run E2E tests in interactive UI mode
+npm run test:e2e:smoke    # Run smoke tests only
+npm run test:chromatic    # Run Chromatic visual regression tests
 
 # Test utilities
-npm run test:debug    # Debug tests with Playwright Inspector
+npm run test:debug    # Debug E2E tests with Playwright Inspector
 npm run test:report   # Show HTML test report
 ```
 
@@ -367,11 +372,19 @@ Environment validation happens at both:
 
 The project follows a comprehensive testing strategy defined in `.ai/@test-plan.mdc`:
 
+**Unit Testing (Vitest):**
+- Tests colocated with source files (`*.test.ts`)
+- Run with `npm run test:unit` or `npm run test:unit:watch`
+- Coverage: validators, utils, services, React hooks
+- 70% coverage threshold (statements, branches, functions, lines)
+- Fast feedback loop with watch mode
+- See `TESTING.md` for detailed documentation
+
 **E2E Testing (Playwright):**
 - Tests located in `tests/e2e/`
-- Run with `npm run test` or `npm run test:ui` (interactive mode)
+- Run with `npm run test:e2e` or `npm run test:e2e:ui` (interactive mode)
 - Covers: authentication, tours, i18n, responsiveness
-- Smoke tests for critical paths: `npm run test:smoke`
+- Smoke tests for critical paths: `npm run test:e2e:smoke`
 - Configured for Chromium, Firefox, and WebKit
 - See `TESTING.md` for detailed documentation
 
@@ -384,14 +397,17 @@ The project follows a comprehensive testing strategy defined in `.ai/@test-plan.
 **CI/CD (GitHub Actions):**
 - `.github/workflows/test.yml` runs on every push/PR
 - Lint + TypeScript check
+- Vitest unit tests with coverage
 - Playwright E2E tests (multi-browser)
 - Chromatic visual tests
 - Smoke tests on main/develop branches
 
 **Test Files:**
+- Unit tests: `*.test.ts` or `*.test.tsx` colocated with source
 - E2E tests: `*.spec.ts` in `tests/e2e/`
 - Storybook stories: `*.stories.tsx` in component directories
 - Test helpers: `tests/helpers/`
+- Test setup: `tests/setup.ts`
 
 For full testing documentation, see [TESTING.md](./TESTING.md)
 

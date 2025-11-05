@@ -4,6 +4,7 @@
 
 Ten projekt wykorzystuje kompleksową strategię testowania zgodną z planem testów opisanym w `.ai/@test-plan.mdc`. Testowanie obejmuje:
 
+- **Testy Jednostkowe** (Unit Tests) z Vitest
 - **Testy E2E** (End-to-End) z Playwright
 - **Testy Wizualnej Regresji** z Chromatic i Storybook
 - **Automatyzacja CI/CD** przez GitHub Actions
@@ -11,6 +12,23 @@ Ten projekt wykorzystuje kompleksową strategię testowania zgodną z planem tes
 ## Struktura Testów
 
 ```
+src/
+├── lib/
+│   ├── validators/        # Walidatory Zod z testami
+│   │   ├── auth.validators.ts
+│   │   ├── auth.validators.test.ts
+│   │   ├── tour.validators.ts
+│   │   └── tour.validators.test.ts
+│   ├── utils/             # Funkcje pomocnicze z testami
+│   │   ├── error-handler.ts
+│   │   └── error-handler.test.ts
+│   ├── services/          # Serwisy biznesowe z testami
+│   │   ├── profile.service.ts
+│   │   └── profile.service.test.ts
+│   └── hooks/             # React hooks z testami
+│       ├── useVotes.ts
+│       └── useVotes.test.tsx
+
 tests/
 ├── e2e/                    # Testy End-to-End (Playwright)
 │   ├── auth/              # Testy uwierzytelniania
@@ -18,9 +36,11 @@ tests/
 │   ├── i18n/              # Testy internacjonalizacji
 │   ├── ui/                # Testy UI i responsywności
 │   └── smoke.spec.ts      # Testy dymne (smoke tests)
-└── helpers/               # Funkcje pomocnicze dla testów
-    └── auth.ts            # Helpery uwierzytelniania
+├── helpers/               # Funkcje pomocnicze dla testów
+│   └── auth.ts            # Helpery uwierzytelniania
+└── setup.ts               # Setup dla Vitest
 
+vitest.config.ts           # Konfiguracja Vitest
 playwright.config.ts       # Konfiguracja Playwright
 .chromatic.config.json     # Konfiguracja Chromatic (git-ignored)
 .chromatic.config.example.json  # Przykładowa konfiguracja
@@ -28,23 +48,46 @@ playwright.config.ts       # Konfiguracja Playwright
 
 ## Skrypty NPM
 
-### Testy Playwright (E2E)
+### Testy Ogólne
 
 ```bash
-# Uruchom wszystkie testy
+# Uruchom wszystkie testy (unit + e2e)
 npm run test
+```
 
-# Uruchom testy w trybie headed (z widoczną przeglądarką)
-npm run test:headed
+### Testy Jednostkowe (Vitest)
+
+```bash
+# Uruchom testy jednostkowe
+npm run test:unit
+
+# Uruchom testy w trybie watch (automatyczne ponowne uruchomienie)
+npm run test:unit:watch
 
 # Uruchom testy w UI mode (interaktywny interfejs)
-npm run test:ui
+npm run test:unit:ui
+
+# Uruchom testy z coverage
+npm run test:unit:coverage
+```
+
+### Testy E2E (Playwright)
+
+```bash
+# Uruchom wszystkie testy E2E
+npm run test:e2e
+
+# Uruchom testy w trybie headed (z widoczną przeglądarką)
+npm run test:e2e:headed
+
+# Uruchom testy w UI mode (interaktywny interfejs)
+npm run test:e2e:ui
 
 # Uruchom tylko smoke tests
-npm run test:smoke
+npm run test:e2e:smoke
 
 # Uruchom tylko testy uwierzytelniania
-npm run test:auth
+npm run test:e2e:auth
 
 # Debugowanie testów
 npm run test:debug
@@ -59,6 +102,147 @@ npm run test:report
 # Uruchom Chromatic dla Storybook
 npm run test:chromatic
 ```
+
+## Vitest - Testy Jednostkowe
+
+### Konfiguracja
+
+Konfiguracja znajduje się w `vitest.config.ts`. Testy wykorzystują:
+
+- **Test Framework**: Vitest
+- **Biblioteka pomocnicza**: @testing-library/react
+- **Matchers**: @testing-library/jest-dom
+- **Test Environment**: happy-dom (dla React)
+- **Coverage Provider**: v8
+
+### Co Testujemy
+
+#### Walidatory Zod
+
+```typescript
+// src/lib/validators/auth.validators.test.ts
+describe('MagicLinkSchema', () => {
+  it('should accept valid email addresses', () => {
+    const result = MagicLinkSchema.safeParse({ email: 'user@example.com' });
+    expect(result.success).toBe(true);
+  });
+
+  it('should reject protocol-based attacks', () => {
+    const result = MagicLinkSchema.safeParse({
+      email: 'user@example.com',
+      redirectTo: 'javascript:alert(1)',
+    });
+    expect(result.success).toBe(false);
+  });
+});
+```
+
+#### Funkcje Pomocnicze
+
+```typescript
+// src/lib/utils/error-handler.test.ts
+describe('handleDatabaseError', () => {
+  it('should handle unique violation error', () => {
+    const error = { code: POSTGRES_ERROR_CODES.UNIQUE_VIOLATION };
+    const result = handleDatabaseError(error);
+
+    expect(result.status).toBe(409);
+    expect(result.message).toBe('Email is already taken');
+  });
+});
+```
+
+#### Serwisy Biznesowe
+
+```typescript
+// src/lib/services/profile.service.test.ts
+describe('ProfileService', () => {
+  it('should return profile data on success', async () => {
+    // Mock Supabase client
+    const mockSupabase = createMockSupabaseClient();
+
+    const result = await profileService.getProfile(mockSupabase, 'user-123');
+
+    expect(result.data).toEqual(mockProfile);
+    expect(result.error).toBeNull();
+  });
+});
+```
+
+#### React Hooks
+
+```typescript
+// src/lib/hooks/useVotes.test.tsx
+describe('useVotes', () => {
+  it('should fetch votes successfully', async () => {
+    const { result } = renderHook(() => useVotes('tour-123'), { wrapper });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(result.current.data).toEqual(mockVotes);
+  });
+});
+```
+
+### Uruchamianie Testów Lokalnie
+
+```bash
+# Uruchom wszystkie testy jednostkowe
+npm run test:unit
+
+# Uruchom w trybie watch (automatyczne ponowne uruchomienie przy zmianach)
+npm run test:unit:watch
+
+# Uruchom z UI (interaktywny interfejs)
+npm run test:unit:ui
+
+# Uruchom z coverage
+npm run test:unit:coverage
+```
+
+### Pisanie Nowych Testów
+
+1. **Umieść test obok pliku źródłowego:**
+   ```bash
+   src/lib/utils/my-function.ts
+   src/lib/utils/my-function.test.ts
+   ```
+
+2. **Użyj podstawowej struktury:**
+   ```typescript
+   import { describe, it, expect } from 'vitest';
+   import { myFunction } from './my-function';
+
+   describe('myFunction', () => {
+     it('should do something', () => {
+       const result = myFunction('input');
+       expect(result).toBe('expected');
+     });
+   });
+   ```
+
+3. **Dla mocków użyj vi:**
+   ```typescript
+   import { describe, it, expect, vi } from 'vitest';
+
+   vi.mock('@/lib/client/api-client', () => ({
+     get: vi.fn(),
+   }));
+   ```
+
+### Coverage Reports
+
+Po uruchomieniu `npm run test:unit:coverage`, raporty znajdziesz w:
+
+- **Konsola**: Szybki przegląd w terminalu
+- **HTML**: `coverage/index.html` - szczegółowy raport wizualny
+- **LCOV**: `coverage/lcov.info` - dla narzędzi CI/CD
+
+Progi coverage (zdefiniowane w `vitest.config.ts`):
+- Statements: 70%
+- Branches: 70%
+- Functions: 70%
+- Lines: 70%
 
 ## Playwright - Testy E2E
 
