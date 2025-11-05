@@ -1,33 +1,95 @@
 {
+  "authError": {
+    "accessDenied": {
+      "action": "Spróbuj ponownie",
+      "message": "Nie masz uprawnień dostępu do tego zasobu. Skontaktuj się z pomocą techniczną, jeśli uważasz, że to błąd.",
+      "title": "Dostęp zabroniony"
+    },
+    "alreadyUsed": {
+      "action": "Poproś o nowy link",
+      "message": "Ten link uwierzytelniający został już użyty. Każdy magiczny link może być użyty tylko raz ze względów bezpieczeństwa.",
+      "title": "Link już użyty"
+    },
+    "expiredLink": {
+      "action": "Poproś o nowy link",
+      "message": "Ten link uwierzytelniający wygasł. Magiczne linki są ważne tylko przez ograniczony czas ze względów bezpieczeństwa.",
+      "title": "Link wygasł"
+    },
+    "generic": {
+      "action": "Spróbuj ponownie",
+      "message": "Wystąpił problem z żądaniem uwierzytelnienia. Spróbuj ponownie.",
+      "title": "Błąd uwierzytelnienia"
+    },
+    "helpText": "Jeśli nadal występują problemy, skontaktuj się z naszym zespołem wsparcia.",
+    "invalidLink": {
+      "action": "Poproś o nowy link",
+      "message": "Ten link uwierzytelniający jest nieprawidłowy lub uszkodzony. Poproś o nowy.",
+      "title": "Nieprawidłowy link"
+    },
+    "noTokens": {
+      "action": "Poproś o nowy link",
+      "message": "Nie mogliśmy znaleźć tokenów uwierzytelniających w Twoim żądaniu. Zwykle zdarza się to, gdy link jest niekompletny lub uszkodzony.",
+      "title": "Uwierzytelnianie nie powiodło się"
+    },
+    "sessionFailed": {
+      "action": "Spróbuj ponownie",
+      "message": "Nie mogliśmy ustanowić Twojej sesji. Może to być spowodowane tymczasowym problemem z serwerem lub nieprawidłowymi danymi uwierzytelniającymi.",
+      "title": "Nie udało się utworzyć sesji"
+    },
+    "unexpectedError": {
+      "action": "Spróbuj ponownie",
+      "message": "Wystąpił nieoczekiwany błąd podczas uwierzytelniania. Spróbuj ponownie lub skontaktuj się z pomocą techniczną, jeśli problem będzie się powtarzał.",
+      "title": "Coś poszło nie tak"
+    }
+  },
+  "invitations": {
+    "accept": "Akceptuj",
+    "decline": "Odrzuć",
+    "error": "Nie udało się załadować zaproszeń",
+    "expiresIn": "Wygasa za {{days}} dni",
+    "expiresInOneDay": "Wygasa za 1 dzień",
+    "expiresToday": "Wygasa dzisiaj",
+    "invitedBy": "Zaproszenie od {{name}}",
+    "loading": "Ładowanie zaproszeń...",
+    "noPending": "Brak oczekujących zaproszeń",
+    "pending": "Oczekujące zaproszenia",
+    "refresh": "Odśwież"
+  },
   "layout": {
-    "siteName": "Planer Wycieczek",
-    "welcome": "Witaj, {{name}}",
+    "login": "Zaloguj",
     "logout": "Wyloguj",
-    "login": "Zaloguj"
+    "siteName": "Planer Wycieczek",
+    "welcome": "Witaj, {{name}}"
+  },
+  "loginPage": {
+    "title": "Logowanie / Rejestracja"
+  },
+  "logoutPage": {
+    "title": "Wylogowano"
   },
   "profile": {
-    "title": "Profil",
-    "email": "Email",
-    "displayName": "Wyświetlana nazwa",
-    "language": "Język",
-    "theme": "Motyw",
-    "memberSince": "Członek od",
-    "notSet": "Nie ustawiono",
-    "editProfile": "Edytuj profil",
     "cancel": "Anuluj",
-    "save": "Zapisz zmiany",
-    "saving": "Zapisywanie...",
-    "reset": "Resetuj",
-    "updateSuccess": "Profil zaktualizowany pomyślnie!",
-    "updateError": "Błąd",
+    "displayName": "Wyświetlana nazwa",
+    "editProfile": "Edytuj profil",
+    "email": "Email",
+    "language": "Język",
     "languages": {
       "en-US": "English (US)",
       "pl-PL": "Polski"
     },
+    "memberSince": "Członek od",
+    "notSet": "Nie ustawiono",
+    "reset": "Resetuj",
+    "save": "Zapisz zmiany",
+    "saving": "Zapisywanie...",
+    "theme": "Motyw",
     "themes": {
-      "light": "Jasny",
       "dark": "Ciemny",
+      "light": "Jasny",
       "system": "Systemowy"
-    }
+    },
+    "title": "Profil",
+    "updateError": "Błąd",
+    "updateSuccess": "Profil zaktualizowany pomyślnie!"
   }
 }

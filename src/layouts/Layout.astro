@@ -3,6 +3,7 @@ import { ClientRouter } from "astro:transitions";
 import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeController } from "@/components/ThemeController";
+import { PendingInvitationsIndicator } from "@/components/invitations/PendingInvitationsIndicator";
 import { getOrCreateCsrfToken } from "@/lib/server/csrf.service";
 import "@/styles/global.css";
 import i18next from "i18next";
@@ -57,6 +58,7 @@ const locale = Astro.params.locale || "en-US";
           <a href={`/${locale}`} class="text-xl font-bold text-base-content">{i18next.t("layout.siteName")}</a>
           <div class="flex items-center gap-4">
             <ThemeController client:load />
+            {user && <PendingInvitationsIndicator client:load />}
             {
               user ? (
                 <div class="flex items-center gap-4">

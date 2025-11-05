@@ -63,6 +63,67 @@ class InvitationService {
   }
 
   /**
+   * Gets all pending (non-expired) invitations for a user by their email.
+   * Used to display pending invitations indicator in the navigation.
+   */
+  public async getUserPendingInvitations(supabase: SupabaseClient, userEmail: string): Promise<InvitationDto[]> {
+    try {
+      const now = new Date().toISOString();
+
+      const { data: invitations, error } = await supabase
+        .from("invitations")
+        .select(
+          `
+          id,
+          tour_id,
+          inviter_id,
+          email,
+          status,
+          token,
+          expires_at,
+          created_at,
+          tours!invitations_tour_id_fkey (
+            title
+          ),
+          profiles!invitations_inviter_id_fkey (
+            display_name
+          )
+        `
+        )
+        .eq("email", userEmail.toLowerCase())
+        .eq("status", "pending")
+        .gt("expires_at", now)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        secureError("Error fetching user pending invitations from database", error);
+        throw new Error("Failed to fetch pending invitations from the database.");
+      }
+
+      // Transform to InvitationDto
+      return (invitations || []).map((inv) => {
+        const tours = inv.tours as { title: string }[] | null | undefined;
+        const profiles = inv.profiles as { display_name: string | null }[] | null | undefined;
+        return {
+          id: inv.id,
+          tour_id: inv.tour_id,
+          inviter_id: inv.inviter_id,
+          email: inv.email,
+          status: inv.status,
+          token: inv.token || undefined,
+          expires_at: inv.expires_at,
+          created_at: inv.created_at,
+          tour_title: tours && tours.length > 0 ? tours[0].title : undefined,
+          inviter_display_name: profiles && profiles.length > 0 ? profiles[0].display_name || undefined : undefined,
+        };
+      });
+    } catch (error) {
+      secureError("Unexpected error in getUserPendingInvitations", error);
+      throw error instanceof Error ? error : new Error("An unexpected error occurred.");
+    }
+  }
+
+  /**
    * Gets an invitation by token.
    * Public endpoint - no authentication required.
    */
