@@ -1,7 +1,6 @@
 import type { SupabaseClient } from "@/db/supabase.client";
 import { secureError } from "@/lib/server/logger.service";
 import { createSupabaseAdminClient } from "@/db/supabase.admin.client";
-import { ENV } from "@/lib/server/env-validation.service";
 import type { InvitationDto, SendInvitationsResponse, InvitationByTokenDto, AcceptInvitationResponse } from "@/types";
 import { randomBytes } from "crypto";
 import type { AuthError } from "@supabase/supabase-js";
