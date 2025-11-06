@@ -20,7 +20,7 @@ test.describe("Responsive Design", () => {
 
     // Sprawdź czy navbar jest widoczny
     const navbar = page.locator("nav").or(page.locator('[role="navigation"]'));
-    if (await navbar.count() > 0) {
+    if ((await navbar.count()) > 0) {
       await expect(navbar.first()).toBeVisible();
     }
 
@@ -107,7 +107,7 @@ test.describe("Responsive Design", () => {
       .or(page.locator('button:has-text("Menu")'))
       .or(page.locator('[data-testid="mobile-menu-button"]'))
       .or(page.locator(".hamburger"))
-      .or(page.locator('[aria-expanded]'));
+      .or(page.locator("[aria-expanded]"));
 
     if ((await menuButton.count()) > 0) {
       // Menu button exists, test it

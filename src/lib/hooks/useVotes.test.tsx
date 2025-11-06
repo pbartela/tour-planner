@@ -149,12 +149,8 @@ describe("useVotes", () => {
       summary: { yes_count: 1, no_count: 0, maybe_count: 0, total_votes: 1 },
     };
 
-    vi.mocked(apiClient.get)
-      .mockResolvedValueOnce(mockVotes1)
-      .mockResolvedValueOnce(mockVotes2);
-    vi.mocked(apiClient.handleApiResponse)
-      .mockReturnValueOnce(mockVotes1)
-      .mockReturnValueOnce(mockVotes2);
+    vi.mocked(apiClient.get).mockResolvedValueOnce(mockVotes1).mockResolvedValueOnce(mockVotes2);
+    vi.mocked(apiClient.handleApiResponse).mockReturnValueOnce(mockVotes1).mockReturnValueOnce(mockVotes2);
 
     const { result, rerender } = renderHook(({ tourId }) => useVotes(tourId), {
       wrapper,

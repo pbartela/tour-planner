@@ -46,12 +46,12 @@ npx playwright test tests/e2e/smoke.spec.ts
 
 Testy są mapowane do scenariuszy z `.ai/@test-plan.mdc`:
 
-| ID Scenariusza | Plik Testu |
-|---------------|------------|
-| AUTH-02 | `auth/auth-protection.spec.ts` |
-| I18N-01 | `i18n/language-switching.spec.ts` |
-| UI-01 | `ui/responsive-design.spec.ts` |
-| Smoke Tests | `smoke.spec.ts` |
+| ID Scenariusza | Plik Testu                        |
+| -------------- | --------------------------------- |
+| AUTH-02        | `auth/auth-protection.spec.ts`    |
+| I18N-01        | `i18n/language-switching.spec.ts` |
+| UI-01          | `ui/responsive-design.spec.ts`    |
+| Smoke Tests    | `smoke.spec.ts`                   |
 
 ## Do Zaimplementowania
 
@@ -64,6 +64,7 @@ Następujące scenariusze z planu testów czekają na implementację:
 - [ ] **SEC-01**: Testy bezpieczeństwa RLS
 
 Każdy z tych testów wymaga:
+
 - Konfiguracji testowej bazy Supabase
 - Helperów do zarządzania danymi testowymi
 - Mockowania lub integracji z serwisami email

@@ -37,6 +37,25 @@ const baseConfig = tseslint.config({
   },
 });
 
+// Test files configuration - relaxed rules for tests
+const testConfig = tseslint.config({
+  files: ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}"],
+  extends: [eslint.configs.recommended, tseslint.configs.recommended],
+  languageOptions: {
+    parser: tseslint.parser,
+  },
+  rules: {
+    "no-console": "off",
+    "no-undef": "off",
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-unused-vars": "off",
+    "@typescript-eslint/no-unsafe-assignment": "off",
+    "@typescript-eslint/no-unsafe-member-access": "off",
+    "@typescript-eslint/no-unsafe-call": "off",
+  },
+});
+
 const jsxA11yConfig = tseslint.config({
   files: ["**/*.{js,jsx,ts,tsx}"],
   ignores: ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}"],
@@ -83,7 +102,7 @@ const serverConfig = tseslint.config({
   },
 });
 
-// Test files are excluded in baseConfig ignores since test infrastructure isn't set up
+// Test files have their own configuration with relaxed rules
 
 export default tseslint.config(
   includeIgnoreFile(gitignorePath),
@@ -92,6 +111,7 @@ export default tseslint.config(
     ignores: ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}", "**/*.test.skip.{ts,tsx}"],
   },
   baseConfig,
+  testConfig,
   jsxA11yConfig,
   reactConfig,
   serverConfig,

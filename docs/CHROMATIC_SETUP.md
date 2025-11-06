@@ -5,6 +5,7 @@ Chromatic to platforma do testowania wizualnej regresji dla Storybook. Ten przew
 ## Czym jest Chromatic?
 
 Chromatic automatycznie:
+
 - Buduje Storybook przy każdym commit
 - Robi snapshoty wszystkich stories
 - Porównuje z poprzednimi wersjami
@@ -69,6 +70,7 @@ npm run test:chromatic
 ```
 
 To:
+
 1. Zbuduje Storybook (`npm run build-storybook`)
 2. Przesle build do Chromatic
 3. Utworzy baseline snapshots
@@ -85,6 +87,7 @@ To:
 Po skonfigurowaniu, Chromatic automatycznie uruchamia się:
 
 ### Pull Request
+
 1. Otwierasz PR
 2. GitHub Actions uruchamia workflow `test.yml`
 3. Job `chromatic` buduje i uploaduje snapshoty
@@ -92,6 +95,7 @@ Po skonfigurowaniu, Chromatic automatycznie uruchamia się:
 5. Jeśli są różnice - pokazuje je w PR jako check
 
 ### Main Branch
+
 1. Po merge do `main`
 2. Chromatic aktualizuje baseline automatycznie (dzięki `autoAcceptChanges: "main"`)
 
@@ -112,16 +116,19 @@ npm run test:chromatic
 ### Akceptowanie Zmian
 
 **W UI Chromatic:**
+
 1. Przejdź do buildu na chromatic.com
 2. Zobacz różnice (diff view)
 3. Kliknij ✓ Approve lub ✗ Deny dla każdej zmiany
 
 **Automatycznie:**
+
 - Zmiany na branchu `main` są auto-akceptowane
 
 ### Odrzucanie Zmian
 
 Jeśli Chromatic pokazuje niezamierzone zmiany:
+
 1. Odrzuć je w UI
 2. Napraw kod
 3. Push nowy commit
@@ -131,14 +138,14 @@ Jeśli Chromatic pokazuje niezamierzone zmiany:
 
 ### `.chromatic.config.json`
 
-| Opcja | Opis |
-|-------|------|
-| `projectToken` | Token projektu Chromatic |
-| `buildScriptName` | Skrypt do budowania Storybook |
-| `storybookBuildDir` | Katalog z zbudowanym Storybook |
-| `onlyChanged` | Testuj tylko zmienione komponenty |
-| `exitZeroOnChanges` | Exit 0 nawet jeśli są zmiany (dla CI) |
-| `exitOnceUploaded` | Exit od razu po upload (szybsze) |
+| Opcja               | Opis                                       |
+| ------------------- | ------------------------------------------ |
+| `projectToken`      | Token projektu Chromatic                   |
+| `buildScriptName`   | Skrypt do budowania Storybook              |
+| `storybookBuildDir` | Katalog z zbudowanym Storybook             |
+| `onlyChanged`       | Testuj tylko zmienione komponenty          |
+| `exitZeroOnChanges` | Exit 0 nawet jeśli są zmiany (dla CI)      |
+| `exitOnceUploaded`  | Exit od razu po upload (szybsze)           |
 | `autoAcceptChanges` | Auto-akceptuj zmiany na określonym branchu |
 
 ### Zaawansowane Opcje
@@ -167,6 +174,7 @@ Kliknij "Details" przy checku aby zobaczyć zmiany.
 ## Limity Free Tier
 
 Plan darmowy Chromatic oferuje:
+
 - **5,000 snapshots/miesiąc**
 - Nieograniczoną liczbę użytkowników
 - Wszystkie podstawowe funkcje
@@ -178,6 +186,7 @@ Monitoruj użycie w Settings → Billing na chromatic.com
 ### Redukuj Liczbę Stories
 
 Zamiast 10 podobnych stories:
+
 ```typescript
 export const PrimarySmall: Story = { ... };
 export const PrimaryMedium: Story = { ... };
@@ -186,6 +195,7 @@ export const PrimaryLarge: Story = { ... };
 ```
 
 Użyj jednej story z wszystkimi wariantami:
+
 ```typescript
 export const AllVariants: Story = {
   render: () => (
@@ -223,6 +233,7 @@ export const WithAnimation: Story = {
 ### Problem: "Project token is invalid"
 
 **Rozwiązanie:**
+
 - Sprawdź czy token jest poprawnie skopiowany
 - Sprawdź czy nie ma spacji na początku/końcu
 - Zweryfikuj token na chromatic.com
@@ -230,6 +241,7 @@ export const WithAnimation: Story = {
 ### Problem: Build timeouts
 
 **Rozwiązanie:**
+
 ```bash
 # Zbuduj Storybook lokalnie najpierw
 npm run build-storybook
@@ -240,6 +252,7 @@ npm run build-storybook
 ### Problem: Too many snapshots
 
 **Rozwiązanie:**
+
 - Włącz `onlyChanged: true` w konfiguracji
 - Zredukuj liczbę stories (patrz Optymalizacja)
 - Użyj `disableSnapshot` dla stories które nie wymagają testowania
@@ -247,6 +260,7 @@ npm run build-storybook
 ### Problem: Zmiany nie są wykrywane
 
 **Rozwiązanie:**
+
 - Upewnij się że Storybook jest aktualny: `npm run storybook`
 - Clear cache: `rm -rf node_modules/.cache`
 - Przebuduj: `npm run build-storybook`
@@ -260,6 +274,7 @@ npm run build-storybook
 ## Wsparcie
 
 Problemy z Chromatic?
+
 - Dokumentacja: https://www.chromatic.com/docs/
 - Discord: https://discord.gg/storybook
 - Email: support@chromatic.com

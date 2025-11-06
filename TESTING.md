@@ -121,16 +121,16 @@ Konfiguracja znajduje się w `vitest.config.ts`. Testy wykorzystują:
 
 ```typescript
 // src/lib/validators/auth.validators.test.ts
-describe('MagicLinkSchema', () => {
-  it('should accept valid email addresses', () => {
-    const result = MagicLinkSchema.safeParse({ email: 'user@example.com' });
+describe("MagicLinkSchema", () => {
+  it("should accept valid email addresses", () => {
+    const result = MagicLinkSchema.safeParse({ email: "user@example.com" });
     expect(result.success).toBe(true);
   });
 
-  it('should reject protocol-based attacks', () => {
+  it("should reject protocol-based attacks", () => {
     const result = MagicLinkSchema.safeParse({
-      email: 'user@example.com',
-      redirectTo: 'javascript:alert(1)',
+      email: "user@example.com",
+      redirectTo: "javascript:alert(1)",
     });
     expect(result.success).toBe(false);
   });
@@ -141,13 +141,13 @@ describe('MagicLinkSchema', () => {
 
 ```typescript
 // src/lib/utils/error-handler.test.ts
-describe('handleDatabaseError', () => {
-  it('should handle unique violation error', () => {
+describe("handleDatabaseError", () => {
+  it("should handle unique violation error", () => {
     const error = { code: POSTGRES_ERROR_CODES.UNIQUE_VIOLATION };
     const result = handleDatabaseError(error);
 
     expect(result.status).toBe(409);
-    expect(result.message).toBe('Email is already taken');
+    expect(result.message).toBe("Email is already taken");
   });
 });
 ```
@@ -156,12 +156,12 @@ describe('handleDatabaseError', () => {
 
 ```typescript
 // src/lib/services/profile.service.test.ts
-describe('ProfileService', () => {
-  it('should return profile data on success', async () => {
+describe("ProfileService", () => {
+  it("should return profile data on success", async () => {
     // Mock Supabase client
     const mockSupabase = createMockSupabaseClient();
 
-    const result = await profileService.getProfile(mockSupabase, 'user-123');
+    const result = await profileService.getProfile(mockSupabase, "user-123");
 
     expect(result.data).toEqual(mockProfile);
     expect(result.error).toBeNull();
@@ -173,9 +173,9 @@ describe('ProfileService', () => {
 
 ```typescript
 // src/lib/hooks/useVotes.test.tsx
-describe('useVotes', () => {
-  it('should fetch votes successfully', async () => {
-    const { result } = renderHook(() => useVotes('tour-123'), { wrapper });
+describe("useVotes", () => {
+  it("should fetch votes successfully", async () => {
+    const { result } = renderHook(() => useVotes("tour-123"), { wrapper });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -203,29 +203,32 @@ npm run test:unit:coverage
 ### Pisanie Nowych Testów
 
 1. **Umieść test obok pliku źródłowego:**
+
    ```bash
    src/lib/utils/my-function.ts
    src/lib/utils/my-function.test.ts
    ```
 
 2. **Użyj podstawowej struktury:**
-   ```typescript
-   import { describe, it, expect } from 'vitest';
-   import { myFunction } from './my-function';
 
-   describe('myFunction', () => {
-     it('should do something', () => {
-       const result = myFunction('input');
-       expect(result).toBe('expected');
+   ```typescript
+   import { describe, it, expect } from "vitest";
+   import { myFunction } from "./my-function";
+
+   describe("myFunction", () => {
+     it("should do something", () => {
+       const result = myFunction("input");
+       expect(result).toBe("expected");
      });
    });
    ```
 
 3. **Dla mocków użyj vi:**
-   ```typescript
-   import { describe, it, expect, vi } from 'vitest';
 
-   vi.mock('@/lib/client/api-client', () => ({
+   ```typescript
+   import { describe, it, expect, vi } from "vitest";
+
+   vi.mock("@/lib/client/api-client", () => ({
      get: vi.fn(),
    }));
    ```
@@ -239,6 +242,7 @@ Po uruchomieniu `npm run test:unit:coverage`, raporty znajdziesz w:
 - **LCOV**: `coverage/lcov.info` - dla narzędzi CI/CD
 
 Progi coverage (zdefiniowane w `vitest.config.ts`):
+
 - Statements: 70%
 - Branches: 70%
 - Functions: 70%
@@ -259,32 +263,36 @@ Konfiguracja znajduje się w `playwright.config.ts`. Testy uruchamiane są na:
 Zgodnie z planem testów zaimplementowano następujące scenariusze:
 
 #### AUTH-02: Ochrona Chronionych Tras
+
 ```typescript
 // tests/e2e/auth/auth-protection.spec.ts
-test('should redirect unauthenticated user to login page', async ({ page }) => {
-  await page.goto('/en-US/tours');
+test("should redirect unauthenticated user to login page", async ({ page }) => {
+  await page.goto("/en-US/tours");
   await expect(page).toHaveURL(/\/en-US\/auth\/login/);
 });
 ```
 
 #### I18N-01: Przełączanie Języka
+
 ```typescript
 // tests/e2e/i18n/language-switching.spec.ts
-test('should switch language from English to Polish', async ({ page }) => {
+test("should switch language from English to Polish", async ({ page }) => {
   // Test weryfikuje przełączanie języka i aktualizację URL
 });
 ```
 
 #### UI-01: Responsywność
+
 ```typescript
 // tests/e2e/ui/responsive-design.spec.ts
-test('should display tours page correctly on mobile device', async ({ page }) => {
+test("should display tours page correctly on mobile device", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 667 });
   // Weryfikacja layoutu na urządzeniach mobilnych
 });
 ```
 
 #### Smoke Tests
+
 ```typescript
 // tests/e2e/smoke.spec.ts
 // Szybkie testy sprawdzające podstawową funkcjonalność aplikacji
@@ -293,16 +301,19 @@ test('should display tours page correctly on mobile device', async ({ page }) =>
 ### Uruchamianie Testów Lokalnie
 
 1. **Upewnij się, że masz zainstalowane zależności:**
+
    ```bash
    npm install
    ```
 
 2. **Zainstaluj przeglądarki Playwright (tylko przy pierwszym uruchomieniu):**
+
    ```bash
    npx playwright install
    ```
 
 3. **Skonfiguruj zmienne środowiskowe:**
+
    ```bash
    # Skopiuj przykładowy plik .env (jeśli nie istnieje)
    cp .env.example .env
@@ -314,6 +325,7 @@ test('should display tours page correctly on mobile device', async ({ page }) =>
    **Uwaga:** Plik `.env` powinien zawierać klucze Supabase. Dla lokalnego Supabase użyj domyślnych kluczy z `.env.example`.
 
 4. **Uruchom aplikację w tle (opcjonalne - konfiguracja automatycznie uruchomi):**
+
    ```bash
    npm run dev
    ```
@@ -326,52 +338,62 @@ test('should display tours page correctly on mobile device', async ({ page }) =>
 ### Debugowanie Testów
 
 #### UI Mode (Zalecane)
+
 ```bash
 npm run test:ui
 ```
+
 Otwiera interaktywny interfejs pozwalający na:
+
 - Uruchamianie pojedynczych testów
 - Podglądanie kroków testu
 - Inspekcję elementów DOM
 - Time travel debugging
 
 #### Debug Mode
+
 ```bash
 npm run test:debug
 ```
+
 Uruchamia testy w trybie debugowania z Playwright Inspector.
 
 #### Headed Mode
+
 ```bash
 npm run test:headed
 ```
+
 Uruchamia testy z widoczną przeglądarką.
 
 ### Pisanie Nowych Testów
 
 1. **Utwórz nowy plik w odpowiednim katalogu:**
+
    ```bash
    touch tests/e2e/tours/create-tour.spec.ts
    ```
 
 2. **Użyj podstawowej struktury:**
-   ```typescript
-   import { test, expect } from '@playwright/test';
 
-   test.describe('Feature Name', () => {
-     test('should do something', async ({ page }) => {
-       await page.goto('/en-US/path');
+   ```typescript
+   import { test, expect } from "@playwright/test";
+
+   test.describe("Feature Name", () => {
+     test("should do something", async ({ page }) => {
+       await page.goto("/en-US/path");
        // Your test steps
-       await expect(page.locator('selector')).toBeVisible();
+       await expect(page.locator("selector")).toBeVisible();
      });
    });
    ```
 
 3. **Użyj helperów z `tests/helpers/` dla powtarzalnych akcji:**
-   ```typescript
-   import { loginAsTestUser } from '../helpers/auth';
 
-   test('authenticated test', async ({ page }) => {
+   ```typescript
+   import { loginAsTestUser } from "../helpers/auth";
+
+   test("authenticated test", async ({ page }) => {
      await loginAsTestUser(page);
      // Continue with authenticated actions
    });
@@ -387,6 +409,7 @@ Uruchamia testy z widoczną przeglądarką.
    - Skopiuj Project Token
 
 2. **Stwórz plik konfiguracyjny:**
+
    ```bash
    cp .chromatic.config.example.json .chromatic.config.json
    ```
@@ -406,6 +429,7 @@ npm run test:chromatic
 ```
 
 Chromatic:
+
 1. Zbuduje Storybook
 2. Przesle snapshotty do Chromatic
 3. Porówna z poprzednimi wersjami
@@ -441,11 +465,13 @@ export const Default: Story = {
 Plik `.github/workflows/test.yml` definiuje następujące joby:
 
 #### 1. Lint & Type Check
+
 - Uruchamia się przy każdym push i PR
 - Sprawdza kod ESLint
 - Weryfikuje typy TypeScript
 
 #### 2. Playwright E2E Tests
+
 - Uruchamia się na Chromium i Firefox
 - Matrix strategy dla wieloprzeglądarkowych testów
 - Uploaduje raporty jako artifacts
@@ -456,11 +482,13 @@ Plik `.github/workflows/test.yml` definiuje następujące joby:
   - `SUPABASE_SERVICE_ROLE_KEY`
 
 #### 3. Chromatic Visual Tests
+
 - Uruchamia się przy każdym push i PR
 - Automatycznie akceptuje zmiany na branchu `main`
 - **Wymaga secret:** `CHROMATIC_PROJECT_TOKEN`
 
 #### 4. Smoke Tests
+
 - Uruchamia się tylko po merge do `main` lub `develop`
 - Szybka weryfikacja krytycznej funkcjonalności
 - Uploaduje raporty na 7 dni
@@ -471,13 +499,13 @@ Dodaj następujące secrets w ustawieniach repozytorium:
 
 **Settings → Secrets and variables → Actions → New repository secret**
 
-| Secret Name | Opis |
-|------------|------|
-| `PUBLIC_SUPABASE_URL` | URL projektu Supabase |
-| `PUBLIC_SUPABASE_ANON_KEY` | Anonimowy klucz Supabase |
-| `SUPABASE_URL` | URL projektu Supabase (taki sam jak public) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service role key Supabase |
-| `CHROMATIC_PROJECT_TOKEN` | Token projektu Chromatic |
+| Secret Name                 | Opis                                        |
+| --------------------------- | ------------------------------------------- |
+| `PUBLIC_SUPABASE_URL`       | URL projektu Supabase                       |
+| `PUBLIC_SUPABASE_ANON_KEY`  | Anonimowy klucz Supabase                    |
+| `SUPABASE_URL`              | URL projektu Supabase (taki sam jak public) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key Supabase                   |
+| `CHROMATIC_PROJECT_TOKEN`   | Token projektu Chromatic                    |
 
 ### Viewing Test Results
 
@@ -496,6 +524,7 @@ Dodaj następujące secrets w ustawieniach repozytorium:
 ### 1. Test Selectors
 
 **Użyj data-testid dla stabilnych selektorów:**
+
 ```html
 <button data-testid="submit-button">Submit</button>
 ```
@@ -507,22 +536,24 @@ await page.locator('[data-testid="submit-button"]').click();
 ### 2. Oczekiwanie na Elementy
 
 **Zawsze czekaj na elementy:**
+
 ```typescript
 // ❌ Źle - może być niestabilne
-await page.click('button');
+await page.click("button");
 
 // ✅ Dobrze - czeka na element
-await expect(page.locator('button')).toBeVisible();
-await page.locator('button').click();
+await expect(page.locator("button")).toBeVisible();
+await page.locator("button").click();
 ```
 
 ### 3. Izolacja Testów
 
 **Każdy test powinien być niezależny:**
+
 ```typescript
 test.beforeEach(async ({ page }) => {
   // Setup fresh state
-  await page.goto('/en-US');
+  await page.goto("/en-US");
 });
 
 test.afterEach(async ({ page }) => {
@@ -556,17 +587,20 @@ test.describe('User Authentication', () => {
 ### Playwright
 
 **Problem: Testy timeout**
+
 ```bash
 # Zwiększ timeout w playwright.config.ts
 timeout: 60000, // 60 sekund
 ```
 
 **Problem: Przeglądarki nie są zainstalowane**
+
 ```bash
 npx playwright install
 ```
 
 **Problem: Port 3000 już używany**
+
 ```bash
 # Zmień port w playwright.config.ts
 baseURL: 'http://localhost:3001'
@@ -576,12 +610,14 @@ baseURL: 'http://localhost:3001'
 ### Chromatic
 
 **Problem: Build fails**
+
 ```bash
 # Sprawdź czy Storybook buduje się lokalnie
 npm run build-storybook
 ```
 
 **Problem: Too many snapshots**
+
 ```bash
 # Użyj onlyChanged w .chromatic.config.json
 "onlyChanged": true
@@ -607,6 +643,7 @@ Plan testów definiuje dodatkowe scenariusze do zaimplementowania:
 - **AUTH-01**: Proces logowania przez magic link
 
 Te testy wymagają:
+
 1. Konfiguracji testowej bazy danych Supabase
 2. Implementacji helperów do tworzenia danych testowych
 3. Mockowania email service lub użycia testowego dostawcy email

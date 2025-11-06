@@ -4,11 +4,7 @@ import { MagicLinkSchema } from "./auth.validators";
 describe("MagicLinkSchema", () => {
   describe("email validation", () => {
     it("should accept valid email addresses", () => {
-      const validEmails = [
-        "user@example.com",
-        "test.user@domain.co.uk",
-        "user+tag@example.com",
-      ];
+      const validEmails = ["user@example.com", "test.user@domain.co.uk", "user+tag@example.com"];
 
       validEmails.forEach((email) => {
         const result = MagicLinkSchema.safeParse({ email });
@@ -70,11 +66,7 @@ describe("MagicLinkSchema", () => {
     });
 
     it("should reject absolute URLs", () => {
-      const absoluteUrls = [
-        "http://example.com",
-        "https://evil.com",
-        "//evil.com",
-      ];
+      const absoluteUrls = ["http://example.com", "https://evil.com", "//evil.com"];
 
       absoluteUrls.forEach((redirectTo) => {
         const result = MagicLinkSchema.safeParse({
@@ -86,11 +78,7 @@ describe("MagicLinkSchema", () => {
     });
 
     it("should reject protocol-based attacks", () => {
-      const maliciousUrls = [
-        "javascript:alert(1)",
-        "data:text/html,<script>alert(1)</script>",
-        "vbscript:msgbox(1)",
-      ];
+      const maliciousUrls = ["javascript:alert(1)", "data:text/html,<script>alert(1)</script>", "vbscript:msgbox(1)"];
 
       maliciousUrls.forEach((redirectTo) => {
         const result = MagicLinkSchema.safeParse({

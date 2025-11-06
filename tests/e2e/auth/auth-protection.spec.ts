@@ -7,9 +7,7 @@ import { test, expect } from "@playwright/test";
  */
 
 test.describe("Authentication Protection", () => {
-  test("should redirect unauthenticated user to login page when accessing protected route", async ({
-    page,
-  }) => {
+  test("should redirect unauthenticated user to login page when accessing protected route", async ({ page }) => {
     // Próba dostępu do chronionej strony /tours bez logowania
     await page.goto("/tours");
 

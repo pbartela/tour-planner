@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  getToursQuerySchema,
-  createTourCommandSchema,
-  updateTourCommandSchema,
-} from "./tour.validators";
+import { getToursQuerySchema, createTourCommandSchema, updateTourCommandSchema } from "./tour.validators";
 
 describe("Tour Validators", () => {
   describe("getToursQuerySchema", () => {

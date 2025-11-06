@@ -54,7 +54,7 @@ test.describe("Smoke Tests", () => {
     expect(await viewport.count()).toBeGreaterThan(0);
 
     // Check for charset
-    const charset = await page.locator('meta[charset]');
+    const charset = await page.locator("meta[charset]");
     expect(await charset.count()).toBeGreaterThan(0);
   });
 

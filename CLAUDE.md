@@ -308,6 +308,7 @@ return new Response(
 All reusable UI components should have corresponding `.stories.tsx` files:
 
 **Structure:**
+
 ```typescript
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { ComponentName } from "./ComponentName";
@@ -335,6 +336,7 @@ export const Primary: Story = {
 ```
 
 **Best Practices:**
+
 - Keep stories concise - show only essential variations
 - Avoid redundant examples that differ only in text or quantity
 - Focus on demonstrating:
@@ -347,6 +349,7 @@ export const Primary: Story = {
 - Use `argTypes` to make props interactive in Storybook UI
 
 **Example - Good vs Bad:**
+
 ```typescript
 // ❌ Bad - redundant stories
 export const PrimaryButton: Story = { args: { variant: "primary" } };
@@ -417,6 +420,7 @@ Environment validation happens at both:
 The project follows a comprehensive testing strategy defined in `.ai/@test-plan.mdc`:
 
 **Unit Testing (Vitest):**
+
 - Tests colocated with source files (`*.test.ts`)
 - Run with `npm run test:unit` or `npm run test:unit:watch`
 - Coverage: validators, utils, services, React hooks
@@ -425,6 +429,7 @@ The project follows a comprehensive testing strategy defined in `.ai/@test-plan.
 - See `TESTING.md` for detailed documentation
 
 **E2E Testing (Playwright):**
+
 - Tests located in `tests/e2e/`
 - Run with `npm run test:e2e` or `npm run test:e2e:ui` (interactive mode)
 - Covers: authentication, tours, i18n, responsiveness
@@ -433,12 +438,14 @@ The project follows a comprehensive testing strategy defined in `.ai/@test-plan.
 - See `TESTING.md` for detailed documentation
 
 **Visual Regression (Chromatic):**
+
 - Automatic visual testing for all Storybook components
 - Run with `npm run test:chromatic`
 - Requires Chromatic project token (see `docs/CHROMATIC_SETUP.md`)
 - Integrated with GitHub Actions for PR checks
 
 **CI/CD (GitHub Actions):**
+
 - `.github/workflows/test.yml` runs on every push/PR
 - Lint + TypeScript check
 - Vitest unit tests with coverage
@@ -447,6 +454,7 @@ The project follows a comprehensive testing strategy defined in `.ai/@test-plan.
 - Smoke tests on main/develop branches
 
 **Test Files:**
+
 - Unit tests: `*.test.ts` or `*.test.tsx` colocated with source
 - E2E tests: `*.spec.ts` in `tests/e2e/`
 - Storybook stories: `*.stories.tsx` in component directories
@@ -473,6 +481,7 @@ For full testing documentation, see [TESTING.md](./TESTING.md)
 ### Translation Key Extraction
 
 The project uses `i18next-parser` to automatically extract translation keys from code. Run:
+
 - `npm run i18n:extract` - Extract keys and update translation files
 - `npm run i18n:extract:dry` - Check what would change without updating
 - `npm run i18n:check` - Verify translation coverage
@@ -495,6 +504,7 @@ return (
 ```
 
 **Pattern:**
+
 1. Add a descriptive comment explaining the dynamic keys
 2. Add commented `t()` calls with all possible key values on a single line
 3. Use simple key paths (without namespace prefix) - the namespace is inferred from the component's `useTranslation()` call
@@ -502,6 +512,7 @@ return (
 5. List all possible dynamic values that could be used
 
 **Example in component:**
+
 ```typescript
 export const InvitedUsersList = ({ invitations }: Props) => {
   const { t } = useTranslation("tours");
