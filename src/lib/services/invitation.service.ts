@@ -1,8 +1,10 @@
 import type { SupabaseClient } from "@/db/supabase.client";
 import { secureError } from "@/lib/server/logger.service";
 import { createSupabaseAdminClient } from "@/db/supabase.admin.client";
+import { ENV } from "@/lib/server/env-validation.service";
 import type { InvitationDto, SendInvitationsResponse, InvitationByTokenDto, AcceptInvitationResponse } from "@/types";
 import { randomBytes } from "crypto";
+import type { AuthError } from "@supabase/supabase-js";
 
 class InvitationService {
   /**
@@ -48,7 +50,10 @@ class InvitationService {
           ...invitationData,
           token: inv.token || undefined,
           tour_title: tours && tours.length > 0 ? (tours[0] as { title: string }).title : undefined,
-          inviter_display_name: profiles && profiles.length > 0 ? (profiles[0] as { display_name: string | null }).display_name || undefined : undefined,
+          inviter_display_name:
+            profiles && profiles.length > 0
+              ? (profiles[0] as { display_name: string | null }).display_name || undefined
+              : undefined,
         } as InvitationDto;
       });
     } catch (error) {
@@ -104,7 +109,10 @@ class InvitationService {
           ...invitationData,
           token: inv.token || undefined,
           tour_title: tours && tours.length > 0 ? (tours[0] as { title: string }).title : undefined,
-          inviter_display_name: profiles && profiles.length > 0 ? (profiles[0] as { display_name: string | null }).display_name || undefined : undefined,
+          inviter_display_name:
+            profiles && profiles.length > 0
+              ? (profiles[0] as { display_name: string | null }).display_name || undefined
+              : undefined,
         } as InvitationDto;
       });
     } catch (error) {
@@ -292,7 +300,8 @@ class InvitationService {
           }
 
           // Send invitation email via Supabase Auth
-          // Try inviteUserByEmail first (for new users), fallback to signInWithOtp for existing users
+          // In local Supabase (localhost:54321), Admin API may not be available, so we use signInWithOtp
+          // In production, we try inviteUserByEmail first for better email templates
           try {
             const adminClient = createSupabaseAdminClient();
 
@@ -306,19 +315,34 @@ class InvitationService {
             const confirmUrl = new URL("/auth/confirm", baseUrl);
             confirmUrl.searchParams.set("next", invitePath);
 
-            // Try inviteUserByEmail first (creates user if they don't exist, uses invite template)
-            const { error: emailError } = await adminClient.auth.admin.inviteUserByEmail(email, {
-              redirectTo: confirmUrl.toString(), // Magic link goes through /auth/confirm, then to /invite?token={token}
-              data: {
-                invitation_token: invitation.token,
-              },
-            });
+            // Try inviteUserByEmail first. This uses the "Invitation" email template.
+            // If it fails because the user already exists or the admin API is unavailable,
+            // fall back to signInWithOtp, which uses the "Magic Link" template.
+            try {
+              const { error: emailError } = await adminClient.auth.admin.inviteUserByEmail(email, {
+                redirectTo: confirmUrl.toString(), // Magic link goes through /auth/confirm, then to /invite?token={token}
+                data: {
+                  invitation_token: invitation.token,
+                },
+              });
 
-            // If user already exists, use signInWithOtp instead
-            if (emailError) {
+              if (emailError) throw emailError;
+
+              // Success - inviteUserByEmail worked (new user)
+              sent.push(email);
+            } catch (e: unknown) {
+              const emailError = e as AuthError;
               const errorMessage = emailError.message || "";
-              if (errorMessage.includes("already been registered") || errorMessage.includes("already registered")) {
-                // User exists - use signInWithOtp (works for existing users)
+              const errorCode =
+                emailError.code ||
+                (typeof emailError === "object" && "code" in emailError ? String(emailError.code) : "");
+
+              // Fallback to signInWithOtp if admin API not available or user already exists
+              if (
+                errorCode === "not_admin" ||
+                errorMessage.includes("already been registered") ||
+                errorMessage.includes("already registered")
+              ) {
                 const { error: otpError } = await adminClient.auth.signInWithOtp({
                   email: email,
                   options: {
@@ -328,7 +352,7 @@ class InvitationService {
                 });
 
                 if (otpError) {
-                  secureError("Failed to send invitation email via OTP for existing user", otpError);
+                  secureError("Failed to send invitation email via OTP (fallback)", otpError);
                   errors.push({ email, error: "Failed to send invitation email" });
                   continue;
                 }
@@ -340,9 +364,6 @@ class InvitationService {
                 errors.push({ email, error: "Failed to send invitation email" });
                 continue;
               }
-            } else {
-              // Success - inviteUserByEmail worked (new user)
-              sent.push(email);
             }
           } catch (err) {
             secureError("Error sending invitation email", err);

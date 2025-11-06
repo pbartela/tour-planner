@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { navigate } from "astro:transitions/client";
 import toast from "react-hot-toast";
@@ -17,13 +17,15 @@ export const useTourDetailsLogic = (tourId: string) => {
   const lockVotingMutation = useLockVotingMutation();
   const unlockVotingMutation = useUnlockVotingMutation();
   const markAsViewedMutation = useMarkTourAsViewedMutation();
+  const hasMarkedAsViewed = useRef<string | null>(null);
 
-  // Mark tour as viewed when component mounts
+  // Mark tour as viewed when component mounts (only once per tourId)
   useEffect(() => {
-    if (tourId) {
+    if (tourId && hasMarkedAsViewed.current !== tourId && !markAsViewedMutation.isPending) {
+      hasMarkedAsViewed.current = tourId;
       markAsViewedMutation.mutate(tourId);
     }
-  }, [tourId, markAsViewedMutation]);
+  }, [markAsViewedMutation, tourId]);
 
   const handleToggleVotingLock = () => {
     if (tour?.voting_locked) {

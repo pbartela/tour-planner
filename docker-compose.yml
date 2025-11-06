@@ -1,4 +1,103 @@
+# IMPORTANT: This docker-compose.yml file is used EXCLUSIVELY for running E2E tests.
+# DO NOT modify this file when working on local development environment issues.
+# Local development uses Supabase CLI (supabase start/stop) and is configured via supabase/config.toml.
+# For local development configuration changes, modify supabase/config.toml instead.
+
 services:
+  # PostgreSQL database with Supabase extensions
+  supabase-db:
+    image: supabase/postgres:17.6.1.038
+    container_name: tour-planner-supabase-db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_HOST: /var/run/postgresql
+      PGPORT: 5432
+      POSTGRES_PORT: 5432
+      PGDATABASE: postgres
+      POSTGRES_DB: postgres
+      PGUSER: postgres
+      POSTGRES_USER: postgres
+    # Don't expose ports to host - only accessible within Docker network
+    volumes:
+      - supabase-db-data:/var/lib/postgresql/data
+      - ./supabase/migrations:/docker-entrypoint-initdb.d
+      - ./supabase/init-supabase.sh:/docker-entrypoint-initdb.d/00-init-supabase.sh
+    networks:
+      test-network:
+        ipv4_address: 172.20.0.3
+    command: postgres -c listen_addresses='*' -c wal_level=logical
+
+  # PostgREST API - RESTful API for PostgreSQL
+  supabase-rest:
+    image: postgrest/postgrest:v12.2.0
+    container_name: tour-planner-supabase-rest
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@supabase-db:5432/postgres
+      PGRST_DB_SCHEMAS: public,graphql_public
+      PGRST_DB_EXTRA_SEARCH_PATH: public,extensions
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}
+      PGRST_APP_SETTINGS_JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}
+      PGRST_DB_POOL: 10
+      PGRST_DB_POOL_TIMEOUT: 10
+    networks:
+      test-network:
+        ipv4_address: 172.20.0.4
+    # Don't expose ports to host - only accessible within Docker network
+    # PostgREST starts quickly, so we rely on depends_on instead of healthcheck
+
+  # GoTrue - Authentication service
+  supabase-auth:
+    image: supabase/gotrue:v2.156.0
+    container_name: tour-planner-supabase-auth
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: http://localhost:3000
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@supabase-db:5432/postgres
+      GOTRUE_SITE_URL: http://localhost:3000
+      GOTRUE_URI_ALLOW_LIST: http://localhost:3000,http://localhost:3000/auth/confirm,https://localhost:3000/auth/confirm,http://localhost:3000/invite,https://localhost:3000/invite
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}
+      GOTRUE_JWT_EXPIRY: 3600
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      GOTRUE_SMTP_ADMIN_EMAIL: admin@email.com
+      GOTRUE_SMTP_HOST: inbucket
+      GOTRUE_SMTP_PORT: 2500
+      GOTRUE_SMTP_USER: ""
+      GOTRUE_SMTP_PASS: ""
+      GOTRUE_SMTP_SENDER_NAME: "Tour Planner"
+    volumes:
+      - ./supabase/templates:/etc/gotrue/replaces
+    networks:
+      test-network:
+        ipv4_address: 172.20.0.5
+    # Don't expose ports to host - only accessible within Docker network
+
+  # Inbucket - Email testing server
+  supabase-inbucket:
+    image: inbucket/inbucket:stable
+    container_name: tour-planner-supabase-inbucket
+    networks:
+      test-network:
+        ipv4_address: 172.20.0.6
+    # Don't expose ports to host - only accessible within Docker network
+
   # Astro development server
   app:
     build:
@@ -6,12 +105,19 @@ services:
       dockerfile: Dockerfile.app
     ports:
       - "3000:3000"
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+      supabase-rest:
+        condition: service_started
+      supabase-auth:
+        condition: service_started
     environment:
-      - PUBLIC_SUPABASE_URL=${PUBLIC_SUPABASE_URL:-http://localhost:54321}
-      - PUBLIC_SUPABASE_ANON_KEY=${PUBLIC_SUPABASE_ANON_KEY}
+      - PUBLIC_SUPABASE_URL=http://supabase-rest:3000
+      - PUBLIC_SUPABASE_ANON_KEY=${PUBLIC_SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0}
       - PUBLIC_DEFAULT_LOCALE=${PUBLIC_DEFAULT_LOCALE:-en-US}
-      - SUPABASE_URL=${SUPABASE_URL:-http://localhost:54321}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - SUPABASE_URL=http://supabase-rest:3000
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU}
     volumes:
       # Mount source code for hot reload
       - ./src:/app/src
@@ -43,11 +149,11 @@ services:
       # Point tests to the app service - using app.test to avoid Chromium hostname issues
       - BASE_URL=http://app.test:3000
       - SKIP_WEBSERVER=true
-      - PUBLIC_SUPABASE_URL=${PUBLIC_SUPABASE_URL:-http://localhost:54321}
-      - PUBLIC_SUPABASE_ANON_KEY=${PUBLIC_SUPABASE_ANON_KEY}
+      - PUBLIC_SUPABASE_URL=http://supabase-rest:3000
+      - PUBLIC_SUPABASE_ANON_KEY=${PUBLIC_SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0}
       - PUBLIC_DEFAULT_LOCALE=${PUBLIC_DEFAULT_LOCALE:-en-US}
-      - SUPABASE_URL=${SUPABASE_URL:-http://localhost:54321}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - SUPABASE_URL=http://supabase-rest:3000
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU}
       - CI=true
     volumes:
       # Mount test files for live updates
@@ -61,6 +167,9 @@ services:
     # Override CMD to run all tests
     # Use --exit-zero-if-all-tests-passed for clean shutdown
     command: npx playwright test
+
+volumes:
+  supabase-db-data:
 
 networks:
   test-network:
