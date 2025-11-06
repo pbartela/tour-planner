@@ -40,11 +40,21 @@ Object.defineProperty(window, "matchMedia", {
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
-  constructor() {}
-  disconnect() {}
-  observe() {}
-  takeRecords() {
+  // Mock constructor - parameters are unused but required for type compatibility
+  // eslint-disable-next-line @typescript-eslint/no-useless-constructor
+  constructor(_callback?: IntersectionObserverCallback, _options?: IntersectionObserverInit) {
+    // Mock constructor
+  }
+  disconnect(): void {
+    // Mock disconnect
+  }
+  observe(_target: Element, _options?: IntersectionObserverInit): void {
+    // Mock observe
+  }
+  takeRecords(): IntersectionObserverEntry[] {
     return [];
   }
-  unobserve() {}
-} as any;
+  unobserve(_target: Element): void {
+    // Mock unobserve
+  }
+} as typeof IntersectionObserver;

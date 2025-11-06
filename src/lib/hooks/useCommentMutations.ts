@@ -115,7 +115,7 @@ export const useUpdateCommentMutation = (tourId: string) => {
               comment.id === commentId
                 ? {
                     ...comment,
-                    content: data.content,
+                    content: data.content ?? comment.content,
                     updated_at: new Date().toISOString(),
                   }
                 : comment

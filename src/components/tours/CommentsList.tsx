@@ -108,13 +108,13 @@ export const CommentsList = ({ tourId, currentUserId }: CommentsListProps) => {
           </DialogHeader>
           <DialogFooter>
             <Button
-              variant="outline"
+              variant="neutral-outline"
               onClick={() => setDeleteDialog({ open: false, commentId: "" })}
               disabled={deleteMutation.isPending}
             >
               {t("common.cancel")}
             </Button>
-            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={deleteMutation.isPending}>
+            <Button variant="error" onClick={handleDeleteConfirm} disabled={deleteMutation.isPending}>
               {deleteMutation.isPending ? t("comments.deleting") : t("common.confirm")}
             </Button>
           </DialogFooter>

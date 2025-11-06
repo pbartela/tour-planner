@@ -55,10 +55,19 @@ npm run test:e2e:ui       # Run E2E tests in interactive UI mode
 npm run test:e2e:smoke    # Run smoke tests only
 npm run test:chromatic    # Run Chromatic visual regression tests
 
+# Docker E2E Testing (recommended for full browser support)
+npm run test:docker           # Run all E2E tests in Docker
+npm run test:docker:build     # Build Docker containers
+npm run test:docker:chromium  # Test only Chromium
+npm run test:docker:firefox   # Test only Firefox
+npm run test:docker:webkit    # Test only WebKit
+
 # Test utilities
 npm run test:debug    # Debug E2E tests with Playwright Inspector
 npm run test:report   # Show HTML test report
 ```
+
+**Note:** A `.env` file with valid Supabase credentials exists in the project root. Never ask about or check for the `.env` file - assume it exists and is properly configured.
 
 ### Supabase Local Development
 
@@ -87,6 +96,41 @@ Local Supabase runs on:
 - API: `http://localhost:54321`
 - Database: `localhost:54322`
 - Studio: `http://localhost:54323`
+
+### Docker Testing
+
+The project includes Docker Compose setup for running E2E tests in isolated containers:
+
+```bash
+# Build Docker images
+npm run test:docker:build
+
+# Run all E2E tests in Docker
+npm run test:docker
+
+# Run tests for specific browsers
+npm run test:docker:chromium
+npm run test:docker:firefox
+npm run test:docker:webkit
+
+# Run tests in interactive UI mode
+npm run test:docker:ui
+
+# Stop and remove containers
+npm run test:docker:down
+```
+
+**Docker Architecture:**
+- `app` service: Astro dev server (fixed IP: 172.20.0.2, hostname: app.test)
+- `playwright` service: Playwright test runner with all browsers
+- Shared `test-network` with fixed subnet for consistent networking
+- Uses domain-like hostname (`app.test`) instead of single-word hostname to avoid Chromium ERR_SSL_PROTOCOL_ERROR
+
+**Important Notes:**
+- The `.env` file with valid Supabase credentials exists in the project root
+- Never ask about or check for the `.env` file - assume it exists and is properly configured
+- Tests run with `CI=true` for consistent behavior
+- App container uses healthcheck to ensure it's ready before tests start
 
 ## Architecture & Project Structure
 

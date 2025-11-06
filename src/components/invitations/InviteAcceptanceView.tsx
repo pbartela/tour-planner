@@ -221,14 +221,14 @@ export const InviteAcceptanceView = ({
           </DialogHeader>
           <DialogFooter>
             <Button
-              variant="outline"
+              variant="neutral-outline"
               onClick={() => setDeclineDialogOpen(false)}
               disabled={declineMutation.isPending || isNavigating}
             >
               {t("common.cancel")}
             </Button>
             <Button
-              variant="destructive"
+              variant="error"
               onClick={handleDeclineConfirm}
               disabled={declineMutation.isPending || isNavigating}
             >

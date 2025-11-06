@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { DaisyCalendar } from "./DaisyCalendar";
 import { useState } from "react";
+import type { DateRange } from "./DateRangePicker";
 
 const meta = {
   title: "Components/UI/DaisyCalendar",
@@ -82,7 +83,12 @@ export const Interactive: Story = {
 
     return (
       <div className="space-y-4">
-        <DaisyCalendar {...args} selected={selectedDate} onSelect={setSelectedDate} />
+        <DaisyCalendar
+          {...args}
+          mode="single"
+          selected={selectedDate}
+          onSelect={(date) => setSelectedDate(date as Date | undefined)}
+        />
         <div className="text-sm text-base-content/70">
           Selected date: {selectedDate ? selectedDate.toLocaleDateString() : "None"}
         </div>
@@ -100,11 +106,16 @@ export const Interactive: Story = {
 
 export const InteractiveRange: Story = {
   render: function Render(args) {
-    const [selectedRange, setSelectedRange] = useState<{ from?: Date; to?: Date } | undefined>(undefined);
+    const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(undefined);
 
     return (
       <div className="space-y-4">
-        <DaisyCalendar {...args} mode="range" selected={selectedRange} onSelect={setSelectedRange} />
+        <DaisyCalendar
+          {...args}
+          mode="range"
+          selected={selectedRange}
+          onSelect={(range) => setSelectedRange(range as DateRange | undefined)}
+        />
         <div className="text-sm text-base-content/70">
           Selected range: {selectedRange?.from ? selectedRange.from.toLocaleDateString() : "None"}
           {selectedRange?.to && ` - ${selectedRange.to.toLocaleDateString()}`}

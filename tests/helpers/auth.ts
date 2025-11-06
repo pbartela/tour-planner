@@ -1,4 +1,4 @@
-import { Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
 /**
  * Helper functions for authentication in tests
@@ -100,7 +100,7 @@ export async function createTestTour(
 /**
  * Clean up test data
  */
-export async function cleanupTestData(page: Page) {
+export async function cleanupTestData(_page: Page) {
   // Delete test tours, invitations, etc.
   // This should be implemented based on your API endpoints
 }

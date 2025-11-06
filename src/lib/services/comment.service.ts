@@ -52,7 +52,10 @@ class CommentService {
 
       // Fetch emails for users who don't have display_name
       const userIdsWithoutDisplayName = (comments || [])
-        .filter((comment) => !comment.profiles?.display_name)
+        .filter((comment) => {
+          const profile = Array.isArray(comment.profiles) ? comment.profiles[0] : comment.profiles;
+          return !profile?.display_name;
+        })
         .map((comment) => comment.user_id)
         .filter((id, index, arr) => arr.indexOf(id) === index); // unique IDs
 
@@ -82,16 +85,19 @@ class CommentService {
       }
 
       // Transform the data to match CommentDto
-      const transformedComments: CommentDto[] = (comments || []).map((comment) => ({
-        id: comment.id,
-        tour_id: comment.tour_id,
-        user_id: comment.user_id,
-        content: comment.content,
-        created_at: comment.created_at,
-        updated_at: comment.updated_at,
-        display_name: (comment as { profiles?: { display_name: string | null } | null }).profiles?.display_name || null,
-        user_email: userEmails.get(comment.user_id) || null,
-      }));
+      const transformedComments: CommentDto[] = (comments || []).map((comment) => {
+        const profile = Array.isArray(comment.profiles) ? comment.profiles[0] : comment.profiles;
+        return {
+          id: comment.id,
+          tour_id: comment.tour_id,
+          user_id: comment.user_id,
+          content: comment.content,
+          created_at: comment.created_at,
+          updated_at: comment.updated_at,
+          display_name: profile?.display_name || null,
+          user_email: userEmails.get(comment.user_id) || null,
+        };
+      });
 
       return {
         data: transformedComments,
@@ -152,7 +158,8 @@ class CommentService {
 
       // Fetch email if display_name is not set
       let userEmail: string | null = null;
-      if (!(comment as { profiles?: { display_name: string | null } | null }).profiles?.display_name) {
+      const profile = Array.isArray(comment.profiles) ? comment.profiles[0] : comment.profiles;
+      if (!profile?.display_name) {
         try {
           const adminClient = createSupabaseAdminClient();
           const { data: authUser } = await adminClient.auth.admin.getUserById(comment.user_id);
@@ -170,7 +177,7 @@ class CommentService {
         content: comment.content,
         created_at: comment.created_at,
         updated_at: comment.updated_at,
-        display_name: (comment as { profiles?: { display_name: string | null } | null }).profiles?.display_name || null,
+        display_name: profile?.display_name || null,
         user_email: userEmail,
       };
     } catch (error) {
@@ -223,7 +230,8 @@ class CommentService {
 
       // Fetch email if display_name is not set
       let userEmail: string | null = null;
-      if (!(comment as { profiles?: { display_name: string | null } | null }).profiles?.display_name) {
+      const profile = Array.isArray(comment.profiles) ? comment.profiles[0] : comment.profiles;
+      if (!profile?.display_name) {
         try {
           const adminClient = createSupabaseAdminClient();
           const { data: authUser } = await adminClient.auth.admin.getUserById(comment.user_id);
@@ -240,7 +248,7 @@ class CommentService {
         content: comment.content,
         created_at: comment.created_at,
         updated_at: comment.updated_at,
-        display_name: (comment as { profiles?: { display_name: string | null } | null }).profiles?.display_name || null,
+        display_name: profile?.display_name || null,
         user_email: userEmail,
       };
     } catch (error) {

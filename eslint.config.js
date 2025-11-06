@@ -20,7 +20,7 @@ const gitignorePath = path.resolve(__dirname, ".gitignore");
 
 const baseConfig = tseslint.config({
   files: ["**/*.{js,jsx,ts,tsx}"],
-  ignores: ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}"],
+  ignores: ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}", "**/*.test.skip.{ts,tsx}"],
   extends: [eslint.configs.recommended, tseslint.configs.strict, tseslint.configs.stylistic],
   rules: {
     "no-console": "warn",
@@ -87,6 +87,10 @@ const serverConfig = tseslint.config({
 
 export default tseslint.config(
   includeIgnoreFile(gitignorePath),
+  // Explicitly ignore test files at the top level
+  {
+    ignores: ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}", "**/*.test.skip.{ts,tsx}"],
+  },
   baseConfig,
   jsxA11yConfig,
   reactConfig,

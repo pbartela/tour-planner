@@ -103,15 +103,27 @@ test.describe("Smoke Tests", () => {
     // Login page may have minimal navigation, that's OK
     // Test links only if they exist
     if (linkCount > 0) {
-      const firstLink = navLinks.first();
-      const href = await firstLink.getAttribute("href");
+      // Find first visible link (Firefox may have different rendering)
+      let clickableLink = null;
+      for (let i = 0; i < linkCount; i++) {
+        const link = navLinks.nth(i);
+        if (await link.isVisible()) {
+          clickableLink = link;
+          break;
+        }
+      }
 
-      if (href && !href.startsWith("#") && !href.startsWith("javascript:")) {
-        await firstLink.click();
+      if (clickableLink) {
+        const href = await clickableLink.getAttribute("href");
 
-        // Should navigate somewhere
-        await page.waitForLoadState("networkidle");
-        expect(page.url()).toBeTruthy();
+        if (href && !href.startsWith("#") && !href.startsWith("javascript:")) {
+          await clickableLink.scrollIntoViewIfNeeded();
+          await clickableLink.click();
+
+          // Should navigate somewhere
+          await page.waitForLoadState("networkidle");
+          expect(page.url()).toBeTruthy();
+        }
       }
     }
 

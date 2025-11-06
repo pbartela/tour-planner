@@ -67,7 +67,7 @@ export const CommentItem = ({ comment, currentUserId, onEdit, onDelete }: Commen
             <Button size="sm" onClick={handleSave}>
               {t("comments.save")}
             </Button>
-            <Button variant="outline" size="sm" onClick={handleCancel}>
+            <Button variant="neutral-outline" size="sm" onClick={handleCancel}>
               {t("comments.cancel")}
             </Button>
           </div>

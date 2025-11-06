@@ -36,6 +36,7 @@ export const DeleteConfirmation: Story = {
           isOpen={isOpen}
           onClose={() => setIsOpen(false)}
           onConfirm={() => {
+            // eslint-disable-next-line no-console
             console.log("Deleted!");
             setIsOpen(false);
           }}
@@ -64,6 +65,7 @@ export const Warning: Story = {
           isOpen={isOpen}
           onClose={() => setIsOpen(false)}
           onConfirm={() => {
+            // eslint-disable-next-line no-console
             console.log("Proceeding...");
             setIsOpen(false);
           }}
@@ -93,6 +95,7 @@ export const WithTextConfirmation: Story = {
           isOpen={isOpen}
           onClose={() => setIsOpen(false)}
           onConfirm={() => {
+            // eslint-disable-next-line no-console
             console.log("Tour deleted!");
             setIsOpen(false);
           }}
@@ -122,6 +125,7 @@ export const PendingState: Story = {
       setIsPending(true);
       // Simulate async operation
       setTimeout(() => {
+        // eslint-disable-next-line no-console
         console.log("Operation completed!");
         setIsPending(false);
         setIsOpen(false);
@@ -160,6 +164,7 @@ export const TextConfirmationWithPending: Story = {
     const handleConfirm = () => {
       setIsPending(true);
       setTimeout(() => {
+        // eslint-disable-next-line no-console
         console.log("File deleted!");
         setIsPending(false);
         setIsOpen(false);

@@ -28,7 +28,14 @@
     "test:e2e:auth": "playwright test tests/e2e/auth",
     "test:chromatic": "chromatic --exit-zero-on-changes",
     "test:debug": "playwright test --debug",
-    "test:report": "playwright show-report"
+    "test:report": "playwright show-report",
+    "test:docker": "docker-compose up --abort-on-container-exit --exit-code-from playwright",
+    "test:docker:build": "docker-compose build",
+    "test:docker:down": "docker-compose down",
+    "test:docker:chromium": "docker-compose run playwright npx playwright test --project=chromium",
+    "test:docker:firefox": "docker-compose run playwright npx playwright test --project=firefox",
+    "test:docker:webkit": "docker-compose run playwright npx playwright test --project=webkit",
+    "test:docker:ui": "docker-compose run --service-ports playwright npx playwright test --ui --ui-host=0.0.0.0"
   },
   "dependencies": {
     "@astrojs/node": "^9.4.3",

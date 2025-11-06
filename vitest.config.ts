@@ -41,10 +41,12 @@ export default defineConfig({
         "**/types.ts",
       ],
       // Thresholds
-      statements: 70,
-      branches: 70,
-      functions: 70,
-      lines: 70,
+      thresholds: {
+        statements: 70,
+        branches: 70,
+        functions: 70,
+        lines: 70,
+      },
     },
 
     // Test timeout

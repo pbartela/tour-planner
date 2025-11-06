@@ -145,7 +145,7 @@ function isTest(): boolean {
   return (
     process.env.NODE_ENV === "test" ||
     process.env.VITEST === "true" ||
-    typeof (globalThis as any).describe === "function"
+    typeof (globalThis as { describe?: unknown }).describe === "function"
   );
 }
 

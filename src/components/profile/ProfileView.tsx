@@ -31,7 +31,7 @@ export const ProfileView = ({ user }: ProfileViewProps) => {
                   setIsEditing(false);
                 }}
               />
-              <Button variant="outline" onClick={() => setIsEditing(false)} className="mt-4">
+              <Button variant="neutral-outline" onClick={() => setIsEditing(false)} className="mt-4">
                 {t("profile.cancel")}
               </Button>
             </>
