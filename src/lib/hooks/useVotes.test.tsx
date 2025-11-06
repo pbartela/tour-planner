@@ -10,18 +10,29 @@ vi.mock("@/lib/client/api-client", () => ({
   handleApiResponse: vi.fn((response) => response),
 }));
 
+// Mock the global queryClient with a factory function
+vi.mock("@/lib/queryClient", () => {
+  const { QueryClient } = require("@tanstack/react-query");
+  return {
+    queryClient: new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    }),
+  };
+});
+
 describe("useVotes", () => {
   let queryClient: QueryClient;
 
-  beforeEach(() => {
-    // Create a new QueryClient for each test
-    queryClient = new QueryClient({
-      defaultOptions: {
-        queries: {
-          retry: false, // Disable retries for tests
-        },
-      },
-    });
+  beforeEach(async () => {
+    // Import the mocked queryClient
+    const { queryClient: mockedClient } = await import("@/lib/queryClient");
+    queryClient = mockedClient;
+    // Clear the query cache before each test
+    queryClient.clear();
     vi.clearAllMocks();
   });
 
@@ -67,16 +78,26 @@ describe("useVotes", () => {
     expect(apiClient.get).toHaveBeenCalledWith("/api/tours/tour-123/votes");
   });
 
-  // TODO: Fix this test - React Query error handling needs proper async setup
-  it.skip("should handle errors", async () => {
+  it("should handle errors", async () => {
     const mockError = new Error("Failed to fetch votes");
     vi.mocked(apiClient.get).mockRejectedValue(mockError);
+    // handleApiResponse should throw when get fails
+    vi.mocked(apiClient.handleApiResponse).mockImplementation(() => {
+      throw mockError;
+    });
 
     const { result } = renderHook(() => useVotes("tour-123"), { wrapper });
 
-    await waitFor(() => expect(result.current.isError).toBe(true));
+    // Initially loading
+    expect(result.current.isLoading).toBe(true);
+
+    // Wait for error state
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
 
     expect(result.current.error).toBeDefined();
+    expect(result.current.data).toBeUndefined();
   });
 
   it("should not fetch when tourId is empty", () => {
@@ -87,8 +108,7 @@ describe("useVotes", () => {
     expect(apiClient.get).not.toHaveBeenCalled();
   });
 
-  // TODO: Fix this test - QueryClient caching needs proper setup
-  it.skip("should use correct query key", async () => {
+  it("should use correct query key", async () => {
     const mockVotes = {
       tour_id: "tour-456",
       votes: [],
@@ -105,7 +125,11 @@ describe("useVotes", () => {
 
     const { result } = renderHook(() => useVotes("tour-456"), { wrapper });
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    // Wait for the query to complete successfully
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+      expect(result.current.data).toEqual(mockVotes);
+    });
 
     // Check if the data is cached under the correct key
     const cachedData = queryClient.getQueryData(["votes", "tour-456"]);

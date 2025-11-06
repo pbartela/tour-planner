@@ -137,12 +137,30 @@ function formatLogMessage(level: LogLevel, message: string, context?: LogContext
 }
 
 /**
+ * Checks if the application is running in test mode.
+ *
+ * @returns True if in test mode, false otherwise
+ */
+function isTest(): boolean {
+  return (
+    process.env.NODE_ENV === "test" ||
+    process.env.VITEST === "true" ||
+    typeof (globalThis as any).describe === "function"
+  );
+}
+
+/**
  * Determines if a log level should be output based on environment.
  *
  * @param level - Log level to check
  * @returns True if should log
  */
 function shouldLog(level: LogLevel): boolean {
+  // In test mode, suppress all logs to keep test output clean
+  if (isTest()) {
+    return false;
+  }
+
   // In development, log everything
   if (isDevelopment()) {
     return true;

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@/db/supabase.client";
 import type { ProfileDto, UpdateProfileCommand } from "@/types";
+import * as logger from "@/lib/server/logger.service";
 
 class ProfileService {
   public async getProfile(
@@ -10,13 +11,13 @@ class ProfileService {
       const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single();
 
       if (error) {
-        console.error("Error fetching profile:", error);
+        logger.error("Error fetching profile", error);
         throw new Error("Failed to fetch profile from the database.");
       }
 
       return { data, error: null };
     } catch (error) {
-      console.error("Unexpected error in getProfile:", error);
+      logger.error("Unexpected error in getProfile", error instanceof Error ? error : undefined);
       return { data: null, error: error instanceof Error ? error : new Error("An unexpected error occurred.") };
     }
   }
@@ -30,14 +31,14 @@ class ProfileService {
       const { data, error } = await supabase.from("profiles").update(command).eq("id", userId).select().maybeSingle();
 
       if (error) {
-        console.error("Error updating profile:", error);
+        logger.error("Error updating profile", error);
         // Pass through the original error for better handling upstream
         throw new Error(error.message || "Failed to update profile in the database.");
       }
 
       return { data, error: null };
     } catch (error) {
-      console.error("Unexpected error in updateProfile:", error);
+      logger.error("Unexpected error in updateProfile", error instanceof Error ? error : undefined);
       return { data: null, error: error instanceof Error ? error : new Error("An unexpected error occurred.") };
     }
   }

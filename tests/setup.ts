@@ -2,6 +2,19 @@ import { expect, afterEach, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
 import * as matchers from "@testing-library/jest-dom/matchers";
 
+// Set up environment variables for tests
+process.env.NODE_ENV = "test";
+process.env.VITEST = "true";
+
+// Mock required environment variables
+import.meta.env.PUBLIC_SUPABASE_URL = "http://localhost:54321";
+import.meta.env.PUBLIC_SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24ifQ.test";
+import.meta.env.PUBLIC_DEFAULT_LOCALE = "en-US";
+import.meta.env.SUPABASE_URL = "http://localhost:54321";
+import.meta.env.SUPABASE_SERVICE_ROLE_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSJ9.test";
+
 // Extend Vitest's expect with jest-dom matchers
 expect.extend(matchers);
 
