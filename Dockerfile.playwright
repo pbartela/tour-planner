@@ -1,0 +1,30 @@
+# Dockerfile for running Playwright E2E tests
+# Uses official Playwright image with all browser dependencies pre-installed
+
+FROM mcr.microsoft.com/playwright:v1.56.1-noble
+
+# Set working directory
+WORKDIR /app
+
+# Set environment variables
+ENV CI=true
+ENV NODE_ENV=test
+
+# Copy package files for dependency installation
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy source code and tests
+COPY . .
+
+# Install Playwright browsers (already included in base image, but ensure all deps are present)
+# This ensures Chromium, Firefox, and WebKit are all available
+RUN npx playwright install --with-deps
+
+# Expose port for UI mode (if needed)
+EXPOSE 9323
+
+# Default command: run all tests
+CMD ["npx", "playwright", "test"]

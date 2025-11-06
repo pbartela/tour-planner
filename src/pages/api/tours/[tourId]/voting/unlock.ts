@@ -31,7 +31,7 @@ export const POST: APIRoute = async ({ params, locals, request }) => {
   const clientId = getClientIdentifier(request, user.id);
   const rateLimitResult = checkRateLimit(clientId, RATE_LIMIT_CONFIGS.API);
 
-  if (!rateLimitResult.success) {
+  if (!rateLimitResult.allowed) {
     return new Response(
       JSON.stringify({
         error: {
@@ -43,7 +43,7 @@ export const POST: APIRoute = async ({ params, locals, request }) => {
         status: 429,
         headers: {
           "Content-Type": "application/json",
-          "Retry-After": String(Math.ceil(rateLimitResult.retryAfter / 1000)),
+          "Retry-After": String(Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)),
         },
       }
     );

@@ -69,7 +69,10 @@ try {
   };
 
   validatedEnv = envSchema.parse(env);
-  console.log("✅ Environment variables validated successfully");
+  // Only log in non-test environments
+  if (process.env.NODE_ENV !== "test" && process.env.VITEST !== "true") {
+    console.log("✅ Environment variables validated successfully");
+  }
 } catch (error) {
   if (error instanceof z.ZodError) {
     const formattedErrors = error.errors
@@ -102,7 +105,9 @@ export const ENV = validatedEnv;
  */
 export function validateEnvironment(): void {
   // Environment is already validated at module load time
-  console.log("✅ Environment variables already validated");
+  if (process.env.NODE_ENV !== "test" && process.env.VITEST !== "true") {
+    console.log("✅ Environment variables already validated");
+  }
 }
 
 /**

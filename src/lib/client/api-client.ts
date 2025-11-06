@@ -85,6 +85,7 @@ export async function apiRequest(url: string, options: RequestInit = {}): Promis
       const token = await getCsrfToken();
       headers.set("X-CSRF-Token", token);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error("Failed to get CSRF token:", error);
       throw new Error("Unable to make secure request. Please refresh the page and try again.");
     }

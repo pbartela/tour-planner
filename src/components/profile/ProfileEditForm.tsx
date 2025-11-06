@@ -82,7 +82,7 @@ export const ProfileEditForm = ({ profile, onSuccess }: ProfileEditFormProps) =>
         {hasChanges && (
           <Button
             type="button"
-            variant="outline"
+            variant="neutral-outline"
             onClick={() =>
               setFormData({
                 display_name: profile.display_name || "",

@@ -43,7 +43,31 @@ npm run build-storybook
 
 # View static design files
 npm run designs       # Serves designs/ on port 8080
+
+# Testing
+npm run test              # Run all tests (unit + E2E)
+npm run test:unit         # Run unit tests with Vitest
+npm run test:unit:watch   # Run unit tests in watch mode
+npm run test:unit:ui      # Run unit tests with UI
+npm run test:unit:coverage # Run unit tests with coverage
+npm run test:e2e          # Run E2E tests with Playwright
+npm run test:e2e:ui       # Run E2E tests in interactive UI mode
+npm run test:e2e:smoke    # Run smoke tests only
+npm run test:chromatic    # Run Chromatic visual regression tests
+
+# Docker E2E Testing (recommended for full browser support)
+npm run test:docker           # Run all E2E tests in Docker
+npm run test:docker:build     # Build Docker containers
+npm run test:docker:chromium  # Test only Chromium
+npm run test:docker:firefox   # Test only Firefox
+npm run test:docker:webkit    # Test only WebKit
+
+# Test utilities
+npm run test:debug    # Debug E2E tests with Playwright Inspector
+npm run test:report   # Show HTML test report
 ```
+
+**Note:** A `.env` file with valid Supabase credentials exists in the project root. Never ask about or check for the `.env` file - assume it exists and is properly configured.
 
 ### Supabase Local Development
 
@@ -73,6 +97,41 @@ Local Supabase runs on:
 - Database: `localhost:54322`
 - Studio: `http://localhost:54323`
 
+### Docker Testing
+
+The project includes Docker Compose setup for running E2E tests in isolated containers:
+
+```bash
+# Build Docker images
+npm run test:docker:build
+
+# Run all E2E tests in Docker
+npm run test:docker
+
+# Run tests for specific browsers
+npm run test:docker:chromium
+npm run test:docker:firefox
+npm run test:docker:webkit
+
+# Run tests in interactive UI mode
+npm run test:docker:ui
+
+# Stop and remove containers
+npm run test:docker:down
+```
+
+**Docker Architecture:**
+- `app` service: Astro dev server (fixed IP: 172.20.0.2, hostname: app.test)
+- `playwright` service: Playwright test runner with all browsers
+- Shared `test-network` with fixed subnet for consistent networking
+- Uses domain-like hostname (`app.test`) instead of single-word hostname to avoid Chromium ERR_SSL_PROTOCOL_ERROR
+
+**Important Notes:**
+- The `.env` file with valid Supabase credentials exists in the project root
+- Never ask about or check for the `.env` file - assume it exists and is properly configured
+- Tests run with `CI=true` for consistent behavior
+- App container uses healthcheck to ensure it's ready before tests start
+
 ## Architecture & Project Structure
 
 ### Directory Layout
@@ -100,6 +159,15 @@ src/
 │   └── [...locale]/    # Localized routes
 ├── styles/             # Global styles
 └── types.ts            # Shared types (DTOs, Commands)
+
+tests/
+├── e2e/                # End-to-End tests (Playwright)
+│   ├── auth/           # Authentication tests
+│   ├── tours/          # Tour management tests
+│   ├── i18n/           # Internationalization tests
+│   ├── ui/             # UI and responsiveness tests
+│   └── smoke.spec.ts   # Smoke tests
+└── helpers/            # Test helper functions
 ```
 
 ### Key Architectural Patterns
@@ -240,6 +308,7 @@ return new Response(
 All reusable UI components should have corresponding `.stories.tsx` files:
 
 **Structure:**
+
 ```typescript
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { ComponentName } from "./ComponentName";
@@ -267,6 +336,7 @@ export const Primary: Story = {
 ```
 
 **Best Practices:**
+
 - Keep stories concise - show only essential variations
 - Avoid redundant examples that differ only in text or quantity
 - Focus on demonstrating:
@@ -279,6 +349,7 @@ export const Primary: Story = {
 - Use `argTypes` to make props interactive in Storybook UI
 
 **Example - Good vs Bad:**
+
 ```typescript
 // ❌ Bad - redundant stories
 export const PrimaryButton: Story = { args: { variant: "primary" } };
@@ -337,10 +408,60 @@ Environment validation happens at both:
 
 ## Testing & Quality
 
+### Code Quality
+
 - Husky pre-commit hooks run `lint-staged`
 - TypeScript in strict mode with all strict flags enabled
 - Lint errors must be fixed before committing
 - Use `npm run lint:fix` to auto-fix most issues
+
+### Testing Strategy
+
+The project follows a comprehensive testing strategy defined in `.ai/@test-plan.mdc`:
+
+**Unit Testing (Vitest):**
+
+- Tests colocated with source files (`*.test.ts`)
+- Run with `npm run test:unit` or `npm run test:unit:watch`
+- Coverage: validators, utils, services, React hooks
+- 70% coverage threshold (statements, branches, functions, lines)
+- Fast feedback loop with watch mode
+- See `TESTING.md` for detailed documentation
+
+**E2E Testing (Playwright):**
+
+- Tests located in `tests/e2e/`
+- Run with `npm run test:e2e` or `npm run test:e2e:ui` (interactive mode)
+- Covers: authentication, tours, i18n, responsiveness
+- Smoke tests for critical paths: `npm run test:e2e:smoke`
+- Configured for Chromium, Firefox, and WebKit
+- See `TESTING.md` for detailed documentation
+
+**Visual Regression (Chromatic):**
+
+- Automatic visual testing for all Storybook components
+- Run with `npm run test:chromatic`
+- Requires Chromatic project token (see `docs/CHROMATIC_SETUP.md`)
+- Integrated with GitHub Actions for PR checks
+
+**CI/CD (GitHub Actions):**
+
+- `.github/workflows/test.yml` runs on every push/PR
+- Lint + TypeScript check
+- Vitest unit tests with coverage
+- Playwright E2E tests (multi-browser)
+- Chromatic visual tests
+- Smoke tests on main/develop branches
+
+**Test Files:**
+
+- Unit tests: `*.test.ts` or `*.test.tsx` colocated with source
+- E2E tests: `*.spec.ts` in `tests/e2e/`
+- Storybook stories: `*.stories.tsx` in component directories
+- Test helpers: `tests/helpers/`
+- Test setup: `tests/setup.ts`
+
+For full testing documentation, see [TESTING.md](./TESTING.md)
 
 ## Authentication Flow
 
@@ -360,6 +481,7 @@ Environment validation happens at both:
 ### Translation Key Extraction
 
 The project uses `i18next-parser` to automatically extract translation keys from code. Run:
+
 - `npm run i18n:extract` - Extract keys and update translation files
 - `npm run i18n:extract:dry` - Check what would change without updating
 - `npm run i18n:check` - Verify translation coverage
@@ -382,6 +504,7 @@ return (
 ```
 
 **Pattern:**
+
 1. Add a descriptive comment explaining the dynamic keys
 2. Add commented `t()` calls with all possible key values on a single line
 3. Use simple key paths (without namespace prefix) - the namespace is inferred from the component's `useTranslation()` call
@@ -389,6 +512,7 @@ return (
 5. List all possible dynamic values that could be used
 
 **Example in component:**
+
 ```typescript
 export const InvitedUsersList = ({ invitations }: Props) => {
   const { t } = useTranslation("tours");

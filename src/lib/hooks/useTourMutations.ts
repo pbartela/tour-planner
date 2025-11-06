@@ -72,6 +72,7 @@ export const useCreateTourMutation = () => {
           start_date: newTour.start_date,
           end_date: newTour.end_date,
           status: newTour.status,
+          updated_at: newTour.created_at, // Use created_at as fallback since TourDetailsDto omits updated_at
           has_new_activity: false,
           metadata: newTour.metadata,
         };

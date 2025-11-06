@@ -23,7 +23,7 @@ export const LogoutContent = () => {
             {t("logout.backToHome")}
           </Button>
           <Button
-            variant="outline"
+            variant="neutral-outline"
             size="lg"
             className="w-full"
             onClick={() => {

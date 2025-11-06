@@ -68,6 +68,10 @@ export default defineConfig({
     },
     server: {
       middlewareMode: false,
+      // Allow Docker container hostname for E2E tests
+      host: true,
+      strictPort: false,
+      allowedHosts: [".localhost", "localhost", "app", "app.test"],
     },
     resolve: {
       alias: {

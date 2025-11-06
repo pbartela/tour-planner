@@ -54,7 +54,7 @@ export const VotingSection = ({
         </div>
         <Button
           size="lg"
-          variant={userHasVoted ? "default" : "outline"}
+          variant={userHasVoted ? "neutral" : "neutral-outline"}
           onClick={handleVote}
           disabled={isVotingDisabled || toggleVoteMutation.isPending}
         >

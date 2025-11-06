@@ -36,8 +36,7 @@ export const TourDetailsView = ({ tourId, currentUserId }: TourDetailsViewProps)
     if (tourId) {
       markAsViewedMutation.mutate(tourId);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tourId]);
+  }, [tourId, markAsViewedMutation]);
 
   const handleToggleVotingLock = () => {
     if (tour?.voting_locked) {
@@ -110,10 +109,10 @@ export const TourDetailsView = ({ tourId, currentUserId }: TourDetailsViewProps)
             </div>
             {isOwner && (
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
+                <Button variant="neutral-outline" onClick={() => setIsEditModalOpen(true)}>
                   {t("tourDetails.edit")}
                 </Button>
-                <Button variant="outline" onClick={() => setShowDeleteConfirm(true)} className="text-error">
+                <Button variant="neutral-outline" onClick={() => setShowDeleteConfirm(true)} className="text-error">
                   {t("tourDetails.delete")}
                 </Button>
               </div>
@@ -185,7 +184,7 @@ export const TourDetailsView = ({ tourId, currentUserId }: TourDetailsViewProps)
                   </p>
                 </div>
                 <Button
-                  variant={tour.voting_locked ? "error" : "default"}
+                  variant={tour.voting_locked ? "error" : "neutral"}
                   onClick={handleToggleVotingLock}
                   disabled={lockVotingMutation.isPending || unlockVotingMutation.isPending}
                 >

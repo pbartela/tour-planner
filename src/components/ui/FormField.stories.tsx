@@ -89,6 +89,7 @@ export const CompleteForm: Story = {
       setErrors(newErrors);
 
       if (Object.keys(newErrors).length === 0) {
+        // eslint-disable-next-line no-console
         console.log("Form submitted:", formData);
       }
     };

@@ -1,0 +1,70 @@
+services:
+  # Astro development server
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    ports:
+      - "3000:3000"
+    environment:
+      - PUBLIC_SUPABASE_URL=${PUBLIC_SUPABASE_URL:-http://localhost:54321}
+      - PUBLIC_SUPABASE_ANON_KEY=${PUBLIC_SUPABASE_ANON_KEY}
+      - PUBLIC_DEFAULT_LOCALE=${PUBLIC_DEFAULT_LOCALE:-en-US}
+      - SUPABASE_URL=${SUPABASE_URL:-http://localhost:54321}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+    volumes:
+      # Mount source code for hot reload
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./astro.config.mjs:/app/astro.config.mjs
+      - ./tailwind.config.ts:/app/tailwind.config.ts
+      - ./tsconfig.json:/app/tsconfig.json
+    networks:
+      test-network:
+        ipv4_address: 172.20.0.2
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+
+  # Playwright test runner
+  playwright:
+    build:
+      context: .
+      dockerfile: Dockerfile.playwright
+    depends_on:
+      app:
+        condition: service_healthy
+    extra_hosts:
+      - "app.test:172.20.0.2"
+    environment:
+      # Point tests to the app service - using app.test to avoid Chromium hostname issues
+      - BASE_URL=http://app.test:3000
+      - SKIP_WEBSERVER=true
+      - PUBLIC_SUPABASE_URL=${PUBLIC_SUPABASE_URL:-http://localhost:54321}
+      - PUBLIC_SUPABASE_ANON_KEY=${PUBLIC_SUPABASE_ANON_KEY}
+      - PUBLIC_DEFAULT_LOCALE=${PUBLIC_DEFAULT_LOCALE:-en-US}
+      - SUPABASE_URL=${SUPABASE_URL:-http://localhost:54321}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - CI=true
+    volumes:
+      # Mount test files for live updates
+      - ./tests:/app/tests
+      - ./playwright.config.ts:/app/playwright.config.ts
+      # Mount report directories to access results on host
+      - ./playwright-report:/app/playwright-report
+      - ./test-results:/app/test-results
+    networks:
+      - test-network
+    # Override CMD to run all tests
+    # Use --exit-zero-if-all-tests-passed for clean shutdown
+    command: npx playwright test
+
+networks:
+  test-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

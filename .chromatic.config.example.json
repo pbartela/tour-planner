@@ -1,0 +1,10 @@
+{
+  "$schema": "https://www.chromatic.com/config-file.schema.json",
+  "projectToken": "YOUR_CHROMATIC_PROJECT_TOKEN_HERE",
+  "buildScriptName": "build-storybook",
+  "storybookBuildDir": "storybook-static",
+  "onlyChanged": true,
+  "exitZeroOnChanges": true,
+  "exitOnceUploaded": true,
+  "autoAcceptChanges": "main"
+}

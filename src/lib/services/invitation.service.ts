@@ -40,21 +40,16 @@ class InvitationService {
       }
 
       // Transform to InvitationDto
-      return (invitations || []).map((inv) => {
-        const tours = inv.tours as { title: string }[] | null | undefined;
-        const profiles = inv.profiles as { display_name: string | null }[] | null | undefined;
+      return (invitations || []).map((inv): InvitationDto => {
+        const tours = Array.isArray(inv.tours) ? inv.tours : inv.tours ? [inv.tours] : null;
+        const profiles = Array.isArray(inv.profiles) ? inv.profiles : inv.profiles ? [inv.profiles] : null;
+        const { tours: _tours, profiles: _profiles, ...invitationData } = inv;
         return {
-          id: inv.id,
-          tour_id: inv.tour_id,
-          inviter_id: inv.inviter_id,
-          email: inv.email,
-          status: inv.status,
+          ...invitationData,
           token: inv.token || undefined,
-          expires_at: inv.expires_at,
-          created_at: inv.created_at,
-          tour_title: tours && tours.length > 0 ? tours[0].title : undefined,
-          inviter_display_name: profiles && profiles.length > 0 ? profiles[0].display_name || undefined : undefined,
-        };
+          tour_title: tours && tours.length > 0 ? (tours[0] as { title: string }).title : undefined,
+          inviter_display_name: profiles && profiles.length > 0 ? (profiles[0] as { display_name: string | null }).display_name || undefined : undefined,
+        } as InvitationDto;
       });
     } catch (error) {
       secureError("Unexpected error in listTourInvitations", error);
@@ -101,21 +96,16 @@ class InvitationService {
       }
 
       // Transform to InvitationDto
-      return (invitations || []).map((inv) => {
-        const tours = inv.tours as { title: string }[] | null | undefined;
-        const profiles = inv.profiles as { display_name: string | null }[] | null | undefined;
+      return (invitations || []).map((inv): InvitationDto => {
+        const tours = Array.isArray(inv.tours) ? inv.tours : inv.tours ? [inv.tours] : null;
+        const profiles = Array.isArray(inv.profiles) ? inv.profiles : inv.profiles ? [inv.profiles] : null;
+        const { tours: _tours, profiles: _profiles, ...invitationData } = inv;
         return {
-          id: inv.id,
-          tour_id: inv.tour_id,
-          inviter_id: inv.inviter_id,
-          email: inv.email,
-          status: inv.status,
+          ...invitationData,
           token: inv.token || undefined,
-          expires_at: inv.expires_at,
-          created_at: inv.created_at,
-          tour_title: tours && tours.length > 0 ? tours[0].title : undefined,
-          inviter_display_name: profiles && profiles.length > 0 ? profiles[0].display_name || undefined : undefined,
-        };
+          tour_title: tours && tours.length > 0 ? (tours[0] as { title: string }).title : undefined,
+          inviter_display_name: profiles && profiles.length > 0 ? (profiles[0] as { display_name: string | null }).display_name || undefined : undefined,
+        } as InvitationDto;
       });
     } catch (error) {
       secureError("Unexpected error in getUserPendingInvitations", error);
