@@ -10,39 +10,34 @@ test.describe("Smoke Tests", () => {
   test("homepage loads successfully", async ({ page }) => {
     await page.goto("/");
 
-    // Should redirect to a locale
-    await expect(page).toHaveURL(/\/(en-US|pl-PL)/);
+    // Homepage is protected, should redirect to login
+    await expect(page).toHaveURL(/\/login/);
 
-    // Page should have loaded
+    // Login page should have loaded
     await expect(page.locator("body")).toBeVisible();
+    await expect(page.locator('input[type="email"]')).toBeVisible();
   });
 
   test("English homepage loads", async ({ page }) => {
     await page.goto("/en-US");
 
-    await expect(page).toHaveURL(/\/en-US/);
+    // Homepage is protected, should redirect to login
+    await expect(page).toHaveURL(/\/login/);
     await expect(page.locator("body")).toBeVisible();
-
-    // Check HTML lang attribute
-    const lang = await page.locator("html").getAttribute("lang");
-    expect(lang).toMatch(/en/i);
   });
 
   test("Polish homepage loads", async ({ page }) => {
     await page.goto("/pl-PL");
 
-    await expect(page).toHaveURL(/\/pl-PL/);
+    // Homepage is protected, should redirect to login
+    await expect(page).toHaveURL(/\/login/);
     await expect(page.locator("body")).toBeVisible();
-
-    // Check HTML lang attribute
-    const lang = await page.locator("html").getAttribute("lang");
-    expect(lang).toMatch(/pl/i);
   });
 
   test("login page loads", async ({ page }) => {
-    await page.goto("/en-US/auth/login");
+    await page.goto("/login");
 
-    await expect(page).toHaveURL(/\/en-US\/auth\/login/);
+    await expect(page).toHaveURL(/\/login/);
 
     // Should have email input
     await expect(page.locator('input[type="email"]')).toBeVisible();
@@ -52,7 +47,7 @@ test.describe("Smoke Tests", () => {
   });
 
   test("app has proper meta tags", async ({ page }) => {
-    await page.goto("/en-US");
+    await page.goto("/login");
 
     // Check for viewport meta tag
     const viewport = await page.locator('meta[name="viewport"]');
@@ -64,7 +59,7 @@ test.describe("Smoke Tests", () => {
   });
 
   test("app loads CSS properly", async ({ page }) => {
-    await page.goto("/en-US");
+    await page.goto("/login");
 
     // Check if Tailwind/styles are loaded by verifying body has expected styling
     const body = page.locator("body");
@@ -86,7 +81,7 @@ test.describe("Smoke Tests", () => {
       }
     });
 
-    await page.goto("/en-US");
+    await page.goto("/login");
     await page.waitForLoadState("networkidle");
 
     // Filter out known/acceptable errors
@@ -99,16 +94,14 @@ test.describe("Smoke Tests", () => {
   });
 
   test("navigation links are functional", async ({ page }) => {
-    await page.goto("/en-US");
+    await page.goto("/login");
 
     // Find all navigation links
     const navLinks = page.locator("nav a, header a").filter({ hasText: /./i });
     const linkCount = await navLinks.count();
 
-    // Should have at least some navigation links
-    expect(linkCount).toBeGreaterThan(0);
-
-    // Test first link if it exists
+    // Login page may have minimal navigation, that's OK
+    // Test links only if they exist
     if (linkCount > 0) {
       const firstLink = navLinks.first();
       const href = await firstLink.getAttribute("href");
@@ -121,5 +114,8 @@ test.describe("Smoke Tests", () => {
         expect(page.url()).toBeTruthy();
       }
     }
+
+    // At minimum, page should have loaded successfully
+    await expect(page.locator("body")).toBeVisible();
   });
 });

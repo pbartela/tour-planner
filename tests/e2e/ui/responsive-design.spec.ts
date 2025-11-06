@@ -12,11 +12,11 @@ test.describe("Responsive Design", () => {
     // Ustaw viewport na rozmiar telefonu
     await page.setViewportSize({ width: 375, height: 667 }); // iPhone SE
 
-    // Przejdź na stronę (może wymagać logowania, więc testujemy stronę główną)
-    await page.goto("/en-US");
+    // Testujemy stronę logowania (publiczna)
+    await page.goto("/login");
 
     // Sprawdź czy strona się załadowała
-    await expect(page).toHaveURL(/\/en-US/);
+    await expect(page).toHaveURL(/\/login/);
 
     // Sprawdź czy navbar jest widoczny
     const navbar = page.locator("nav").or(page.locator('[role="navigation"]'));
@@ -34,10 +34,10 @@ test.describe("Responsive Design", () => {
     // Ustaw viewport na rozmiar tabletu
     await page.setViewportSize({ width: 768, height: 1024 }); // iPad
 
-    await page.goto("/en-US");
+    await page.goto("/login");
 
     // Sprawdź czy strona się załadowała
-    await expect(page).toHaveURL(/\/en-US/);
+    await expect(page).toHaveURL(/\/login/);
 
     // Sprawdź czy nie ma poziomego scrollowania
     const bodyWidth = await page.evaluate(() => document.body.scrollWidth);
@@ -49,10 +49,10 @@ test.describe("Responsive Design", () => {
     // Ustaw viewport na rozmiar desktop
     await page.setViewportSize({ width: 1920, height: 1080 });
 
-    await page.goto("/en-US");
+    await page.goto("/login");
 
     // Sprawdź czy strona się załadowała
-    await expect(page).toHaveURL(/\/en-US/);
+    await expect(page).toHaveURL(/\/login/);
 
     // Sprawdź czy nie ma poziomego scrollowania
     const bodyWidth = await page.evaluate(() => document.body.scrollWidth);
@@ -62,7 +62,7 @@ test.describe("Responsive Design", () => {
 
   test("should have clickable elements on mobile", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto("/en-US");
+    await page.goto("/login");
 
     // Znajdź linki i przyciski
     const links = page.locator("a").filter({ hasText: /./i });
@@ -89,7 +89,7 @@ test.describe("Responsive Design", () => {
 
   test("should toggle mobile menu if present", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto("/en-US");
+    await page.goto("/login");
 
     // Szukaj przycisku menu mobilnego
     const menuButton = page

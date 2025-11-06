@@ -11,10 +11,10 @@ test.describe("Authentication Protection", () => {
     page,
   }) => {
     // Próba dostępu do chronionej strony /tours bez logowania
-    await page.goto("/en-US/tours");
+    await page.goto("/tours");
 
     // Sprawdź czy zostaliśmy przekierowani na stronę logowania
-    await expect(page).toHaveURL(/\/en-US\/auth\/login/);
+    await expect(page).toHaveURL(/\/login/);
 
     // Weryfikuj czy wyświetla się formularz logowania
     await expect(page.locator('input[type="email"]')).toBeVisible();
@@ -22,27 +22,26 @@ test.describe("Authentication Protection", () => {
 
   test("should redirect unauthenticated user when accessing tour details", async ({ page }) => {
     // Próba dostępu do szczegółów wycieczki bez logowania
-    await page.goto("/en-US/tours/123");
+    await page.goto("/tours/123");
 
     // Sprawdź czy zostaliśmy przekierowani na stronę logowania
-    await expect(page).toHaveURL(/\/en-US\/auth\/login/);
+    await expect(page).toHaveURL(/\/login/);
   });
 
   test("should redirect unauthenticated user when accessing profile", async ({ page }) => {
     // Próba dostępu do profilu bez logowania
-    await page.goto("/en-US/profile");
+    await page.goto("/profile");
 
     // Sprawdź czy zostaliśmy przekierowani na stronę logowania
-    await expect(page).toHaveURL(/\/en-US\/auth\/login/);
+    await expect(page).toHaveURL(/\/login/);
   });
 
   test("should allow access to public pages without authentication", async ({ page }) => {
-    // Strona główna powinna być dostępna bez logowania
-    await page.goto("/en-US");
-    await expect(page).not.toHaveURL(/\/auth\/login/);
+    // Strona logowania powinna być dostępna bez logowania
+    await page.goto("/login");
+    await expect(page).toHaveURL(/\/login/);
 
-    // Strona logowania powinna być dostępna
-    await page.goto("/en-US/auth/login");
-    await expect(page).toHaveURL(/\/en-US\/auth\/login/);
+    // Weryfikuj czy wyświetla się formularz logowania
+    await expect(page.locator('input[type="email"]')).toBeVisible();
   });
 });
