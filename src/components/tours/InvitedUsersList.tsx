@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,10 @@ import { InvitationStatusBadge } from "@/components/ui/InvitationStatusBadge";
 import { Badge } from "@/components/ui/Badge";
 import { useTourInvitations } from "@/lib/hooks/useInvitations";
 import { useCancelInvitationMutation, useResendInvitationMutation } from "@/lib/hooks/useInvitationMutations";
+import { useDialogState } from "@/lib/hooks/useDialogState";
 import { SkeletonLoader } from "@/components/shared/SkeletonLoader";
+import { InvitationPermissions } from "@/lib/services/invitation-permissions.service";
+import { formatDate } from "@/lib/utils/date-formatters";
 
 interface InvitedUsersListProps {
   tourId: string;
@@ -22,29 +24,26 @@ interface InvitedUsersListProps {
 }
 
 /**
- * Component for displaying the list of invited users with their statuses.
- * Shows pending, accepted, and declined invitations.
+ * Component for displaying the list of invited users with their statuses
+ * Uses InvitationPermissions service for business logic
+ * Refactored to separate concerns and reduce complexity
  */
 export const InvitedUsersList = ({ tourId, isOwner }: InvitedUsersListProps) => {
   const { t } = useTranslation("tours");
   const { data: invitations, isLoading, isError, error } = useTourInvitations({ tourId });
   const cancelMutation = useCancelInvitationMutation(tourId);
   const resendMutation = useResendInvitationMutation(tourId);
-  const [cancelDialog, setCancelDialog] = useState<{ open: boolean; invitationId: string; email: string }>({
-    open: false,
-    invitationId: "",
-    email: "",
-  });
+  const { dialogState, openDialog, closeDialog } = useDialogState();
 
   const handleCancelClick = (invitationId: string, email: string) => {
-    setCancelDialog({ open: true, invitationId, email });
+    openDialog(invitationId, email);
   };
 
   const handleCancelConfirm = async () => {
     try {
-      await cancelMutation.mutateAsync(cancelDialog.invitationId);
-      toast.success(t("invitations.cancelSuccess", { email: cancelDialog.email }));
-      setCancelDialog({ open: false, invitationId: "", email: "" });
+      await cancelMutation.mutateAsync(dialogState.invitationId);
+      toast.success(t("invitations.cancelSuccess", { email: dialogState.email }));
+      closeDialog();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : t("invitations.cancelError");
       toast.error(errorMessage);
@@ -59,10 +58,6 @@ export const InvitedUsersList = ({ tourId, isOwner }: InvitedUsersListProps) => 
       const errorMessage = error instanceof Error ? error.message : t("invitations.resendError");
       toast.error(errorMessage);
     }
-  };
-
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString();
   };
 
   if (isLoading) {
@@ -88,14 +83,9 @@ export const InvitedUsersList = ({ tourId, isOwner }: InvitedUsersListProps) => 
       <h3 className="font-semibold">{t("invitations.listTitle")}</h3>
       <ul className="space-y-2">
         {invitations.map((invitation) => {
-          const isExpired = new Date(invitation.expires_at) < new Date();
+          const isExpired = InvitationPermissions.isExpired(invitation);
           const status = invitation.status as "pending" | "accepted" | "declined";
-
-          const canCancel = isOwner && status === "pending" && !isExpired;
-          // Allow removing declined invitations or expired pending invitations
-          const canRemove = isOwner && (status === "declined" || (status === "pending" && isExpired));
-          // Allow resending declined invitations or expired pending invitations
-          const canResend = isOwner && (status === "declined" || (status === "pending" && isExpired));
+          const actions = InvitationPermissions.getAvailableActions(invitation, isOwner);
 
           // Dynamic status translation keys (extracted by i18next-parser):
           // t('invitations.status.pending'), t('invitations.status.accepted'), t('invitations.status.declined')
@@ -125,7 +115,7 @@ export const InvitedUsersList = ({ tourId, isOwner }: InvitedUsersListProps) => 
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {canCancel && (
+                {actions.canCancel && (
                   <Button
                     variant="neutral-outline"
                     size="sm"
@@ -136,7 +126,7 @@ export const InvitedUsersList = ({ tourId, isOwner }: InvitedUsersListProps) => 
                     {cancelMutation.isPending ? t("invitations.canceling") : t("invitations.cancelButton")}
                   </Button>
                 )}
-                {canResend && (
+                {actions.canResend && (
                   <Button
                     variant="primary"
                     size="sm"
@@ -146,7 +136,7 @@ export const InvitedUsersList = ({ tourId, isOwner }: InvitedUsersListProps) => 
                     {resendMutation.isPending ? t("invitations.resending") : t("invitations.resendButton")}
                   </Button>
                 )}
-                {canRemove && (
+                {actions.canRemove && (
                   <Button
                     variant="neutral-outline"
                     size="sm"
@@ -163,21 +153,14 @@ export const InvitedUsersList = ({ tourId, isOwner }: InvitedUsersListProps) => 
         })}
       </ul>
 
-      <Dialog
-        open={cancelDialog.open}
-        onOpenChange={(open) => !open && setCancelDialog({ open: false, invitationId: "", email: "" })}
-      >
+      <Dialog open={dialogState.open} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("invitations.cancelTitle")}</DialogTitle>
-            <DialogDescription>{t("invitations.cancelConfirm", { email: cancelDialog.email })}</DialogDescription>
+            <DialogDescription>{t("invitations.cancelConfirm", { email: dialogState.email })}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="neutral-outline"
-              onClick={() => setCancelDialog({ open: false, invitationId: "", email: "" })}
-              disabled={cancelMutation.isPending}
-            >
+            <Button variant="neutral-outline" onClick={closeDialog} disabled={cancelMutation.isPending}>
               {t("common.cancel")}
             </Button>
             <Button variant="error" onClick={handleCancelConfirm} disabled={cancelMutation.isPending}>
