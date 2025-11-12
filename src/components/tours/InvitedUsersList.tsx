@@ -154,7 +154,7 @@ export const InvitedUsersList = ({ tourId, isOwner }: InvitedUsersListProps) => 
       </ul>
 
       <Dialog open={dialogState.open} onOpenChange={(open) => !open && closeDialog()}>
-        <DialogContent>
+        <DialogContent className="bg-base-100">
           <DialogHeader>
             <DialogTitle>{t("invitations.cancelTitle")}</DialogTitle>
             <DialogDescription>{t("invitations.cancelConfirm", { email: dialogState.email })}</DialogDescription>

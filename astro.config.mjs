@@ -41,6 +41,18 @@ export default defineConfig({
         access: "secret",
         min: 1, // Ensures non-empty
       }),
+      RESEND_API_KEY: envField.string({
+        context: "server",
+        access: "secret",
+        min: 1, // Required for email functionality
+        optional: true, // Optional for test environments
+      }),
+      RESEND_FROM_EMAIL: envField.string({
+        context: "server",
+        access: "secret",
+        min: 1, // Required for email functionality
+        optional: true, // Optional for test environments
+      }),
       OPENROUTER_API_KEY: envField.string({
         context: "server",
         access: "secret",

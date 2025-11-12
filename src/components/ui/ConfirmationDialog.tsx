@@ -108,7 +108,7 @@ const ConfirmationDialog = React.forwardRef<HTMLDivElement, ConfirmationDialogPr
 
     return (
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent ref={ref} className="sm:max-w-md" {...props}>
+        <DialogContent ref={ref} className="bg-base-100 sm:max-w-md" {...props}>
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription className="pt-2">{message}</DialogDescription>

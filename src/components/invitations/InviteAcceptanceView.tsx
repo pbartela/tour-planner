@@ -113,7 +113,7 @@ export const InviteAcceptanceView = ({
       </div>
 
       <Dialog open={declineDialogOpen} onOpenChange={setDeclineDialogOpen}>
-        <DialogContent>
+        <DialogContent className="bg-base-100">
           <DialogHeader>
             <DialogTitle>{t("invitations.declineTitle")}</DialogTitle>
             <DialogDescription>{t("invitations.confirmDecline")}</DialogDescription>

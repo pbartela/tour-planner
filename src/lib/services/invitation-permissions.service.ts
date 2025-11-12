@@ -46,7 +46,10 @@ export class InvitationPermissions {
   /**
    * Get all available actions for an invitation
    */
-  static getAvailableActions(invitation: InvitationDto, isOwner: boolean): {
+  static getAvailableActions(
+    invitation: InvitationDto,
+    isOwner: boolean
+  ): {
     canCancel: boolean;
     canResend: boolean;
     canRemove: boolean;

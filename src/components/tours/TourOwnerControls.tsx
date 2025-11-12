@@ -43,8 +43,16 @@ export const TourOwnerControls = ({ tourId, tour, onToggleVotingLock, isToggling
                 {tour.voting_locked ? t("voting.votingLockedMessage") : "Allow participants to vote"}
               </p>
             </div>
-            <Button variant={tour.voting_locked ? "error" : "neutral"} onClick={onToggleVotingLock} disabled={isToggling}>
-              {isToggling ? "..." : tour.voting_locked ? `🔓 ${t("voting.unlockVoting")}` : `🔒 ${t("voting.lockVoting")}`}
+            <Button
+              variant={tour.voting_locked ? "error" : "neutral"}
+              onClick={onToggleVotingLock}
+              disabled={isToggling}
+            >
+              {isToggling
+                ? "..."
+                : tour.voting_locked
+                  ? `🔓 ${t("voting.unlockVoting")}`
+                  : `🔒 ${t("voting.lockVoting")}`}
             </Button>
           </div>
         </div>
