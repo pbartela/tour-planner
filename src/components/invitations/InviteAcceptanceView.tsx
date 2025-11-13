@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,10 +9,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { SkeletonLoader } from "@/components/shared/SkeletonLoader";
-import { get, handleApiResponse } from "@/lib/client/api-client";
-import type { InvitationByTokenDto } from "@/types";
-import { useAcceptInvitationMutation, useDeclineInvitationMutation } from "@/lib/hooks/useInvitationMutations";
+import { useInvitationAcceptance } from "@/lib/hooks/useInvitationAcceptance";
+import {
+  InvitationLoadingView,
+  InvitationErrorView,
+  InvitationExpiredView,
+  InvitationEmailMismatchView,
+} from "./InvitationStateViews";
 
 interface InviteAcceptanceViewProps {
   token: string;
@@ -21,138 +23,48 @@ interface InviteAcceptanceViewProps {
   userEmail: string;
 }
 
+/**
+ * Invitation acceptance view component
+ * Uses custom hook with reducer pattern for state management
+ * Separated into sub-components for different states
+ */
 export const InviteAcceptanceView = ({
   token,
   currentUserId: _currentUserId,
   userEmail,
 }: InviteAcceptanceViewProps) => {
   const { t } = useTranslation("tours");
-  const [invitation, setInvitation] = useState<InvitationByTokenDto | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [declineDialogOpen, setDeclineDialogOpen] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false);
-  const acceptMutation = useAcceptInvitationMutation();
-  const declineMutation = useDeclineInvitationMutation();
+  const { state, isEmailMatch, isExpiredOrProcessed, isProcessing, actions } = useInvitationAcceptance(
+    token,
+    userEmail
+  );
 
-  useEffect(() => {
-    const fetchInvitation = async () => {
-      try {
-        const response = await get(`/api/invitations?token=${encodeURIComponent(token)}`);
-        const data = await handleApiResponse<InvitationByTokenDto>(response);
-        setInvitation(data);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : t("invitations.fetchError");
-        setError(errorMessage);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const isNavigating = state.status === "navigating";
 
-    fetchInvitation();
-  }, [token, t]);
+  // Handle different states
+  if (state.status === "loading") {
+    return <InvitationLoadingView />;
+  }
 
-  const handleAccept = async () => {
-    if (!invitation) return;
+  if (state.status === "error") {
+    return <InvitationErrorView error={state.error} onGoHome={actions.handleGoHome} isNavigating={isNavigating} />;
+  }
 
-    try {
-      const result = await acceptMutation.mutateAsync({
-        invitationId: invitation.id,
-        token: invitation.is_expired ? undefined : token,
-      });
-
-      toast.success(t("invitations.acceptSuccess"));
-      // Show loading state before redirect
-      setIsNavigating(true);
-      // Redirect directly to tour details page
-      window.location.href = `/tours/${result.tour_id}`;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : t("invitations.acceptError");
-      toast.error(errorMessage);
-    }
-  };
-
-  const handleDeclineClick = () => {
-    setDeclineDialogOpen(true);
-  };
-
-  const handleDeclineConfirm = async () => {
-    if (!invitation) return;
-
-    try {
-      await declineMutation.mutateAsync({
-        invitationId: invitation.id,
-        token: invitation.is_expired ? undefined : token,
-      });
-
-      toast.success(t("invitations.declineSuccess"));
-      setDeclineDialogOpen(false);
-      // Show loading state before redirect
-      setIsNavigating(true);
-      // Redirect to dashboard
-      window.location.href = "/";
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : t("invitations.declineError");
-      toast.error(errorMessage);
-    }
-  };
-
-  const handleGoHome = () => {
-    setIsNavigating(true);
-    window.location.href = "/";
-  };
-
-  if (isLoading) {
+  if (state.status === "success" && isExpiredOrProcessed) {
     return (
-      <div className="container mx-auto max-w-2xl p-4">
-        <SkeletonLoader />
-      </div>
+      <InvitationExpiredView
+        invitation={state.invitation}
+        onGoHome={actions.handleGoHome}
+        isNavigating={isNavigating}
+      />
     );
   }
 
-  if (error || !invitation) {
-    return (
-      <div className="container mx-auto max-w-2xl p-4">
-        <div className="card bg-base-100 shadow-xl">
-          <div className="card-body text-center">
-            <h1 className="card-title text-2xl justify-center">{t("invitations.errorTitle")}</h1>
-            <p className="text-base-content/70">{error || t("invitations.notFound")}</p>
-            <div className="card-actions justify-center mt-4">
-              <Button onClick={handleGoHome} disabled={isNavigating}>
-                {isNavigating ? t("common.redirecting") : t("invitations.goHome")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // At this point, we have a valid pending invitation
+  if (state.status !== "success") return null;
 
-  if (invitation.is_expired || invitation.status !== "pending") {
-    return (
-      <div className="container mx-auto max-w-2xl p-4">
-        <div className="card bg-base-100 shadow-xl">
-          <div className="card-body text-center">
-            <h1 className="card-title text-2xl justify-center">{t("invitations.expiredTitle")}</h1>
-            <p className="text-base-content/70">
-              {invitation.is_expired
-                ? t("invitations.expiredMessage")
-                : t("invitations.alreadyProcessed", { status: invitation.status })}
-            </p>
-            <div className="card-actions justify-center mt-4">
-              <Button onClick={handleGoHome} disabled={isNavigating}>
-                {isNavigating ? t("common.redirecting") : t("invitations.goHome")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // User is guaranteed to be authenticated at this point (enforced by middleware)
-  // Check if user's email matches the invitation email
-  const isEmailMatch = userEmail.toLowerCase() === invitation.email.toLowerCase();
+  const { invitation } = state;
 
   return (
     <div className="container mx-auto max-w-2xl p-4">
@@ -178,65 +90,47 @@ export const InviteAcceptanceView = ({
             {isEmailMatch ? (
               <div className="flex gap-4">
                 <Button
-                  onClick={handleDeclineClick}
-                  disabled={declineMutation.isPending || acceptMutation.isPending || isNavigating}
+                  onClick={() => setDeclineDialogOpen(true)}
+                  disabled={isProcessing || isNavigating}
                   variant="neutral-outline"
                 >
-                  {declineMutation.isPending ? t("invitations.declining") : t("invitations.declineButton")}
+                  {t("invitations.declineButton")}
                 </Button>
-                <Button
-                  onClick={handleAccept}
-                  disabled={acceptMutation.isPending || declineMutation.isPending || isNavigating}
-                  variant="primary"
-                >
-                  {acceptMutation.isPending
-                    ? t("invitations.accepting")
-                    : isNavigating
-                      ? t("common.redirecting")
-                      : t("invitations.acceptButton")}
+                <Button onClick={actions.handleAccept} disabled={isProcessing || isNavigating} variant="primary">
+                  {isNavigating ? t("common.redirecting") : t("invitations.acceptButton")}
                 </Button>
               </div>
             ) : (
-              <div className="text-center space-y-4">
-                <div className="alert alert-error">
-                  <span>
-                    {t("invitations.emailMismatchStrict", { invitedEmail: invitation.email, currentEmail: userEmail })}
-                  </span>
-                </div>
-                <p className="text-sm text-base-content/70">{t("invitations.emailMismatchInstructions")}</p>
-                <Button onClick={handleGoHome} disabled={isNavigating}>
-                  {isNavigating ? t("common.redirecting") : t("invitations.goHome")}
-                </Button>
-              </div>
+              <InvitationEmailMismatchView
+                invitation={invitation}
+                currentEmail={userEmail}
+                onGoHome={actions.handleGoHome}
+                isNavigating={isNavigating}
+              />
             )}
           </div>
         </div>
       </div>
 
       <Dialog open={declineDialogOpen} onOpenChange={setDeclineDialogOpen}>
-        <DialogContent>
+        <DialogContent className="bg-base-100">
           <DialogHeader>
             <DialogTitle>{t("invitations.declineTitle")}</DialogTitle>
             <DialogDescription>{t("invitations.confirmDecline")}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="neutral-outline"
-              onClick={() => setDeclineDialogOpen(false)}
-              disabled={declineMutation.isPending || isNavigating}
-            >
+            <Button variant="neutral-outline" onClick={() => setDeclineDialogOpen(false)} disabled={isProcessing}>
               {t("common.cancel")}
             </Button>
             <Button
               variant="error"
-              onClick={handleDeclineConfirm}
-              disabled={declineMutation.isPending || isNavigating}
+              onClick={async () => {
+                await actions.handleDecline();
+                setDeclineDialogOpen(false);
+              }}
+              disabled={isProcessing}
             >
-              {declineMutation.isPending
-                ? t("invitations.declining")
-                : isNavigating
-                  ? t("common.redirecting")
-                  : t("common.confirm")}
+              {isNavigating ? t("common.redirecting") : t("common.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>

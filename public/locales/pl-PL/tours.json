@@ -124,7 +124,19 @@
     "error": "Coś poszło nie tak. Proszę spróbować ponownie.",
     "finish": "Zakończ",
     "next": "Dalej",
-    "skip": "Pomiń"
+    "skip": "Pomiń",
+    "step1": {
+      "title": "Witaj w Plannerze Wycieczek",
+      "description": "Planuj wycieczki ze znajomymi i rodziną w prosty sposób"
+    },
+    "step2": {
+      "title": "Twórz i głosuj",
+      "description": "Twórz propozycje wycieczek i głosuj na ulubione"
+    },
+    "step3": {
+      "title": "Współpracuj",
+      "description": "Zaproś innych i omawiajcie wspólnie swoje plany"
+    }
   },
   "tourDetails": {
     "delete": "Usuń",

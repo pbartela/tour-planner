@@ -3,6 +3,8 @@ import { MagicLinkSchema } from "src/lib/validators/auth.validators";
 import { createSupabaseAdminClient } from "src/db/supabase.admin.client";
 import { checkRateLimit, getClientIdentifier, RATE_LIMIT_CONFIGS } from "@/lib/server/rate-limit.service";
 import { secureError } from "@/lib/server/logger.service";
+import { sendAuthEmail } from "@/lib/server/email.service";
+import { randomBytes } from "node:crypto";
 
 export const POST: APIRoute = async ({ request }) => {
   // Rate limiting: 3 requests per 15 minutes per client
@@ -36,43 +38,61 @@ export const POST: APIRoute = async ({ request }) => {
 
   const { email, redirectTo, locale } = parsedData.data;
 
-  // PKCE Flow: Redirect to /auth/confirm which will handle server-side token verification
-  const redirectURL = new URL(request.url);
-  redirectURL.pathname = "/auth/confirm";
-  if (redirectTo) {
-    redirectURL.searchParams.set("next", redirectTo);
-  }
-  if (locale) {
-    redirectURL.searchParams.set("locale", locale);
-  }
-
   // Use admin client for server-side auth operations
   const supabaseAdmin = createSupabaseAdminClient();
 
-  // Use signInWithOtp which handles both existing and new users
-  const { error } = await supabaseAdmin.auth.signInWithOtp({
-    email,
-    options: {
-      emailRedirectTo: redirectURL.toString(),
-      shouldCreateUser: true,
-    },
-  });
+  try {
+    // Generate cryptographically secure OTP token (32 bytes = 64 hex chars)
+    const otpToken = randomBytes(32).toString("hex");
 
-  if (error) {
-    // Log the actual error for debugging, but don't expose internal details to the client
-    // Uses secure logging to sanitize sensitive information in production
-    secureError("Magic link generation failed", error);
+    // OTP expires in 1 hour
+    const otpExpiresAt = new Date();
+    otpExpiresAt.setHours(otpExpiresAt.getHours() + 1);
+
+    // Store OTP in database
+    const { error: otpError } = await supabaseAdmin.from("auth_otp").insert({
+      email: email,
+      otp_token: otpToken,
+      redirect_to: redirectTo || null,
+      expires_at: otpExpiresAt.toISOString(),
+    });
+
+    if (otpError) {
+      secureError("Failed to store auth OTP", otpError);
+      return new Response(JSON.stringify({ error: "Failed to send magic link. Please try again later." }), {
+        status: 500,
+      });
+    }
+
+    // Build authentication URL with OTP
+    const baseUrl = new URL(request.url).origin;
+    const loginUrl = `${baseUrl}/auth/verify-otp?otp=${otpToken}`;
+
+    // Send custom authentication email
+    const emailResult = await sendAuthEmail({
+      to: email,
+      loginUrl,
+    });
+
+    if (!emailResult.success) {
+      secureError("Failed to send authentication email", { error: emailResult.error });
+      return new Response(JSON.stringify({ error: "Failed to send magic link. Please try again later." }), {
+        status: 500,
+      });
+    }
+
+    return new Response(JSON.stringify({ message: "Magic link sent successfully" }), {
+      status: 200,
+      headers: {
+        "X-RateLimit-Limit": String(RATE_LIMIT_CONFIGS.MAGIC_LINK.maxRequests),
+        "X-RateLimit-Remaining": String(rateLimitResult.remaining),
+        "X-RateLimit-Reset": String(Math.floor(rateLimitResult.resetAt / 1000)),
+      },
+    });
+  } catch (err) {
+    secureError("Unexpected error in magic link generation", err);
     return new Response(JSON.stringify({ error: "Failed to send magic link. Please try again later." }), {
       status: 500,
     });
   }
-
-  return new Response(JSON.stringify({ message: "Magic link sent successfully" }), {
-    status: 200,
-    headers: {
-      "X-RateLimit-Limit": String(RATE_LIMIT_CONFIGS.MAGIC_LINK.maxRequests),
-      "X-RateLimit-Remaining": String(rateLimitResult.remaining),
-      "X-RateLimit-Reset": String(Math.floor(rateLimitResult.resetAt / 1000)),
-    },
-  });
 };

@@ -242,6 +242,8 @@ Two types of clients:
 - `rate-limit.service.ts` - In-memory rate limiting
 - `logger.service.ts` - Secure error logging (redacts sensitive data)
 - `env-validation.service.ts` - Runtime environment validation
+- `email.service.ts` - Custom email service using Resend with React Email templates
+- `email-dev.middleware.ts` - Development email routing to local Inbucket SMTP
 
 #### 6. Middleware Flow (`src/middleware/index.ts`)
 
@@ -376,6 +378,74 @@ export const AllVariants: Story = {
 - Generate types after schema changes: `npx supabase gen types typescript --local`
 - Import `SupabaseClient` type from `@/db/supabase.client.ts`, not `@supabase/supabase-js`
 
+### Email System
+
+The project uses **Resend** with **React Email** templates for full control over email content.
+
+**Architecture:**
+
+- **Production**: Emails sent via Resend API to real addresses
+- **Development**: Emails routed through local Mailpit/Inbucket SMTP (http://localhost:54324)
+  - Uses nodemailer to connect to Mailpit SMTP on port 54325 (configured in `supabase/config.toml`)
+  - All emails visible in Mailpit web interface for testing
+
+**Email Service** (`src/lib/server/email.service.ts`):
+- `sendInvitationEmail()` - Sends tour invitation emails
+- `sendEmail()` - Generic email sending function for future use
+- Automatically handles dev/prod routing
+
+**Email Templates** (`src/lib/templates/`):
+- Built with React Email components (`@react-email/components`)
+- `email-layout.tsx` - Base layout for consistent styling
+- `invitation-email.tsx` - Tour invitation template
+- Styled with Tailwind CSS utilities
+- See `src/lib/templates/README.md` for template development guide
+
+**Development Workflow:**
+
+1. Start local Supabase (includes Mailpit): `npx supabase start`
+2. Mailpit web UI available at: http://localhost:54324
+3. SMTP server running on: localhost:54325 (configured in `supabase/config.toml`)
+4. Send test email → Check Mailpit for captured email
+5. All emails logged to console in development
+
+**Testing Email System:**
+
+```bash
+# Quick test with provided script
+node test-email.mjs
+
+# Then check Mailpit: http://localhost:54324
+```
+
+**Adding New Email Templates:**
+
+```typescript
+// 1. Create template: src/lib/templates/my-email.tsx
+import { Text, Button } from "@react-email/components";
+import { EmailLayout } from "./email-layout";
+
+export function MyEmail({ userName }: { userName: string }) {
+  return (
+    <EmailLayout preview="Preview text" heading="Email Heading">
+      <Text>Hello {userName}!</Text>
+      <Button href="/action">Click Here</Button>
+    </EmailLayout>
+  );
+}
+
+// 2. Add sender function to email.service.ts
+export async function sendMyEmail(to: string, userName: string) {
+  const html = await render(MyEmail({ userName }));
+  return sendEmail(to, "Subject", html);
+}
+```
+
+**Environment Variables:**
+
+- `RESEND_API_KEY` - Resend API key (get from https://resend.com/api-keys)
+- `RESEND_FROM_EMAIL` - Sender email (e.g., "Tour Planner <noreply@example.com>")
+
 ### Validation
 
 - All API inputs validated with Zod schemas (`src/lib/validators/`)
@@ -399,6 +469,8 @@ Required environment variables (see `.env.example`):
 
 - `SUPABASE_URL` - Same as public URL
 - `SUPABASE_SERVICE_ROLE_KEY` - Service role key for admin operations
+- `RESEND_API_KEY` - Resend API key for email functionality (required)
+- `RESEND_FROM_EMAIL` - Sender email address (e.g., "Tour Planner <noreply@example.com>")
 - `OPENROUTER_API_KEY` - Optional AI API key
 
 Environment validation happens at both:

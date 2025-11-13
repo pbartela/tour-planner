@@ -63,7 +63,7 @@ export const OnboardingModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="bg-base-100 sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t(step.titleKey)}</DialogTitle>
           <DialogDescription>{t(step.descriptionKey)}</DialogDescription>
