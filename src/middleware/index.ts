@@ -9,6 +9,9 @@ import i18next from "i18next";
 const protectedRoutes = ["/", "/profile", "/tours", "/invite"];
 // Routes that authenticated users should be redirected away from.
 const authRoutes = ["/login"];
+// Public auth routes that should be accessible without authentication
+// (e.g., invitation verification, password reset, etc.)
+const publicAuthRoutes = ["/auth/verify-invitation", "/auth/error", "/auth/confirm"];
 // Allowed locales - must match those defined in astro.config.mjs
 const allowedLocales = ["en-US", "pl-PL"] as const;
 
@@ -66,12 +69,16 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
   }
 
+  // Check if the route is a public auth route (should be accessible without auth)
+  const isPublicAuthRoute = publicAuthRoutes.some((route) => pathWithoutLocale.startsWith(route));
+
   const isProtectedRoute = protectedRoutes.some((route) =>
     route === "/" ? pathWithoutLocale === route : pathWithoutLocale.startsWith(route)
   );
 
   // If user is not logged in and trying to access a protected route, redirect to login.
-  if (!context.locals.user && isProtectedRoute) {
+  // BUT: skip this check for public auth routes
+  if (!context.locals.user && isProtectedRoute && !isPublicAuthRoute) {
     const loginUrl =
       pathWithoutLocale === "/" ? `/${lang}/login` : `/${lang}/login?redirect=${encodeURIComponent(pathWithoutLocale)}`;
     return context.redirect(loginUrl);

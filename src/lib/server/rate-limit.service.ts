@@ -236,6 +236,17 @@ export const RATE_LIMIT_CONFIGS = {
     maxRequests: isDevelopment ? 100 : 10,
     windowMs: minutes(60),
   },
+
+  /**
+   * OTP verification rate limits (for invitation links)
+   * - Production/Test: 5 verification attempts per minute per IP/user
+   * - Development: 50 verification attempts per minute
+   * Prevents brute-force attacks on OTP tokens
+   */
+  OTP_VERIFICATION: {
+    maxRequests: isDevelopment ? 50 : 5,
+    windowMs: minutes(1),
+  },
 } as const;
 
 /**

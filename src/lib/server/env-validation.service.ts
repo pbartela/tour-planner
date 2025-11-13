@@ -60,10 +60,7 @@ const envSchema = z.object({
   RESEND_FROM_EMAIL: z
     .string()
     .min(1, "RESEND_FROM_EMAIL is required")
-    .regex(
-      /^.+<.+@.+\..+>$|^.+@.+\..+$/,
-      "RESEND_FROM_EMAIL must be a valid email or 'Name <email@domain.com>' format"
-    )
+    .regex(/^.+<.+@.+\..+>$|^.+@.+\..+$/, "RESEND_FROM_EMAIL must be a valid email or 'Name <email@domain.com>' format")
     .optional(),
 
   // Optional but validated if present

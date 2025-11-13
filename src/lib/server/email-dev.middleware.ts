@@ -4,6 +4,7 @@
  */
 
 import nodemailer from "nodemailer";
+import type { Transporter } from "nodemailer";
 import type { SendEmailResult } from "./email.service";
 import { secureError } from "./logger.service";
 
@@ -16,8 +17,101 @@ const INBUCKET_CONFIG = {
   auth: undefined, // Inbucket/Mailpit doesn't require auth
 };
 
-// Create nodemailer transport for local Inbucket
-const transport = nodemailer.createTransport(INBUCKET_CONFIG);
+// Retry configuration
+const RETRY_CONFIG = {
+  maxRetries: 3,
+  initialDelayMs: 100,
+  maxDelayMs: 2000,
+  backoffMultiplier: 2,
+};
+
+// Lazy-initialized transport (created on first use)
+let transportInstance: Transporter | null = null;
+let isInitializing = false;
+
+/**
+ * Utility function to sleep for a given duration
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Creates and verifies the nodemailer transport with retry logic
+ * Uses exponential backoff for retries
+ *
+ * @returns Verified nodemailer transport
+ * @throws Error if connection fails after all retries
+ */
+async function createAndVerifyTransport(): Promise<Transporter> {
+  let lastError: Error | null = null;
+  let delay = RETRY_CONFIG.initialDelayMs;
+
+  for (let attempt = 0; attempt <= RETRY_CONFIG.maxRetries; attempt++) {
+    try {
+      console.log(`🔄 [DEV-INBUCKET] Creating transport (attempt ${attempt + 1}/${RETRY_CONFIG.maxRetries + 1})...`);
+
+      const transport = nodemailer.createTransport(INBUCKET_CONFIG);
+
+      // Verify the connection
+      await transport.verify();
+
+      console.log("✅ [DEV-INBUCKET] Transport created and verified successfully");
+      return transport;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      if (attempt < RETRY_CONFIG.maxRetries) {
+        console.warn(
+          `⚠️ [DEV-INBUCKET] Connection failed (attempt ${attempt + 1}/${RETRY_CONFIG.maxRetries + 1}), retrying in ${delay}ms...`
+        );
+        await sleep(delay);
+        delay = Math.min(delay * RETRY_CONFIG.backoffMultiplier, RETRY_CONFIG.maxDelayMs);
+      }
+    }
+  }
+
+  // All retries exhausted
+  const errorMessage = `Failed to connect to Inbucket after ${RETRY_CONFIG.maxRetries + 1} attempts. Is Mailpit/Inbucket running? (${INBUCKET_CONFIG.host}:${INBUCKET_CONFIG.port})`;
+  console.error(`❌ [DEV-INBUCKET] ${errorMessage}`);
+  secureError(errorMessage, lastError);
+
+  throw new Error(errorMessage);
+}
+
+/**
+ * Gets or creates the nodemailer transport instance
+ * Implements lazy initialization with connection retry logic
+ *
+ * @returns Nodemailer transport instance
+ * @throws Error if transport cannot be created
+ */
+async function getTransport(): Promise<Transporter> {
+  // Return cached instance if available
+  if (transportInstance) {
+    return transportInstance;
+  }
+
+  // Prevent concurrent initialization attempts
+  if (isInitializing) {
+    // Wait for ongoing initialization
+    while (isInitializing) {
+      await sleep(50);
+    }
+    if (transportInstance) {
+      return transportInstance;
+    }
+  }
+
+  // Initialize the transport
+  isInitializing = true;
+  try {
+    transportInstance = await createAndVerifyTransport();
+    return transportInstance;
+  } finally {
+    isInitializing = false;
+  }
+}
 
 /**
  * Sends an email through local Inbucket SMTP server
@@ -43,6 +137,9 @@ export async function sendEmailThroughInbucket(
       host: INBUCKET_CONFIG.host,
       port: INBUCKET_CONFIG.port,
     });
+
+    // Get or create transport with retry logic
+    const transport = await getTransport();
 
     const info = await transport.sendMail({
       from,
@@ -75,15 +172,30 @@ export async function sendEmailThroughInbucket(
 /**
  * Verifies that Inbucket SMTP server is available
  * Useful for debugging connection issues
+ *
+ * @returns true if connection is successful, false otherwise
  */
 export async function verifyInbucketConnection(): Promise<boolean> {
   try {
-    await transport.verify();
+    // This will attempt to create and verify the transport with retry logic
+    await getTransport();
     console.log("✅ [DEV-INBUCKET] Connection verified");
     return true;
   } catch (error) {
     console.error("❌ [DEV-INBUCKET] Connection failed:", error);
     secureError("Inbucket connection verification failed", error);
     return false;
+  }
+}
+
+/**
+ * Resets the transport instance
+ * Useful for testing or when Inbucket restarts
+ */
+export function resetTransport(): void {
+  if (transportInstance) {
+    transportInstance.close();
+    transportInstance = null;
+    console.log("🔄 [DEV-INBUCKET] Transport reset");
   }
 }

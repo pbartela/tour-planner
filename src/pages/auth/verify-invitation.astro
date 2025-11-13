@@ -15,6 +15,8 @@ import { createSupabaseServerClient } from "@/db/supabase.client";
 import { createSupabaseAdminClient } from "@/db/supabase.admin.client";
 import { secureError } from "@/lib/server/logger.service";
 import { ENV } from "@/lib/server/env-validation.service";
+import { checkRateLimit, getClientIdentifier, RATE_LIMIT_CONFIGS } from "@/lib/server/rate-limit.service";
+import { getUserByEmail } from "@/lib/server/supabase-admin.service";
 
 export const prerender = false;
 
@@ -28,6 +30,18 @@ const locale = Astro.cookies.get("locale")?.value || ENV.PUBLIC_DEFAULT_LOCALE;
 if (!otp || typeof otp !== "string" || otp.length !== 64) {
   secureError("Invalid OTP format", { hasOtp: !!otp, otpLength: otp?.length });
   return Astro.redirect(`/${locale}/auth/error?error=invalid_link`);
+}
+
+// Rate limiting: Prevent brute-force attacks on OTP verification
+const clientId = getClientIdentifier(Astro.request);
+const rateLimitResult = checkRateLimit(clientId, RATE_LIMIT_CONFIGS.OTP_VERIFICATION);
+
+if (!rateLimitResult.allowed) {
+  secureError("OTP verification rate limit exceeded", {
+    clientId,
+    resetAt: new Date(rateLimitResult.resetAt).toISOString(),
+  });
+  return Astro.redirect(`/${locale}/auth/error?error=too_many_requests`);
 }
 
 // Create admin client for database operations
@@ -66,44 +80,21 @@ try {
   const email = otpRecord.email;
   const invitationToken = otpRecord.invitation_token;
 
-  // Step 4: Check if user exists
+  // Step 4: Check if user exists (using direct email lookup - much more efficient)
   let userId: string | null = null;
   let userExists = false;
 
   try {
-    let page = 1;
-    const perPage = 1000;
-    let hasMoreUsers = true;
+    const { user, error: lookupError } = await getUserByEmail(adminClient, email);
 
-    while (hasMoreUsers && !userExists) {
-      const { data: usersList, error: listError } = await adminClient.auth.admin.listUsers({
-        page,
-        perPage,
-      });
+    if (lookupError) {
+      secureError("Error looking up user by email", lookupError);
+      return Astro.redirect(`/${locale}/auth/error?error=unexpected_error`);
+    }
 
-      if (listError) {
-        secureError("Error listing users", listError);
-        break;
-      }
-
-      if (!usersList?.users || usersList.users.length === 0) {
-        hasMoreUsers = false;
-        break;
-      }
-
-      for (const user of usersList.users) {
-        if (user.email && user.email.toLowerCase() === email.toLowerCase()) {
-          userExists = true;
-          userId = user.id;
-          break;
-        }
-      }
-
-      if (usersList.users.length < perPage) {
-        hasMoreUsers = false;
-      } else {
-        page++;
-      }
+    if (user) {
+      userExists = true;
+      userId = user.id;
     }
   } catch (err) {
     secureError("Error checking user existence", err);
@@ -133,8 +124,8 @@ try {
           throw createError;
         }
         // User exists, try to find them again
-        const { data: existingUser } = await adminClient.auth.admin.getUserByEmail(email);
-        userId = existingUser?.user?.id || null;
+        const { user: existingUser } = await getUserByEmail(adminClient, email);
+        userId = existingUser?.id || null;
       } else {
         userId = newUser?.user?.id || null;
       }

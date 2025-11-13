@@ -6,6 +6,7 @@ import { invitationIdSchema, invitationTokenSchema } from "@/lib/validators/invi
 import { checkCsrfProtection } from "@/lib/server/csrf.service";
 import { secureError } from "@/lib/server/logger.service";
 import { validateSession } from "@/lib/server/session-validation.service";
+import { isPastDate } from "@/lib/utils/date-formatters";
 
 export const prerender = false;
 
@@ -109,7 +110,7 @@ export const POST: APIRoute = async ({ params, request, locals, cookies }) => {
     }
 
     // Check if expired
-    if (new Date(invitation.expires_at) < new Date()) {
+    if (isPastDate(invitation.expires_at)) {
       return new Response(
         JSON.stringify({
           error: {

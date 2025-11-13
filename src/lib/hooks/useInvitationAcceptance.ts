@@ -44,10 +44,18 @@ export const useInvitationAcceptance = (token: string, userEmail: string) => {
 
   // Fetch invitation data
   useEffect(() => {
+    const abortController = new AbortController();
+    let isMounted = true;
+
     const fetchInvitation = async () => {
       try {
-        const response = await get(`/api/invitations?token=${encodeURIComponent(token)}`);
+        const response = await get(`/api/invitations?token=${encodeURIComponent(token)}`, {
+          signal: abortController.signal,
+        });
         const data = await handleApiResponse<InvitationByTokenDto>(response);
+
+        // Don't update state if component unmounted
+        if (!isMounted) return;
 
         // Check if invitation is expired or already processed
         if (data.is_expired || data.status !== "pending") {
@@ -64,12 +72,22 @@ export const useInvitationAcceptance = (token: string, userEmail: string) => {
 
         dispatch({ type: "FETCH_SUCCESS", invitation: data });
       } catch (err) {
+        // Ignore errors from aborted requests
+        if (abortController.signal.aborted) return;
+        if (!isMounted) return;
+
         const errorMessage = err instanceof Error ? err.message : "Failed to fetch invitation";
         dispatch({ type: "FETCH_ERROR", error: errorMessage });
       }
     };
 
     fetchInvitation();
+
+    // Cleanup function to prevent memory leaks
+    return () => {
+      isMounted = false;
+      abortController.abort();
+    };
   }, [token, userEmail]);
 
   const handleAccept = async () => {

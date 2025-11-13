@@ -35,8 +35,8 @@ export function InvitationEmail({ inviterName, tourTitle, invitationUrl, expires
       </Text>
 
       <Text className="mb-6 text-sm text-gray-600">
-        Clicking the button below will log you in (or create your account if you&apos;re new) and take you directly
-        to the invitation page.
+        Clicking the button below will log you in (or create your account if you&apos;re new) and take you directly to
+        the invitation page.
       </Text>
 
       {/* CTA Button */}

@@ -84,9 +84,6 @@ const InvitationItemComponent = ({ invitation, onAccept, onDecline, isProcessing
 
 /**
  * Memoized InvitationItem component
- * Only re-renders when invitation ID or processing state changes
+ * Uses default shallow comparison to detect prop changes
  */
-export const InvitationItem = React.memo(
-  InvitationItemComponent,
-  (prev, next) => prev.invitation.id === next.invitation.id && prev.isProcessing === next.isProcessing
-);
+export const InvitationItem = React.memo(InvitationItemComponent);

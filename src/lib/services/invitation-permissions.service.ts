@@ -1,9 +1,11 @@
 import type { InvitationDto } from "@/types";
+import { isPastDate } from "@/lib/utils/date-formatters";
 
 /**
  * Service for managing invitation permissions logic
  * Encapsulates business rules for invitation actions (cancel, resend, remove)
  */
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class InvitationPermissions {
   /**
    * Check if owner can cancel a pending invitation
@@ -12,7 +14,7 @@ export class InvitationPermissions {
   static canCancel(invitation: InvitationDto, isOwner: boolean): boolean {
     if (!isOwner) return false;
 
-    const isExpired = new Date(invitation.expires_at) < new Date();
+    const isExpired = isPastDate(invitation.expires_at);
     return invitation.status === "pending" && !isExpired;
   }
 
@@ -23,7 +25,7 @@ export class InvitationPermissions {
   static canResend(invitation: InvitationDto, isOwner: boolean): boolean {
     if (!isOwner) return false;
 
-    const isExpired = new Date(invitation.expires_at) < new Date();
+    const isExpired = isPastDate(invitation.expires_at);
     return invitation.status === "declined" || (invitation.status === "pending" && isExpired);
   }
 
@@ -40,7 +42,7 @@ export class InvitationPermissions {
    * Check if invitation is expired
    */
   static isExpired(invitation: InvitationDto): boolean {
-    return new Date(invitation.expires_at) < new Date();
+    return isPastDate(invitation.expires_at);
   }
 
   /**

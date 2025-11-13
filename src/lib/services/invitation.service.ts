@@ -3,6 +3,7 @@ import { secureError } from "@/lib/server/logger.service";
 import { createSupabaseAdminClient } from "@/db/supabase.admin.client";
 import type { InvitationDto, SendInvitationsResponse, InvitationByTokenDto, AcceptInvitationResponse } from "@/types";
 import { randomBytes } from "crypto";
+import { isPastDate } from "@/lib/utils/date-formatters";
 
 class InvitationService {
   /**
@@ -155,7 +156,7 @@ class InvitationService {
       }
 
       // Check if expired
-      const isExpired = new Date(invitation.expires_at) < new Date();
+      const isExpired = isPastDate(invitation.expires_at);
 
       // Get inviter email
       let inviterEmail = "";
@@ -276,7 +277,7 @@ class InvitationService {
       }
 
       // Get existing pending invitations for this tour
-      const { data: existingInvitations, error: invitationsError} = await supabase
+      const { data: existingInvitations, error: invitationsError } = await supabase
         .from("invitations")
         .select("email")
         .eq("tour_id", tourId)
@@ -337,14 +338,12 @@ class InvitationService {
           otpExpiresAt.setHours(otpExpiresAt.getHours() + 1);
 
           // Store OTP in database
-          const { error: otpError } = await adminClient
-            .from("invitation_otp")
-            .insert({
-              email: email,
-              otp_token: otpToken,
-              invitation_token: invitation.token,
-              expires_at: otpExpiresAt.toISOString(),
-            });
+          const { error: otpError } = await adminClient.from("invitation_otp").insert({
+            email: email,
+            otp_token: otpToken,
+            invitation_token: invitation.token,
+            expires_at: otpExpiresAt.toISOString(),
+          });
 
           if (otpError) {
             secureError("Error creating OTP token", otpError);
@@ -613,14 +612,12 @@ class InvitationService {
       const adminClient = createSupabaseAdminClient();
 
       // Store OTP in database
-      const { error: otpError } = await adminClient
-        .from("invitation_otp")
-        .insert({
-          email: invitation.email,
-          otp_token: otpToken,
-          invitation_token: updatedInvitation.token,
-          expires_at: otpExpiresAt.toISOString(),
-        });
+      const { error: otpError } = await adminClient.from("invitation_otp").insert({
+        email: invitation.email,
+        otp_token: otpToken,
+        invitation_token: updatedInvitation.token,
+        expires_at: otpExpiresAt.toISOString(),
+      });
 
       if (otpError) {
         secureError("Error creating OTP token for resend", otpError);
