@@ -2,6 +2,8 @@ import { test, expect } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 import * as dotenv from "dotenv";
+import { Pool } from "pg";
+import type { Database } from "../../../src/db/database.types";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -26,65 +28,144 @@ if (!supabaseServiceKey) {
   );
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
 
-// Helper function to create a test invitation OTP
+const defaultDbUrl =
+  process.env.TEST_DATABASE_URL ||
+  (process.env.CI
+    ? "postgres://postgres:postgres@supabase-db:5432/postgres"
+    : "postgres://postgres:postgres@localhost:54322/postgres");
+
+const pgPool = new Pool({
+  connectionString: defaultDbUrl,
+});
+
+type InvitationSetupOptions = { expired?: boolean; used?: boolean };
+
+const ANON_USER_ID = "00000000-0000-0000-0000-000000000000";
+
+interface InviterContext {
+  userId: string;
+  tourId: string;
+  email: string;
+}
+
+let inviterContext: InviterContext | null = null;
+
+async function createInviterContext(): Promise<InviterContext> {
+  const ownerId = ANON_USER_ID;
+  const inviterEmail = "anonymized-user@tour-planner.test";
+  const startDate = new Date();
+  const endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  const { rows } = await pgPool.query<{ id: string }>(
+    `insert into public.tours (
+       owner_id,
+       title,
+       destination,
+       description,
+       start_date,
+       end_date
+     ) values ($1, $2, $3, $4, $5, $6)
+     returning id`,
+    [
+      ownerId,
+      `Test Invitation Tour ${startDate.getTime()}`,
+      "Invitation City",
+      "E2E invitation test tour",
+      startDate.toISOString(),
+      endDate.toISOString(),
+    ]
+  );
+
+  const tourId = rows[0]?.id;
+
+  if (!tourId) {
+    throw new Error("Failed to create test tour: insert returned no ID");
+  }
+
+  return {
+    userId: ownerId,
+    tourId,
+    email: inviterEmail,
+  };
+}
+
+async function cleanupInviterContext(context: InviterContext | null): Promise<void> {
+  if (!context) {
+    return;
+  }
+
+  await pgPool.query("delete from public.invitations where tour_id = $1", [context.tourId]);
+  await pgPool.query("delete from public.tours where id = $1", [context.tourId]);
+}
+
+// Helper function to create a test invitation OTP linked to a real invitation
 async function createTestOTP(
   email: string,
-  options: { expired?: boolean; used?: boolean } = {}
+  options: InvitationSetupOptions = {}
 ): Promise<{ otpToken: string; invitationToken: string }> {
-  const otpToken = crypto.randomBytes(32).toString("hex");
-  const invitationToken = crypto.randomBytes(16).toString("hex");
+  if (!inviterContext) {
+    throw new Error("Inviter context not initialized");
+  }
 
-  // Set expiration: 1 hour from now (or in the past if expired)
+  const invitationToken = crypto.randomBytes(16).toString("hex");
+  const invitationExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  await pgPool.query(
+    `insert into public.invitations (
+       tour_id,
+       inviter_id,
+       email,
+       token,
+       status,
+       expires_at
+     ) values ($1, $2, $3, $4, 'pending', $5)`,
+    [inviterContext.tourId, inviterContext.userId, email, invitationToken, invitationExpiresAt]
+  );
+
+  const otpToken = crypto.randomBytes(32).toString("hex");
+
   const expiresAt = new Date();
   if (options.expired) {
-    expiresAt.setHours(expiresAt.getHours() - 1); // 1 hour ago
+    expiresAt.setHours(expiresAt.getHours() - 1);
   } else {
-    expiresAt.setHours(expiresAt.getHours() + 1); // 1 hour from now
+    expiresAt.setHours(expiresAt.getHours() + 1);
   }
 
-  // Insert OTP into database
-  const { error } = await supabase.from("invitation_otp").insert({
-    email,
-    otp_token: otpToken,
-    invitation_token: invitationToken,
-    expires_at: expiresAt.toISOString(),
-    used: options.used || false,
-  });
-
-  if (error) {
-    throw new Error(`Failed to create test OTP: ${error.message}`);
-  }
+  await pgPool.query(
+    `insert into public.invitation_otp (
+       email,
+       otp_token,
+       invitation_token,
+       expires_at,
+       used
+     ) values ($1, $2, $3, $4, $5)`,
+    [email, otpToken, invitationToken, expiresAt.toISOString(), options.used || false]
+  );
 
   return { otpToken, invitationToken };
 }
 
-// Helper function to create a test invitation
-async function createTestInvitation(
-  tourId: string,
-  inviterId: string,
-  email: string,
-  token: string
-): Promise<void> {
-  const { error } = await supabase.from("invitations").insert({
-    tour_id: tourId,
-    inviter_id: inviterId,
-    email,
-    token,
-    status: "pending",
-    expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
-  });
-
-  if (error) {
-    throw new Error(`Failed to create test invitation: ${error.message}`);
+// Cleanup function to remove test data
+async function cleanupTestOTP(otpToken?: string, invitationToken?: string): Promise<void> {
+  if (otpToken) {
+    await pgPool.query("delete from public.invitation_otp where otp_token = $1", [otpToken]);
+  }
+  if (invitationToken) {
+    await pgPool.query("delete from public.invitations where token = $1", [invitationToken]);
   }
 }
 
-// Cleanup function to remove test data
-async function cleanupTestOTP(otpToken: string): Promise<void> {
-  await supabase.from("invitation_otp").delete().eq("otp_token", otpToken);
-}
+test.beforeAll(async () => {
+  inviterContext = await createInviterContext();
+});
+
+test.afterAll(async () => {
+  await cleanupInviterContext(inviterContext);
+  inviterContext = null;
+  await pgPool.end();
+});
 
 // Helper function to get user by email (Supabase v2 API)
 async function getUserByEmail(email: string) {
@@ -126,7 +207,7 @@ test.describe("OTP Verification - Valid Scenarios", () => {
 
   test.afterEach(async () => {
     // Cleanup
-    await cleanupTestOTP(otpToken);
+    await cleanupTestOTP(otpToken, invitationToken);
     await cleanupTestUser(testEmail);
   });
 
@@ -161,7 +242,10 @@ test.describe("OTP Verification - Valid Scenarios", () => {
     });
     expect(newUser?.user).toBeDefined();
 
-    const existingUserId = newUser!.user.id;
+    const existingUserId = newUser?.user?.id;
+    if (!existingUserId) {
+      throw new Error("Failed to create test user");
+    }
 
     // Navigate to OTP verification URL
     await page.goto(`/en-US/auth/verify-invitation?otp=${otpToken}`);
@@ -203,6 +287,7 @@ test.describe("OTP Verification - Invalid Scenarios", () => {
     await expect(page).toHaveURL(/\/en-US\/auth\/error\?error=invalid_link/);
   });
 
+  // TODO: OTP verification endpoint redirects to login page instead of error page when OTP parameter is missing
   test("should reject missing OTP parameter", async ({ page }) => {
     await page.goto("/en-US/auth/verify-invitation");
 
@@ -210,6 +295,7 @@ test.describe("OTP Verification - Invalid Scenarios", () => {
     await expect(page).toHaveURL(/\/en-US\/auth\/error\?error=invalid_link/);
   });
 
+  // TODO: OTP verification endpoint redirects to login page instead of error page when OTP token doesn't exist
   test("should reject non-existent OTP token", async ({ page }) => {
     const nonExistentOtp = crypto.randomBytes(32).toString("hex");
 
@@ -223,18 +309,21 @@ test.describe("OTP Verification - Invalid Scenarios", () => {
 test.describe("OTP Verification - Expiration", () => {
   const testEmail = `test-expired-${Date.now()}@example.com`;
   let otpToken: string;
+  let invitationToken: string;
 
   test.beforeEach(async () => {
     // Create an expired OTP
     const result = await createTestOTP(testEmail, { expired: true });
     otpToken = result.otpToken;
+    invitationToken = result.invitationToken;
   });
 
   test.afterEach(async () => {
-    await cleanupTestOTP(otpToken);
+    await cleanupTestOTP(otpToken, invitationToken);
     await cleanupTestUser(testEmail);
   });
 
+  // TODO: OTP verification endpoint redirects to login page instead of error page when OTP token is expired
   test("should reject expired OTP token", async ({ page }) => {
     await page.goto(`/en-US/auth/verify-invitation?otp=${otpToken}`);
 
@@ -250,18 +339,21 @@ test.describe("OTP Verification - Expiration", () => {
 test.describe("OTP Verification - One-Time Use", () => {
   const testEmail = `test-used-${Date.now()}@example.com`;
   let otpToken: string;
+  let invitationToken: string;
 
   test.beforeEach(async () => {
     // Create an already-used OTP
     const result = await createTestOTP(testEmail, { used: true });
     otpToken = result.otpToken;
+    invitationToken = result.invitationToken;
   });
 
   test.afterEach(async () => {
-    await cleanupTestOTP(otpToken);
+    await cleanupTestOTP(otpToken, invitationToken);
     await cleanupTestUser(testEmail);
   });
 
+  // TODO: OTP verification endpoint redirects to login page instead of error page when OTP token was already used
   test("should reject already-used OTP token", async ({ page }) => {
     await page.goto(`/en-US/auth/verify-invitation?otp=${otpToken}`);
 
@@ -271,7 +363,8 @@ test.describe("OTP Verification - One-Time Use", () => {
 
   test("should mark OTP as used after first successful verification", async ({ page }) => {
     // Create a fresh, unused OTP
-    const { otpToken: freshOtp } = await createTestOTP(`fresh-${Date.now()}@example.com`);
+    const freshEmail = `fresh-${Date.now()}@example.com`;
+    const { otpToken: freshOtp, invitationToken: freshInvitationToken } = await createTestOTP(freshEmail);
 
     // First verification should succeed
     await page.goto(`/en-US/auth/verify-invitation?otp=${freshOtp}`);
@@ -291,8 +384,8 @@ test.describe("OTP Verification - One-Time Use", () => {
     await expect(page).toHaveURL(/\/en-US\/auth\/error\?error=link_used/);
 
     // Cleanup
-    await cleanupTestOTP(freshOtp);
-    await cleanupTestUser(`fresh-${Date.now()}@example.com`);
+    await cleanupTestOTP(freshOtp, freshInvitationToken);
+    await cleanupTestUser(freshEmail);
   });
 });
 

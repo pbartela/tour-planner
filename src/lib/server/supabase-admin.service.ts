@@ -16,18 +16,38 @@ export async function getUserByEmail(adminClient: AdminClient, email: string): P
     return { user: null, error: null };
   }
 
-  const { data, error } = await adminClient.auth.admin.listUsers({
-    email: normalizedEmail,
-    perPage: 1,
-    page: 1,
+  // Use RPC function to securely query auth.users table
+  const { data, error } = await adminClient.rpc('get_user_by_email', {
+    search_email: normalizedEmail
   });
 
   if (error) {
-    return { user: null, error };
+    return { user: null, error: error as AuthError };
   }
 
-  const user = data?.users?.find((candidate) => candidate.email?.toLowerCase() === normalizedEmail) ?? null;
+  // RPC returns array, get first result (or null)
+  const userRecord = data?.[0] ?? null;
+
+  if (!userRecord) {
+    return { user: null, error: null };
+  }
+
+  // Map RPC result to AuthUser format
+  const user: AuthUser = {
+    id: userRecord.id,
+    email: userRecord.email,
+    email_confirmed_at: userRecord.email_confirmed_at,
+    created_at: userRecord.created_at,
+    updated_at: userRecord.updated_at,
+    user_metadata: userRecord.raw_user_meta_data,
+    app_metadata: userRecord.raw_app_meta_data,
+    aud: 'authenticated',
+    role: 'authenticated'
+  };
 
   return { user, error: null };
 }
+
+
+
 

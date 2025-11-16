@@ -22,6 +22,7 @@ export function getErrorInfo(errorCode: string | null, errorDescription: string 
 
     case "expired_token":
     case "token_expired":
+    case "link_expired":
       return {
         title: i18next.t("authError.expiredLink.title", { lng: locale, ns }),
         message: i18next.t("authError.expiredLink.message", { lng: locale, ns }),
@@ -31,6 +32,7 @@ export function getErrorInfo(errorCode: string | null, errorDescription: string 
 
     case "invalid_token":
     case "invalid_request":
+    case "invalid_link":
       return {
         title: i18next.t("authError.invalidLink.title", { lng: locale, ns }),
         message: i18next.t("authError.invalidLink.message", { lng: locale, ns }),
@@ -90,8 +92,10 @@ export function getSupportedErrorCodes(): string[] {
     "access_denied",
     "expired_token",
     "token_expired",
+    "link_expired",
     "invalid_token",
     "invalid_request",
+    "invalid_link",
     "already_used",
     "link_used",
     "no_tokens",

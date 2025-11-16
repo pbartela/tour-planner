@@ -2,14 +2,8 @@
 /**
  * Invitation OTP Verification Endpoint (Server-Side)
  *
- * This endpoint handles the custom OTP authentication flow for invitations:
- * 1. Validates OTP token from query params
- * 2. Checks if user exists in the system
- * 3. Creates account for new users (with email_confirm=true)
- * 4. Creates authenticated session for the user
- * 5. Redirects to invitation acceptance page (/invite?token=xxx)
- *
- * This is 100% server-side and passwordless.
+ * Locale-aware route version used by `/[locale]/auth/verify-invitation`.
+ * Handles OTP validation, user/session creation, and error redirects.
  */
 import { createSupabaseServerClient } from "@/db/supabase.client";
 import { createSupabaseAdminClient } from "@/db/supabase.admin.client";
@@ -20,11 +14,13 @@ import { getUserByEmail } from "@/lib/server/supabase-admin.service";
 
 export const prerender = false;
 
+const localeParam = Astro.params.locale;
+const locale = (typeof localeParam === "string" && localeParam.length > 0
+  ? localeParam
+  : Astro.cookies.get("locale")?.value) || ENV.PUBLIC_DEFAULT_LOCALE;
+
 // Get OTP from query params
 const otp = Astro.url.searchParams.get("otp");
-
-// Get locale from cookie or use default
-const locale = Astro.cookies.get("locale")?.value || ENV.PUBLIC_DEFAULT_LOCALE;
 
 // Validate OTP parameter
 if (!otp || typeof otp !== "string" || otp.length !== 64) {
@@ -188,3 +184,7 @@ try {
   return Astro.redirect(`/${locale}/auth/error?error=unexpected_error`);
 }
 ---
+
+
+
+

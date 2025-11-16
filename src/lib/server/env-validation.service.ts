@@ -44,6 +44,12 @@ const envSchema = z.object({
   // Server-only environment variables
   SUPABASE_URL: z.string().url("SUPABASE_URL must be a valid URL").min(1, "SUPABASE_URL is required"),
 
+  SUPABASE_AUTH_URL: z
+    .string()
+    .url("SUPABASE_AUTH_URL must be a valid URL")
+    .min(1, "SUPABASE_AUTH_URL cannot be empty")
+    .optional(),
+
   SUPABASE_SERVICE_ROLE_KEY: z
     .string()
     .min(1, "SUPABASE_SERVICE_ROLE_KEY is required")
@@ -78,6 +84,7 @@ try {
     PUBLIC_SUPABASE_ANON_KEY: import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
     PUBLIC_DEFAULT_LOCALE: import.meta.env.PUBLIC_DEFAULT_LOCALE,
     SUPABASE_URL: import.meta.env.SUPABASE_URL,
+    SUPABASE_AUTH_URL: import.meta.env.SUPABASE_AUTH_URL,
     SUPABASE_SERVICE_ROLE_KEY: import.meta.env.SUPABASE_SERVICE_ROLE_KEY,
     RESEND_API_KEY: import.meta.env.RESEND_API_KEY,
     RESEND_FROM_EMAIL: import.meta.env.RESEND_FROM_EMAIL,

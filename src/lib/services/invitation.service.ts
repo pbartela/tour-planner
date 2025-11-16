@@ -203,7 +203,7 @@ class InvitationService {
    * Custom OTP Flow (100% server-side, passwordless):
    * 1. Generate cryptographically secure OTP token (32 bytes)
    * 2. Store OTP in database with link to invitation token
-   * 3. Send custom email with link: /auth/verify-invitation?otp=XXX
+   * 3. Send custom email with link: /{locale}/auth/verify-invitation?otp=XXX
    * 4. When user clicks: server creates account (if new) + logs in + redirects to /invite
    *
    * This is 100% passwordless - no passwords involved anywhere.
@@ -351,9 +351,10 @@ class InvitationService {
             continue;
           }
 
-          // Build invitation URL with OTP
+          // Build invitation URL with OTP (use default locale for new users)
           const baseUrl = siteUrl.replace(/\/$/, ""); // Remove trailing slash
-          const invitationUrl = `${baseUrl}/auth/verify-invitation?otp=${otpToken}`;
+          const locale = ENV.PUBLIC_DEFAULT_LOCALE;
+          const invitationUrl = `${baseUrl}/${locale}/auth/verify-invitation?otp=${otpToken}`;
 
           // Send invitation email via custom email service
           try {
@@ -624,9 +625,10 @@ class InvitationService {
         throw new Error("Failed to create authentication token.");
       }
 
-      // Build invitation URL with OTP
+      // Build invitation URL with OTP (use default locale for new users)
       const baseUrl = siteUrl.replace(/\/$/, ""); // Remove trailing slash
-      const invitationUrl = `${baseUrl}/auth/verify-invitation?otp=${otpToken}`;
+      const locale = ENV.PUBLIC_DEFAULT_LOCALE;
+      const invitationUrl = `${baseUrl}/${locale}/auth/verify-invitation?otp=${otpToken}`;
 
       // Dynamic import of email service
       const { sendInvitationEmail } = await import("@/lib/server/email.service");
