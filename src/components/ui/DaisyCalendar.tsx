@@ -124,9 +124,12 @@ function DaisyCalendar({
         ...classNames,
       }}
       components={{
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         Root: DaisyCalendarRoot as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         Chevron: DaisyCalendarChevron as any,
         DayButton: DaisyCalendarDayButton,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         WeekNumber: DaisyCalendarWeekNumber as any,
         ...components,
       }}

@@ -36,7 +36,7 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify(parsedData.error), { status: 400 });
   }
 
-  const { email, redirectTo, locale } = parsedData.data;
+  const { email, redirectTo, locale: _locale } = parsedData.data;
 
   // Use admin client for server-side auth operations
   const supabaseAdmin = createSupabaseAdminClient();
