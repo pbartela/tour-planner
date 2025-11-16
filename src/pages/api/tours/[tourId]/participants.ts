@@ -62,7 +62,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
       avatar_url: p.profiles?.avatar_url || null,
     }));
 
-    return new Response(JSON.stringify({ data: participantDtos }), { status: 200 });
+    return new Response(JSON.stringify(participantDtos), { status: 200 });
   } catch (error) {
     logger.error("Unexpected error in GET /api/tours/[tourId]/participants", error instanceof Error ? error : undefined);
     return new Response(
