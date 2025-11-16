@@ -12,6 +12,34 @@ const updateProfile = async (data: UpdateProfileCommand): Promise<ProfileDto> =>
 };
 
 /**
+ * Uploads a new avatar for the current user
+ */
+const uploadAvatar = async (file: File): Promise<ProfileDto> => {
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  const response = await fetch("/api/profiles/avatar", {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+  });
+
+  return handleApiResponse<ProfileDto>(response);
+};
+
+/**
+ * Deletes the current user's avatar
+ */
+const deleteAvatar = async (): Promise<ProfileDto> => {
+  const response = await fetch("/api/profiles/avatar", {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  return handleApiResponse<ProfileDto>(response);
+};
+
+/**
  * React Query mutation hook for updating user profile
  *
  * @example
@@ -30,6 +58,60 @@ export const useUpdateProfileMutation = () => {
       onSuccess: (data) => {
         // Update the profile cache with the new data
         queryClient.setQueryData(["profile", "me"], data);
+      },
+    },
+    queryClient
+  );
+};
+
+/**
+ * React Query mutation hook for uploading user avatar
+ *
+ * @example
+ * ```tsx
+ * const { mutate, isPending } = useUploadAvatarMutation();
+ *
+ * const handleFileChange = (file: File) => {
+ *   mutate(file);
+ * };
+ * ```
+ */
+export const useUploadAvatarMutation = () => {
+  return useMutation(
+    {
+      mutationFn: uploadAvatar,
+      onSuccess: (data) => {
+        // Update the profile cache with the new data
+        queryClient.setQueryData(["profile", "me"], data);
+        // Invalidate to refetch user data
+        queryClient.invalidateQueries({ queryKey: ["user"] });
+      },
+    },
+    queryClient
+  );
+};
+
+/**
+ * React Query mutation hook for deleting user avatar
+ *
+ * @example
+ * ```tsx
+ * const { mutate, isPending } = useDeleteAvatarMutation();
+ *
+ * const handleDeleteAvatar = () => {
+ *   mutate();
+ * };
+ * ```
+ */
+export const useDeleteAvatarMutation = () => {
+  return useMutation(
+    {
+      mutationFn: deleteAvatar,
+      onSuccess: (data) => {
+        // Update the profile cache with the new data
+        queryClient.setQueryData(["profile", "me"], data);
+        // Invalidate to refetch user data
+        queryClient.invalidateQueries({ queryKey: ["user"] });
       },
     },
     queryClient

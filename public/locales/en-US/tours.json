@@ -159,6 +159,15 @@
     "newActivity": "New Activity",
     "retry": "Retry"
   },
+  "participants": {
+    "title": "Participants",
+    "joinedOn": "Joined on",
+    "owner": "Owner",
+    "loadError": "Error loading participants",
+    "unknownError": "Unknown error",
+    "unknownUser": "Unknown User",
+    "noParticipants": "No participants yet"
+  },
   "voting": {
     "like": "Like",
     "liked": "Liked",

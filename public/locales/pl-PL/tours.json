@@ -165,6 +165,15 @@
     "newActivity": "Nowa aktywność",
     "retry": "Spróbuj ponownie"
   },
+  "participants": {
+    "title": "Uczestnicy",
+    "joinedOn": "Dołączył",
+    "owner": "Właściciel",
+    "loadError": "Błąd ładowania uczestników",
+    "unknownError": "Nieznany błąd",
+    "unknownUser": "Nieznany użytkownik",
+    "noParticipants": "Brak uczestników"
+  },
   "voting": {
     "like": "Lubię to",
     "liked": "Polubiono",

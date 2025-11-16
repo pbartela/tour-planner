@@ -48,7 +48,7 @@ export type ProfileDto = Omit<Tables<"profiles">, "updated_at">;
  * Corresponds to the request body of `PATCH /api/profiles/me`.
  */
 export type UpdateProfileCommand = Partial<
-  Pick<Tables<"profiles">, "display_name" | "language" | "theme" | "onboarding_completed">
+  Pick<Tables<"profiles">, "display_name" | "avatar_url" | "language" | "theme" | "onboarding_completed">
 >;
 
 // ============================================================================
@@ -148,7 +148,7 @@ export type UpdateTourCommand = Partial<
  * Corresponds to an item in the response of `GET /api/tours/{tourId}/participants`.
  */
 export type ParticipantDto = Pick<Tables<"participants">, "user_id" | "joined_at"> &
-  Pick<Tables<"profiles">, "display_name">;
+  Pick<Tables<"profiles">, "display_name" | "avatar_url">;
 
 // ============================================================================
 // Invitations

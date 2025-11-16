@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { User } from "@/types";
 import { ProfileEditForm } from "./ProfileEditForm";
 import { Button } from "@/components/ui/button";
+import { Avatar } from "@/components/ui/Avatar";
 
 interface ProfileViewProps {
   user: User;
@@ -27,6 +28,7 @@ export const ProfileView = ({ user }: ProfileViewProps) => {
             <>
               <ProfileEditForm
                 profile={user.profile}
+                email={user.email}
                 onSuccess={() => {
                   setIsEditing(false);
                 }}
@@ -37,6 +39,19 @@ export const ProfileView = ({ user }: ProfileViewProps) => {
             </>
           ) : (
             <div className="space-y-4">
+              {/* Avatar */}
+              <div className="flex items-center gap-4">
+                <Avatar
+                  src={user.profile.avatar_url}
+                  alt={user.profile.display_name || user.email}
+                  size="xl"
+                />
+                <div>
+                  <p className="text-sm text-base-content/60">{t("profile.avatar")}</p>
+                  <p className="text-sm">{user.profile.avatar_url ? t("profile.avatarSet") : t("profile.noAvatar")}</p>
+                </div>
+              </div>
+
               <div>
                 <p className="text-sm text-base-content/60">{t("profile.email")}</p>
                 <p className="text-lg">{user.email}</p>

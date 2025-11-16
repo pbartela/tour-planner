@@ -1,30 +1,81 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "react-hot-toast";
 import type { ProfileDto, UpdateProfileCommand } from "@/types";
-import { useUpdateProfileMutation } from "@/lib/hooks/useProfileMutations";
+import { useUpdateProfileMutation, useUploadAvatarMutation, useDeleteAvatarMutation } from "@/lib/hooks/useProfileMutations";
 import { Button } from "@/components/ui/button";
 import { InputWithLabel } from "@/components/ui/InputWithLabel";
+import { Avatar } from "@/components/ui/Avatar";
 
 interface ProfileEditFormProps {
   profile: ProfileDto;
+  email: string;
   onSuccess?: () => void;
 }
 
-export const ProfileEditForm = ({ profile, onSuccess }: ProfileEditFormProps) => {
+export const ProfileEditForm = ({ profile, email, onSuccess }: ProfileEditFormProps) => {
   const { t } = useTranslation("common");
   const [formData, setFormData] = useState<UpdateProfileCommand>({
     display_name: profile.display_name || "",
     language: profile.language,
     theme: profile.theme,
   });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateProfileMutation = useUpdateProfileMutation();
+  const uploadAvatarMutation = useUploadAvatarMutation();
+  const deleteAvatarMutation = useDeleteAvatarMutation();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     updateProfileMutation.mutate(formData, {
       onSuccess: () => {
         onSuccess?.();
+      },
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error(t("profile.invalidFileType"));
+      return;
+    }
+
+    // Validate file size (5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error(t("profile.fileTooLarge"));
+      return;
+    }
+
+    uploadAvatarMutation.mutate(file, {
+      onSuccess: () => {
+        toast.success(t("profile.avatarUploadSuccess"));
+        // Reset file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      },
+      onError: (error) => {
+        toast.error(error.message || t("profile.avatarUploadError"));
+      },
+    });
+  };
+
+  const handleDeleteAvatar = () => {
+    if (!window.confirm(t("profile.deleteAvatarConfirm"))) return;
+
+    deleteAvatarMutation.mutate(undefined, {
+      onSuccess: () => {
+        toast.success(t("profile.avatarDeleteSuccess"));
+      },
+      onError: (error) => {
+        toast.error(error.message || t("profile.avatarDeleteError"));
       },
     });
   };
@@ -36,6 +87,44 @@ export const ProfileEditForm = ({ profile, onSuccess }: ProfileEditFormProps) =>
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Avatar Upload Section */}
+      <div>
+        <label className="label">
+          <span className="label-text">{t("profile.avatar")}</span>
+        </label>
+        <div className="flex items-center gap-4">
+          <Avatar
+            src={profile.avatar_url}
+            alt={profile.display_name || email}
+            size="lg"
+          />
+          <div className="flex flex-col gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+              onChange={handleFileChange}
+              className="file-input file-input-bordered file-input-sm w-full max-w-xs"
+              disabled={uploadAvatarMutation.isPending}
+            />
+            {profile.avatar_url && (
+              <Button
+                type="button"
+                variant="error-outline"
+                size="sm"
+                onClick={handleDeleteAvatar}
+                disabled={deleteAvatarMutation.isPending}
+              >
+                {deleteAvatarMutation.isPending ? t("profile.deleting") : t("profile.deleteAvatar")}
+              </Button>
+            )}
+            <p className="text-xs text-base-content/60">{t("profile.avatarHint")}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="divider"></div>
+
       <InputWithLabel
         label={t("profile.displayName")}
         type="text"

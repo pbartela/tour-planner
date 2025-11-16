@@ -6,6 +6,7 @@ import { VotingSection } from "./VotingSection";
 import { TourHeader } from "./TourHeader";
 import { TourOwnerControls } from "./TourOwnerControls";
 import { EditTourModal } from "./EditTourModal";
+import { ParticipantsList } from "./ParticipantsList";
 import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 import { SkeletonLoader } from "@/components/shared/SkeletonLoader";
 
@@ -81,6 +82,13 @@ export const TourDetailsView = ({ tourId, currentUserId }: TourDetailsViewProps)
         areVotesHidden={tour.are_votes_hidden}
         votingLocked={tour.voting_locked}
       />
+
+      {/* Participants Section */}
+      <div className="card bg-base-100 shadow-xl">
+        <div className="card-body">
+          <ParticipantsList tourId={tourId} ownerId={tour.owner_id} />
+        </div>
+      </div>
 
       {/* Comments Section */}
       <div className="card bg-base-100 shadow-xl">
