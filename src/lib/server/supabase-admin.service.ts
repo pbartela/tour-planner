@@ -4,10 +4,10 @@ import type { AuthUser, AuthError } from "@supabase/supabase-js";
 
 type AdminClient = SupabaseClient<Database>;
 
-type GetUserByEmailResult = {
+interface GetUserByEmailResult {
   user: AuthUser | null;
   error: AuthError | null;
-};
+}
 
 export async function getUserByEmail(adminClient: AdminClient, email: string): Promise<GetUserByEmailResult> {
   const normalizedEmail = email?.trim().toLowerCase();
@@ -17,8 +17,8 @@ export async function getUserByEmail(adminClient: AdminClient, email: string): P
   }
 
   // Use RPC function to securely query auth.users table
-  const { data, error } = await adminClient.rpc('get_user_by_email', {
-    search_email: normalizedEmail
+  const { data, error } = await adminClient.rpc("get_user_by_email", {
+    search_email: normalizedEmail,
   });
 
   if (error) {
@@ -41,13 +41,9 @@ export async function getUserByEmail(adminClient: AdminClient, email: string): P
     updated_at: userRecord.updated_at,
     user_metadata: userRecord.raw_user_meta_data,
     app_metadata: userRecord.raw_app_meta_data,
-    aud: 'authenticated',
-    role: 'authenticated'
+    aud: "authenticated",
+    role: "authenticated",
   };
 
   return { user, error: null };
 }
-
-
-
-
