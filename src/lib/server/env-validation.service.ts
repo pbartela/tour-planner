@@ -44,10 +44,30 @@ const envSchema = z.object({
   // Server-only environment variables
   SUPABASE_URL: z.string().url("SUPABASE_URL must be a valid URL").min(1, "SUPABASE_URL is required"),
 
+  SUPABASE_AUTH_URL: z
+    .string()
+    .url("SUPABASE_AUTH_URL must be a valid URL")
+    .min(1, "SUPABASE_AUTH_URL cannot be empty")
+    .optional(),
+
   SUPABASE_SERVICE_ROLE_KEY: z
     .string()
     .min(1, "SUPABASE_SERVICE_ROLE_KEY is required")
     .regex(/^eyJ/, "SUPABASE_SERVICE_ROLE_KEY must be a valid JWT token"),
+
+  // Resend email service (required for custom email templates)
+  // Optional in test environment
+  RESEND_API_KEY: z
+    .string()
+    .min(1, "RESEND_API_KEY is required for email functionality")
+    .regex(/^re_/, "RESEND_API_KEY must start with 're_'")
+    .optional(),
+
+  RESEND_FROM_EMAIL: z
+    .string()
+    .min(1, "RESEND_FROM_EMAIL is required")
+    .regex(/^.+<.+@.+\..+>$|^.+@.+\..+$/, "RESEND_FROM_EMAIL must be a valid email or 'Name <email@domain.com>' format")
+    .optional(),
 
   // Optional but validated if present
   OPENROUTER_API_KEY: z.string().optional(),
@@ -64,7 +84,10 @@ try {
     PUBLIC_SUPABASE_ANON_KEY: import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
     PUBLIC_DEFAULT_LOCALE: import.meta.env.PUBLIC_DEFAULT_LOCALE,
     SUPABASE_URL: import.meta.env.SUPABASE_URL,
+    SUPABASE_AUTH_URL: import.meta.env.SUPABASE_AUTH_URL,
     SUPABASE_SERVICE_ROLE_KEY: import.meta.env.SUPABASE_SERVICE_ROLE_KEY,
+    RESEND_API_KEY: import.meta.env.RESEND_API_KEY,
+    RESEND_FROM_EMAIL: import.meta.env.RESEND_FROM_EMAIL,
     OPENROUTER_API_KEY: import.meta.env.OPENROUTER_API_KEY,
   };
 

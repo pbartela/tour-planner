@@ -17,7 +17,18 @@ export const GET: APIRoute = async ({ locals }) => {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: "UNAUTHORIZED",
+          message: "Authentication required",
+        },
+      }),
+      {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 
   try {
@@ -25,17 +36,50 @@ export const GET: APIRoute = async ({ locals }) => {
 
     if (error) {
       // The service already logged the detailed error
-      return new Response(JSON.stringify({ message: "Internal Server Error" }), { status: 500 });
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to fetch profile",
+          },
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     if (!profile) {
-      return new Response(JSON.stringify({ message: "Profile not found" }), { status: 404 });
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "NOT_FOUND",
+            message: "Profile not found",
+          },
+        }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     return new Response(JSON.stringify(profile), { status: 200 });
   } catch (error) {
     secureError("Unexpected error in GET /api/profiles/me", error);
-    return new Response(JSON.stringify({ message: "Internal Server Error" }), { status: 500 });
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "An unexpected error occurred",
+        },
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 };
 
@@ -54,7 +98,18 @@ export const PATCH: APIRoute = async ({ request, locals, cookies }) => {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: "UNAUTHORIZED",
+          message: "Authentication required",
+        },
+      }),
+      {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 
   try {
@@ -69,12 +124,34 @@ export const PATCH: APIRoute = async ({ request, locals, cookies }) => {
 
     if (error) {
       const { message, status } = handleDatabaseError(error);
-      return new Response(JSON.stringify({ message }), { status });
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "DATABASE_ERROR",
+            message,
+          },
+        }),
+        {
+          status,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     return new Response(JSON.stringify(updatedProfile), { status: 200 });
   } catch (error) {
     secureError("Unexpected error in PATCH /api/profiles/me", error);
-    return new Response(JSON.stringify({ message: "Internal Server Error" }), { status: 500 });
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "An unexpected error occurred",
+        },
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 };

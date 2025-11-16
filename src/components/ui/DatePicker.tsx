@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DateFormatterService, getDateFormatHint } from "@/lib/services/date-formatter.service";
 
 const datePickerVariants = cva("input w-full", {
   variants: {
@@ -54,46 +55,8 @@ export interface DatePickerProps
   "aria-describedby"?: string;
 }
 
-/**
- * Get the date format pattern for a given locale
- * Returns the format string that shows the expected date pattern
- *
- * @param locale - The locale code (e.g., 'en-US', 'pl-PL', 'fr-FR')
- * @returns Format string like 'MM/DD/YYYY' or 'DD/MM/YYYY'
- */
-export const getDateFormatHint = (locale: string): string => {
-  // US locale uses MM/DD/YYYY format
-  if (locale.startsWith("en-US") || locale === "en") {
-    return "MM/DD/YYYY";
-  }
-  // All other locales use DD/MM/YYYY format
-  return "DD/MM/YYYY";
-};
-
-/**
- * Format date with consistent slash separators
- * - en-US: MM/DD/YYYY (12/25/2025)
- * - All others: DD/MM/YYYY (25/12/2025)
- *
- * @param date - The date to format
- * @param locale - The locale to use for formatting
- * @returns Formatted date string
- */
-const formatDateByLocale = (date: Date | undefined, locale: string): string => {
-  if (!date) return "";
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  // US locale uses MM/DD/YYYY format
-  if (locale.startsWith("en-US") || locale === "en") {
-    return `${month}/${day}/${year}`;
-  }
-
-  // All other locales use DD/MM/YYYY format
-  return `${day}/${month}/${year}`;
-};
+// Re-export getDateFormatHint for backward compatibility
+export { getDateFormatHint };
 
 const DatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
   (
@@ -120,14 +83,11 @@ const DatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
     const [open, setOpen] = React.useState(false);
     // Use provided locale, fallback to browser locale, or default to en-US
     const locale = propLocale || (typeof navigator !== "undefined" ? navigator.language : undefined) || "en-US";
+    const dateFormatter = React.useMemo(() => new DateFormatterService(locale), [locale]);
 
     const handleDateSelect = (selectedDate: Date | undefined) => {
       onChange?.(selectedDate);
       setOpen(false);
-    };
-
-    const formatDate = (date: Date | undefined) => {
-      return formatDateByLocale(date, locale);
     };
 
     // Determine disabled dates
@@ -158,7 +118,7 @@ const DatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
               role="combobox"
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {value ? formatDate(value) : <span>{placeholder}</span>}
+              {value ? dateFormatter.format(value) : <span>{placeholder}</span>}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0 bg-base-100" align="start">

@@ -118,7 +118,19 @@
     "error": "Something went wrong. Please try again.",
     "finish": "Finish",
     "next": "Next",
-    "skip": "Skip"
+    "skip": "Skip",
+    "step1": {
+      "title": "Welcome to Tour Planner",
+      "description": "Plan your trips with friends and family easily"
+    },
+    "step2": {
+      "title": "Create and Vote",
+      "description": "Create trip proposals and vote on your favorites"
+    },
+    "step3": {
+      "title": "Collaborate",
+      "description": "Invite others and discuss your plans together"
+    }
   },
   "tourDetails": {
     "delete": "Delete",

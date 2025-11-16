@@ -1,0 +1,190 @@
+---
+/**
+ * Invitation OTP Verification Endpoint (Server-Side)
+ *
+ * Locale-aware route version used by `/[locale]/auth/verify-invitation`.
+ * Handles OTP validation, user/session creation, and error redirects.
+ */
+import { createSupabaseServerClient } from "@/db/supabase.client";
+import { createSupabaseAdminClient } from "@/db/supabase.admin.client";
+import { secureError } from "@/lib/server/logger.service";
+import { ENV } from "@/lib/server/env-validation.service";
+import { checkRateLimit, getClientIdentifier, RATE_LIMIT_CONFIGS } from "@/lib/server/rate-limit.service";
+import { getUserByEmail } from "@/lib/server/supabase-admin.service";
+
+export const prerender = false;
+
+const localeParam = Astro.params.locale;
+const locale = (typeof localeParam === "string" && localeParam.length > 0
+  ? localeParam
+  : Astro.cookies.get("locale")?.value) || ENV.PUBLIC_DEFAULT_LOCALE;
+
+// Get OTP from query params
+const otp = Astro.url.searchParams.get("otp");
+
+// Validate OTP parameter
+if (!otp || typeof otp !== "string" || otp.length !== 64) {
+  secureError("Invalid OTP format", { hasOtp: !!otp, otpLength: otp?.length });
+  return Astro.redirect(`/${locale}/auth/error?error=invalid_link`);
+}
+
+// Rate limiting: Prevent brute-force attacks on OTP verification
+const clientId = getClientIdentifier(Astro.request);
+const rateLimitResult = checkRateLimit(clientId, RATE_LIMIT_CONFIGS.OTP_VERIFICATION);
+
+if (!rateLimitResult.allowed) {
+  secureError("OTP verification rate limit exceeded", {
+    clientId,
+    resetAt: new Date(rateLimitResult.resetAt).toISOString(),
+  });
+  return Astro.redirect(`/${locale}/auth/error?error=too_many_requests`);
+}
+
+// Create admin client for database operations
+const adminClient = createSupabaseAdminClient();
+
+try {
+  // Step 1: Fetch and validate OTP from database
+  const { data: otpRecord, error: otpFetchError } = await adminClient
+    .from("invitation_otp")
+    .select("*")
+    .eq("otp_token", otp)
+    .maybeSingle();
+
+  if (otpFetchError) {
+    secureError("Error fetching OTP record", otpFetchError);
+    return Astro.redirect(`/${locale}/auth/error?error=verification_failed`);
+  }
+
+  if (!otpRecord) {
+    secureError("OTP not found", { otp });
+    return Astro.redirect(`/${locale}/auth/error?error=invalid_link`);
+  }
+
+  // Step 2: Check if OTP has expired
+  if (new Date(otpRecord.expires_at) < new Date()) {
+    secureError("OTP expired", { otp, expiresAt: otpRecord.expires_at });
+    return Astro.redirect(`/${locale}/auth/error?error=link_expired`);
+  }
+
+  // Step 3: Check if OTP has already been used
+  if (otpRecord.used) {
+    secureError("OTP already used", { otp });
+    return Astro.redirect(`/${locale}/auth/error?error=link_used`);
+  }
+
+  const email = otpRecord.email;
+  const invitationToken = otpRecord.invitation_token;
+
+  // Step 4: Check if user exists (using direct email lookup - much more efficient)
+  let userId: string | null = null;
+  let userExists = false;
+
+  try {
+    const { user, error: lookupError } = await getUserByEmail(adminClient, email);
+
+    if (lookupError) {
+      secureError("Error looking up user by email", lookupError);
+      return Astro.redirect(`/${locale}/auth/error?error=unexpected_error`);
+    }
+
+    if (user) {
+      userExists = true;
+      userId = user.id;
+    }
+  } catch (err) {
+    secureError("Error checking user existence", err);
+    return Astro.redirect(`/${locale}/auth/error?error=unexpected_error`);
+  }
+
+  // Step 5: Create account for new users
+  if (!userExists) {
+    try {
+      const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
+        email,
+        email_confirm: true, // Auto-confirm email
+        user_metadata: {
+          invited_at: new Date().toISOString(),
+          invitation_token: invitationToken,
+        },
+      });
+
+      if (createError) {
+        // Check if error is because user already exists
+        const errMsg = createError.message || "";
+        if (
+          !errMsg.includes("already been registered") &&
+          !errMsg.includes("already registered") &&
+          createError.code !== "email_exists"
+        ) {
+          throw createError;
+        }
+        // User exists, try to find them again
+        const { user: existingUser } = await getUserByEmail(adminClient, email);
+        userId = existingUser?.id || null;
+      } else {
+        userId = newUser?.user?.id || null;
+      }
+    } catch (createErr) {
+      secureError("Error creating user account", createErr);
+      return Astro.redirect(`/${locale}/auth/error?error=account_creation_failed`);
+    }
+  }
+
+  if (!userId) {
+    secureError("Failed to get user ID", { email });
+    return Astro.redirect(`/${locale}/auth/error?error=unexpected_error`);
+  }
+
+  // Step 6: Create session for the user using signInWithPassword
+  // We'll use the admin API to set a temporary password, sign in, then immediately change it
+  // This is a workaround since Supabase doesn't have a direct "create session" API
+
+  // Alternative approach: Use the magic link token to create a session
+  // Generate a magic link and extract the token to verify
+  const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
+    type: "magiclink",
+    email,
+  });
+
+  if (linkError || !linkData) {
+    secureError("Error generating magic link", linkError);
+    return Astro.redirect(`/${locale}/auth/error?error=session_creation_failed`);
+  }
+
+  // The hashed_token from generateLink can be used with verifyOtp
+  const hashedToken = linkData.properties.hashed_token;
+
+  if (!hashedToken) {
+    secureError("No hashed token in link data", { linkData });
+    return Astro.redirect(`/${locale}/auth/error?error=session_creation_failed`);
+  }
+
+  // Create Supabase client and verify with the hashed token
+  const supabase = createSupabaseServerClient(Astro.request, Astro.cookies);
+
+  const { data, error: verifyError } = await supabase.auth.verifyOtp({
+    token_hash: hashedToken,
+    type: "magiclink",
+  });
+
+  if (verifyError || !data.session) {
+    secureError("Error creating session with hashed token", verifyError);
+    return Astro.redirect(`/${locale}/auth/error?error=session_creation_failed`);
+  }
+
+  // Step 7: Mark OTP as used
+  await adminClient.from("invitation_otp").update({ used: true }).eq("otp_token", otp);
+
+  // Step 8: Redirect to invitation acceptance page
+  const inviteUrl = `/${locale}/invite?token=${encodeURIComponent(invitationToken)}`;
+  return Astro.redirect(inviteUrl);
+} catch (err) {
+  secureError("Unexpected error in verify-invitation", err);
+  return Astro.redirect(`/${locale}/auth/error?error=unexpected_error`);
+}
+---
+
+
+
+

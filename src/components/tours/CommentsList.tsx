@@ -101,7 +101,7 @@ export const CommentsList = ({ tourId, currentUserId }: CommentsListProps) => {
         open={deleteDialog.open}
         onOpenChange={(open) => !open && setDeleteDialog({ open: false, commentId: "" })}
       >
-        <DialogContent>
+        <DialogContent className="bg-base-100">
           <DialogHeader>
             <DialogTitle>{t("comments.deleteTitle")}</DialogTitle>
             <DialogDescription>{t("comments.deleteConfirm")}</DialogDescription>

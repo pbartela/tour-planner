@@ -30,6 +30,8 @@ export const createSupabaseServerClient = (request: Request, cookies: AstroCooki
     maxAge: weeksInSeconds(1),
   };
 
+  const authUrl = ENV.SUPABASE_AUTH_URL ?? ENV.PUBLIC_SUPABASE_URL;
+
   return createServerClient<Database>(ENV.PUBLIC_SUPABASE_URL, ENV.PUBLIC_SUPABASE_ANON_KEY, {
     cookies: {
       getAll() {
@@ -43,6 +45,9 @@ export const createSupabaseServerClient = (request: Request, cookies: AstroCooki
           cookies.set(name, value, { ...defaultCookieOptions, ...options });
         });
       },
+    },
+    auth: {
+      url: authUrl,
     },
   });
 };
