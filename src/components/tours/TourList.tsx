@@ -38,7 +38,7 @@ const transformToViewModel = (dto: TourSummaryDto, locale: string): TourCardView
   dateRange: formatDateRange(dto.start_date, dto.end_date, locale),
   hasNewActivity: dto.has_new_activity,
   imageUrl: dto.metadata?.image,
-  participantAvatars: undefined, // Can be fetched separately if needed
+  participantAvatars: dto.participant_avatars,
 });
 
 export const TourList = ({ onAddTripClick }: TourListProps = {}) => {

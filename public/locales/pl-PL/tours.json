@@ -172,7 +172,18 @@
     "loadError": "Błąd ładowania uczestników",
     "unknownError": "Nieznany błąd",
     "unknownUser": "Nieznany użytkownik",
-    "noParticipants": "Brak uczestników"
+    "noParticipants": "Brak uczestników",
+    "leaveButton": "Opuść wycieczkę",
+    "removeButton": "Usuń",
+    "leaveTitle": "Opuść wycieczkę",
+    "removeTitle": "Usuń uczestnika",
+    "leaveConfirm": "Czy na pewno chcesz opuścić tę wycieczkę? Możesz zostać zaproszony ponownie później.",
+    "removeConfirm": "Czy na pewno chcesz usunąć {{name}} z tej wycieczki?",
+    "leaveSuccess": "Pomyślnie opuściłeś wycieczkę",
+    "removeSuccess": "{{name}} został usunięty z wycieczki",
+    "removeError": "Nie udało się usunąć uczestnika",
+    "leaving": "Opuszczanie...",
+    "removing": "Usuwanie..."
   },
   "voting": {
     "like": "Lubię to",

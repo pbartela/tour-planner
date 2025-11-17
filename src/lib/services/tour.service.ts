@@ -129,6 +129,29 @@ class TourService {
       // Get tour IDs for activity tracking
       const tourIds = (tours || []).map((p) => p.tour.id);
 
+      // Batch fetch participant avatars for all tours
+      const { data: participantsData } = await supabase
+        .from("participants")
+        .select("tour_id, profiles!participants_user_id_fkey(avatar_url)")
+        .in("tour_id", tourIds)
+        .order("joined_at", { ascending: true });
+
+      // Create a map of tour_id -> array of avatar URLs
+      const participantAvatarsMap = new Map<string, string[]>();
+      (participantsData || []).forEach((participant) => {
+        const profile = Array.isArray(participant.profiles)
+          ? participant.profiles[0]
+          : participant.profiles;
+        const avatarUrl = profile?.avatar_url;
+
+        if (avatarUrl) {
+          if (!participantAvatarsMap.has(participant.tour_id)) {
+            participantAvatarsMap.set(participant.tour_id, []);
+          }
+          participantAvatarsMap.get(participant.tour_id)!.push(avatarUrl);
+        }
+      });
+
       // Batch fetch tour activity data for all tours
       const { data: activityData } = await supabase
         .from("tour_activity")
@@ -210,6 +233,7 @@ class TourService {
             ...p.tour,
             has_new_activity: hasNewActivity,
             metadata: metadata || undefined,
+            participant_avatars: participantAvatarsMap.get(p.tour.id) || [],
           };
         })
       );

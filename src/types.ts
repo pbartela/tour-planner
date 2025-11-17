@@ -77,6 +77,7 @@ export type TourSummaryDto = Pick<
 > & {
   has_new_activity: boolean;
   metadata?: TourMetadata;
+  participant_avatars?: string[];
 };
 
 /**
