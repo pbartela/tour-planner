@@ -28,9 +28,23 @@ export const ProfileEditForm = ({ profile, email, onSuccess }: ProfileEditFormPr
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check if language changed
+    const languageChanged = formData.language !== profile.language;
+
     updateProfileMutation.mutate(formData, {
       onSuccess: () => {
-        onSuccess?.();
+        // If language changed, redirect to the new locale
+        if (languageChanged && formData.language) {
+          const currentPath = window.location.pathname;
+          const pathParts = currentPath.split('/');
+          // Replace the locale (first non-empty segment) with the new language
+          pathParts[1] = formData.language;
+          const newPath = pathParts.join('/');
+          window.location.href = newPath;
+        } else {
+          onSuccess?.();
+        }
       },
     });
   };
