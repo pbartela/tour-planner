@@ -18,7 +18,7 @@ class InvitationService {
         .select(
           `
           id,
-          tour_id, s 
+          tour_id,
           inviter_id,
           email,
           status,
