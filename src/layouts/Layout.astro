@@ -62,9 +62,9 @@ const locale = Astro.params.locale || "en-US";
             {
               user ? (
                 <div class="flex items-center gap-4">
-                  <span class="text-base-content">
+                  <a href={`/${locale}/profile`} class="text-base-content hover:text-primary">
                     {i18next.t("layout.welcome", { name: user.profile.display_name || user.email })}
-                  </span>
+                  </a>
                   <form action="/api/auth/signout" method="post" data-astro-reload>
                     <input type="hidden" name="csrf_token" value={csrfToken} />
                     <button type="submit" class="btn btn-error btn-sm">
