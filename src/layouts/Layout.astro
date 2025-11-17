@@ -58,7 +58,7 @@ const locale = Astro.params.locale || "en-US";
           <a href={`/${locale}`} class="text-xl font-bold text-base-content">{i18next.t("layout.siteName")}</a>
           <div class="flex items-center gap-4">
             <ThemeController client:load />
-            {user && <PendingInvitationsIndicator client:load />}
+            {user && <PendingInvitationsIndicator client:only="react" />}
             {
               user ? (
                 <div class="flex items-center gap-4">

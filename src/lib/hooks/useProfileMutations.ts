@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { patch, handleApiResponse } from "@/lib/client/api-client";
+import { patch, handleApiResponse, apiRequest } from "@/lib/client/api-client";
 import type { ProfileDto, UpdateProfileCommand } from "@/types";
 import { queryClient } from "@/lib/queryClient";
 
@@ -18,10 +18,9 @@ const uploadAvatar = async (file: File): Promise<ProfileDto> => {
   const formData = new FormData();
   formData.append("avatar", file);
 
-  const response = await fetch("/api/profiles/avatar", {
+  const response = await apiRequest("/api/profiles/avatar", {
     method: "POST",
     body: formData,
-    credentials: "include",
   });
 
   return handleApiResponse<ProfileDto>(response);
@@ -31,9 +30,8 @@ const uploadAvatar = async (file: File): Promise<ProfileDto> => {
  * Deletes the current user's avatar
  */
 const deleteAvatar = async (): Promise<ProfileDto> => {
-  const response = await fetch("/api/profiles/avatar", {
+  const response = await apiRequest("/api/profiles/avatar", {
     method: "DELETE",
-    credentials: "include",
   });
 
   return handleApiResponse<ProfileDto>(response);

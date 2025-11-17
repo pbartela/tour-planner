@@ -16,5 +16,5 @@ if (!tourId) {
 ---
 
 <Layout title="Tour Details">
-  <TourDetailsView client:load tourId={tourId} currentUserId={user.id} />
+  <TourDetailsView client:only="react" tourId={tourId} currentUserId={user.id} />
 </Layout>

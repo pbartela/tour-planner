@@ -74,8 +74,8 @@ export async function apiRequest(url: string, options: RequestInit = {}): Promis
   // Clone headers to avoid mutating the original options
   const headers = new Headers(options.headers);
 
-  // Set default content type if not provided
-  if (!headers.has("Content-Type") && options.body) {
+  // Set default content type if not provided (but not for FormData - browser will set it)
+  if (!headers.has("Content-Type") && options.body && !(options.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
 
