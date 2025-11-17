@@ -17,17 +17,15 @@ export const GET: APIRoute = async ({ params, locals }) => {
     // Validate session
     const user = await validateSession(supabase);
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: { code: "UNAUTHORIZED", message: "Authentication required" } }),
-        { status: 401 }
-      );
+      return new Response(JSON.stringify({ error: { code: "UNAUTHORIZED", message: "Authentication required" } }), {
+        status: 401,
+      });
     }
 
     if (!tourId) {
-      return new Response(
-        JSON.stringify({ error: { code: "VALIDATION_ERROR", message: "Tour ID is required" } }),
-        { status: 400 }
-      );
+      return new Response(JSON.stringify({ error: { code: "VALIDATION_ERROR", message: "Tour ID is required" } }), {
+        status: 400,
+      });
     }
 
     // Fetch participants with their profile information
@@ -48,10 +46,9 @@ export const GET: APIRoute = async ({ params, locals }) => {
 
     if (error) {
       logger.error("Error fetching participants from database", error);
-      return new Response(
-        JSON.stringify({ error: { code: "FETCH_ERROR", message: "Failed to fetch participants" } }),
-        { status: 500 }
-      );
+      return new Response(JSON.stringify({ error: { code: "FETCH_ERROR", message: "Failed to fetch participants" } }), {
+        status: 500,
+      });
     }
 
     // Transform the data to match ParticipantDto shape
@@ -64,7 +61,10 @@ export const GET: APIRoute = async ({ params, locals }) => {
 
     return new Response(JSON.stringify(participantDtos), { status: 200 });
   } catch (error) {
-    logger.error("Unexpected error in GET /api/tours/[tourId]/participants", error instanceof Error ? error : undefined);
+    logger.error(
+      "Unexpected error in GET /api/tours/[tourId]/participants",
+      error instanceof Error ? error : undefined
+    );
     return new Response(
       JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred" } }),
       { status: 500 }

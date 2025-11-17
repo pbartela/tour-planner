@@ -2,7 +2,11 @@ import { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-hot-toast";
 import type { ProfileDto, UpdateProfileCommand } from "@/types";
-import { useUpdateProfileMutation, useUploadAvatarMutation, useDeleteAvatarMutation } from "@/lib/hooks/useProfileMutations";
+import {
+  useUpdateProfileMutation,
+  useUploadAvatarMutation,
+  useDeleteAvatarMutation,
+} from "@/lib/hooks/useProfileMutations";
 import { Button } from "@/components/ui/button";
 import { InputWithLabel } from "@/components/ui/InputWithLabel";
 import { Avatar } from "@/components/ui/Avatar";
@@ -37,10 +41,10 @@ export const ProfileEditForm = ({ profile, email, onSuccess }: ProfileEditFormPr
         // If language changed, redirect to the new locale
         if (languageChanged && formData.language) {
           const currentPath = window.location.pathname;
-          const pathParts = currentPath.split('/');
+          const pathParts = currentPath.split("/");
           // Replace the locale (first non-empty segment) with the new language
           pathParts[1] = formData.language;
-          const newPath = pathParts.join('/');
+          const newPath = pathParts.join("/");
           window.location.href = newPath;
         } else {
           onSuccess?.();
@@ -107,11 +111,7 @@ export const ProfileEditForm = ({ profile, email, onSuccess }: ProfileEditFormPr
           <span className="label-text">{t("profile.avatar")}</span>
         </label>
         <div className="flex items-center gap-4">
-          <Avatar
-            src={profile.avatar_url}
-            alt={profile.display_name || email}
-            size="lg"
-          />
+          <Avatar src={profile.avatar_url} alt={profile.display_name || email} size="lg" />
           <div className="flex flex-col gap-2">
             <input
               ref={fileInputRef}

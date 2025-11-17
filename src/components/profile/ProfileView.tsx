@@ -41,11 +41,7 @@ export const ProfileView = ({ user }: ProfileViewProps) => {
             <div className="space-y-4">
               {/* Avatar */}
               <div className="flex items-center gap-4">
-                <Avatar
-                  src={user.profile.avatar_url}
-                  alt={user.profile.display_name || user.email}
-                  size="xl"
-                />
+                <Avatar src={user.profile.avatar_url} alt={user.profile.display_name || user.email} size="xl" />
                 <div>
                   <p className="text-sm text-base-content/60">{t("profile.avatar")}</p>
                   <p className="text-sm">{user.profile.avatar_url ? t("profile.avatarSet") : t("profile.noAvatar")}</p>

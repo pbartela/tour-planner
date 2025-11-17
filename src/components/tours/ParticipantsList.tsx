@@ -37,7 +37,9 @@ export const ParticipantsList = ({ tourId, ownerId }: ParticipantsListProps) => 
 
   return (
     <div className="space-y-2">
-      <h3 className="font-semibold">{t("participants.title")} ({participants.length})</h3>
+      <h3 className="font-semibold">
+        {t("participants.title")} ({participants.length})
+      </h3>
       <ul className="space-y-2">
         {participants.map((participant) => {
           const isOwner = participant.user_id === ownerId;
@@ -45,17 +47,11 @@ export const ParticipantsList = ({ tourId, ownerId }: ParticipantsListProps) => 
 
           return (
             <li key={participant.user_id} className="flex items-center gap-3 p-2 bg-base-200 rounded-lg">
-              <Avatar
-                src={participant.avatar_url}
-                alt={displayName}
-                size="md"
-              />
+              <Avatar src={participant.avatar_url} alt={displayName} size="md" />
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{displayName}</span>
-                  {isOwner && (
-                    <span className="badge badge-primary badge-sm">{t("participants.owner")}</span>
-                  )}
+                  {isOwner && <span className="badge badge-primary badge-sm">{t("participants.owner")}</span>}
                 </div>
                 <div className="text-xs text-base-content/60">
                   {t("participants.joinedOn")} {formatDate(participant.joined_at)}

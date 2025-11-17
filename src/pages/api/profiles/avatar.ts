@@ -16,10 +16,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // Validate session
     const user = await validateSession(supabase);
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: { code: "UNAUTHORIZED", message: "Authentication required" } }),
-        { status: 401 }
-      );
+      return new Response(JSON.stringify({ error: { code: "UNAUTHORIZED", message: "Authentication required" } }), {
+        status: 401,
+      });
     }
 
     // Parse multipart form data
@@ -27,10 +26,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const file = formData.get("avatar") as File | null;
 
     if (!file) {
-      return new Response(
-        JSON.stringify({ error: { code: "VALIDATION_ERROR", message: "Avatar file is required" } }),
-        { status: 400 }
-      );
+      return new Response(JSON.stringify({ error: { code: "VALIDATION_ERROR", message: "Avatar file is required" } }), {
+        status: 400,
+      });
     }
 
     // Validate file type (images only)
@@ -83,19 +81,16 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const fileName = `${user.id}/${Date.now()}.${fileExt}`;
 
     // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(fileName, file, {
-        contentType: file.type,
-        upsert: true,
-      });
+    const { data: uploadData, error: uploadError } = await supabase.storage.from("avatars").upload(fileName, file, {
+      contentType: file.type,
+      upsert: true,
+    });
 
     if (uploadError) {
       logger.error("Error uploading avatar to storage", uploadError);
-      return new Response(
-        JSON.stringify({ error: { code: "UPLOAD_ERROR", message: "Failed to upload avatar" } }),
-        { status: 500 }
-      );
+      return new Response(JSON.stringify({ error: { code: "UPLOAD_ERROR", message: "Failed to upload avatar" } }), {
+        status: 500,
+      });
     }
 
     // Get public URL
@@ -110,10 +105,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     if (updateError) {
       logger.error("Error updating profile with avatar URL", updateError);
-      return new Response(
-        JSON.stringify({ error: { code: "UPDATE_ERROR", message: "Failed to update profile" } }),
-        { status: 500 }
-      );
+      return new Response(JSON.stringify({ error: { code: "UPDATE_ERROR", message: "Failed to update profile" } }), {
+        status: 500,
+      });
     }
 
     return new Response(JSON.stringify({ data: updatedProfile }), { status: 200 });
@@ -137,20 +131,18 @@ export const DELETE: APIRoute = async ({ locals }) => {
     // Validate session
     const user = await validateSession(supabase);
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: { code: "UNAUTHORIZED", message: "Authentication required" } }),
-        { status: 401 }
-      );
+      return new Response(JSON.stringify({ error: { code: "UNAUTHORIZED", message: "Authentication required" } }), {
+        status: 401,
+      });
     }
 
     // Get current profile
     const { data: currentProfile } = await profileService.getProfile(supabase, user.id);
 
     if (!currentProfile?.avatar_url) {
-      return new Response(
-        JSON.stringify({ error: { code: "NOT_FOUND", message: "No avatar to delete" } }),
-        { status: 404 }
-      );
+      return new Response(JSON.stringify({ error: { code: "NOT_FOUND", message: "No avatar to delete" } }), {
+        status: 404,
+      });
     }
 
     // Delete avatar from storage
@@ -174,10 +166,9 @@ export const DELETE: APIRoute = async ({ locals }) => {
 
     if (updateError) {
       logger.error("Error removing avatar URL from profile", updateError);
-      return new Response(
-        JSON.stringify({ error: { code: "UPDATE_ERROR", message: "Failed to update profile" } }),
-        { status: 500 }
-      );
+      return new Response(JSON.stringify({ error: { code: "UPDATE_ERROR", message: "Failed to update profile" } }), {
+        status: 500,
+      });
     }
 
     return new Response(JSON.stringify({ data: updatedProfile }), { status: 200 });
