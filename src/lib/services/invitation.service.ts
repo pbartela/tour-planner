@@ -4,6 +4,7 @@ import { createSupabaseAdminClient } from "@/db/supabase.admin.client";
 import type { InvitationDto, SendInvitationsResponse, InvitationByTokenDto, AcceptInvitationResponse } from "@/types";
 import { randomBytes } from "crypto";
 import { isPastDate } from "@/lib/utils/date-formatters";
+import { ENV } from "../server/env-validation.service";
 
 class InvitationService {
   /**
@@ -17,7 +18,7 @@ class InvitationService {
         .select(
           `
           id,
-          tour_id,
+          tour_id, s 
           inviter_id,
           email,
           status,
