@@ -59,8 +59,25 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // SECURITY: Use secure session validation instead of direct getUser()
   const user = await validateSession(supabase);
 
+  // Check if the route is a public auth route (should be accessible without auth)
+  const isPublicAuthRoute = publicAuthRoutes.some((route) => pathWithoutLocale.startsWith(route));
+
   if (user) {
     context.locals.user = user;
+
+    // Check if user's saved language preference differs from current URL locale
+    // If so, redirect to their preferred language (except for public auth routes)
+    if (
+      user.profile.language &&
+      user.profile.language !== lang &&
+      allowedLocales.includes(user.profile.language as (typeof allowedLocales)[number]) &&
+      !isPublicAuthRoute
+    ) {
+      // Redirect to user's preferred language
+      const newPath = `/${user.profile.language}${pathWithoutLocale}`;
+      const fullUrl = newPath + context.url.search;
+      return context.redirect(fullUrl);
+    }
 
     // If a user is fully authenticated and tries to visit an auth route (e.g., /login),
     // redirect them to the main dashboard.
@@ -68,9 +85,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
       return context.redirect(`/${lang}/`);
     }
   }
-
-  // Check if the route is a public auth route (should be accessible without auth)
-  const isPublicAuthRoute = publicAuthRoutes.some((route) => pathWithoutLocale.startsWith(route));
 
   const isProtectedRoute = protectedRoutes.some((route) =>
     route === "/" ? pathWithoutLocale === route : pathWithoutLocale.startsWith(route)

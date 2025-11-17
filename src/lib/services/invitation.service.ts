@@ -4,6 +4,7 @@ import { createSupabaseAdminClient } from "@/db/supabase.admin.client";
 import type { InvitationDto, SendInvitationsResponse, InvitationByTokenDto, AcceptInvitationResponse } from "@/types";
 import { randomBytes } from "crypto";
 import { isPastDate } from "@/lib/utils/date-formatters";
+import { ENV } from "../server/env-validation.service";
 
 class InvitationService {
   /**
@@ -24,10 +25,10 @@ class InvitationService {
           token,
           expires_at,
           created_at,
-          tours!invitations_tour_id_fkey (
+          tours!tour_id (
             title
           ),
-          profiles!invitations_inviter_id_fkey (
+          profiles!inviter_id (
             display_name
           )
         `
@@ -81,10 +82,10 @@ class InvitationService {
           token,
           expires_at,
           created_at,
-          tours!invitations_tour_id_fkey (
+          tours!tour_id (
             title
           ),
-          profiles!invitations_inviter_id_fkey (
+          profiles!inviter_id (
             display_name
           )
         `
@@ -137,7 +138,7 @@ class InvitationService {
           status,
           expires_at,
           created_at,
-          tours!invitations_tour_id_fkey (
+          tours!tour_id (
             title
           )
         `

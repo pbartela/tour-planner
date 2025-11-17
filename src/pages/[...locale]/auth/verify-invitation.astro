@@ -15,9 +15,9 @@ import { getUserByEmail } from "@/lib/server/supabase-admin.service";
 export const prerender = false;
 
 const localeParam = Astro.params.locale;
-const locale = (typeof localeParam === "string" && localeParam.length > 0
-  ? localeParam
-  : Astro.cookies.get("locale")?.value) || ENV.PUBLIC_DEFAULT_LOCALE;
+const locale =
+  (typeof localeParam === "string" && localeParam.length > 0 ? localeParam : Astro.cookies.get("locale")?.value) ||
+  ENV.PUBLIC_DEFAULT_LOCALE;
 
 // Get OTP from query params
 const otp = Astro.url.searchParams.get("otp");
@@ -184,7 +184,3 @@ try {
   return Astro.redirect(`/${locale}/auth/error?error=unexpected_error`);
 }
 ---
-
-
-
-

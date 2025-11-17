@@ -8,7 +8,7 @@ const BASE_URL = "http://localhost:3000";
 
 async function testOtpVerification() {
   console.log("🧪 Testing OTP verification for t@t.pl");
-  console.log("=" .repeat(70));
+  console.log("=".repeat(70));
   console.log(`\nOTP Token: ${OTP_TOKEN}`);
   console.log(`URL: ${BASE_URL}/auth/verify-otp?otp=${OTP_TOKEN}\n`);
 
@@ -16,19 +16,19 @@ async function testOtpVerification() {
     console.log("📤 Clicking magic link (following redirects)...\n");
 
     const response = await fetch(`${BASE_URL}/auth/verify-otp?otp=${OTP_TOKEN}`, {
-      redirect: 'manual' // Don't auto-follow redirects so we can see them
+      redirect: "manual", // Don't auto-follow redirects so we can see them
     });
 
     console.log(`Response Status: ${response.status}`);
     console.log(`Response Status Text: ${response.statusText}`);
 
-    const location = response.headers.get('location');
+    const location = response.headers.get("location");
     if (location) {
       console.log(`\n🔀 Redirect Location: ${location}`);
 
-      if (location.includes('/auth/error')) {
+      if (location.includes("/auth/error")) {
         const url = new URL(location, BASE_URL);
-        const errorCode = url.searchParams.get('error');
+        const errorCode = url.searchParams.get("error");
         console.log(`\n❌ ERROR DETECTED: ${errorCode}`);
         console.log("\nPossible error codes:");
         console.log("  - invalid_link: OTP not found or invalid format");
@@ -44,7 +44,6 @@ async function testOtpVerification() {
     } else {
       console.log("\n⚠️  No redirect - unexpected response");
     }
-
   } catch (error) {
     console.error("\n❌ Request failed:", error.message);
   }
