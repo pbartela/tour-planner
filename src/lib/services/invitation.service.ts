@@ -25,10 +25,10 @@ class InvitationService {
           token,
           expires_at,
           created_at,
-          tours!invitations_tour_id_fkey (
+          tours!tour_id (
             title
           ),
-          profiles!invitations_inviter_id_fkey (
+          profiles!inviter_id (
             display_name
           )
         `
@@ -82,10 +82,10 @@ class InvitationService {
           token,
           expires_at,
           created_at,
-          tours!invitations_tour_id_fkey (
+          tours!tour_id (
             title
           ),
-          profiles!invitations_inviter_id_fkey (
+          profiles!inviter_id (
             display_name
           )
         `
@@ -138,7 +138,7 @@ class InvitationService {
           status,
           expires_at,
           created_at,
-          tours!invitations_tour_id_fkey (
+          tours!tour_id (
             title
           )
         `
