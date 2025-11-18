@@ -12,6 +12,7 @@ import type {
   TourMetadata,
 } from "@/types";
 import getTripMetaData from "@/lib/server/metadata-extract.service";
+import { ensureTourNotArchived } from "@/lib/utils/tour-status.util";
 
 class TourService {
   // Server-side metadata cache
@@ -365,6 +366,9 @@ class TourService {
     command: UpdateTourCommand
   ): Promise<{ data: TourDetailsDto | null; error: Error | null }> {
     try {
+      // Prevent updating archived tours
+      await ensureTourNotArchived(supabase, tourId);
+
       const { data, error } = await supabase.from("tours").update(command).eq("id", tourId).select().single();
 
       if (error) {
@@ -383,6 +387,9 @@ class TourService {
 
   public async deleteTour(supabase: SupabaseClient, tourId: string): Promise<{ error: Error | null }> {
     try {
+      // Prevent deleting archived tours
+      await ensureTourNotArchived(supabase, tourId);
+
       const { error } = await supabase.from("tours").delete().eq("id", tourId);
 
       if (error) {
@@ -408,6 +415,9 @@ class TourService {
     tourId: string
   ): Promise<{ data: TourDetailsDto | null; error: Error | null }> {
     try {
+      // Prevent locking voting on archived tours
+      await ensureTourNotArchived(supabase, tourId);
+
       const { data, error } = await supabase
         .from("tours")
         .update({ voting_locked: true })
@@ -437,6 +447,9 @@ class TourService {
     tourId: string
   ): Promise<{ data: TourDetailsDto | null; error: Error | null }> {
     try {
+      // Prevent unlocking voting on archived tours
+      await ensureTourNotArchived(supabase, tourId);
+
       const { data, error } = await supabase
         .from("tours")
         .update({ voting_locked: false })

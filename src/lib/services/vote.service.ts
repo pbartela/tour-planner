@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@/db/supabase.client";
 import { secureError } from "@/lib/server/logger.service";
 import type { TourVotesDto, ToggleVoteResponseDto } from "@/types";
+import { ensureTourNotArchived } from "@/lib/utils/tour-status.util";
 
 class VoteService {
   /**
@@ -34,6 +35,9 @@ class VoteService {
    */
   public async toggleVote(supabase: SupabaseClient, userId: string, tourId: string): Promise<ToggleVoteResponseDto> {
     try {
+      // Prevent voting on archived tours
+      await ensureTourNotArchived(supabase, tourId);
+
       // Check if vote exists
       const { data: existingVote, error: checkError } = await supabase
         .from("votes")

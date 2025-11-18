@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@/db/supabase.client";
 import { secureError } from "@/lib/server/logger.service";
 import { createSupabaseAdminClient } from "@/db/supabase.admin.client";
 import type { InvitationDto, SendInvitationsResponse, InvitationByTokenDto, AcceptInvitationResponse } from "@/types";
+import { ensureTourNotArchived } from "@/lib/utils/tour-status.util";
 import { randomBytes } from "crypto";
 import { isPastDate } from "@/lib/utils/date-formatters";
 import { ENV } from "../server/env-validation.service";
@@ -221,6 +222,9 @@ class InvitationService {
     const errors: { email: string; error: string }[] = [];
 
     try {
+      // Prevent sending invitations to archived tours
+      await ensureTourNotArchived(supabase, tourId);
+
       // Normalize emails (lowercase, trim)
       const normalizedEmails = emails.map((email) => email.toLowerCase().trim());
 
@@ -423,6 +427,15 @@ class InvitationService {
     userId: string
   ): Promise<AcceptInvitationResponse> {
     try {
+      // First, get the invitation to check the tour status
+      const invitation = await this.getInvitationByToken(supabase, token);
+      if (!invitation) {
+        throw new Error("This invitation is invalid or has expired.");
+      }
+
+      // Prevent accepting invitations to archived tours
+      await ensureTourNotArchived(supabase, invitation.tour_id);
+
       // Call the database function
       const { data, error } = await supabase.rpc("accept_invitation", {
         invitation_token: token,
@@ -527,6 +540,9 @@ class InvitationService {
       if (!invitation) {
         throw new Error("Invitation not found.");
       }
+
+      // Prevent resending invitations to archived tours
+      await ensureTourNotArchived(supabase, invitation.tour_id);
 
       // Only allow resending declined or expired invitations
       if (invitation.status === "accepted") {
