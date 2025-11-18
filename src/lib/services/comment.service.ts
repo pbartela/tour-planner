@@ -4,6 +4,7 @@ import type { getCommentsQuerySchema } from "@/lib/validators/comment.validators
 import { secureError } from "@/lib/server/logger.service";
 import type { CommentDto, PaginatedCommentsDto, CreateCommentCommand, UpdateCommentCommand } from "@/types";
 import { createSupabaseAdminClient } from "@/db/supabase.admin.client";
+import { ensureTourNotArchived } from "@/lib/utils/tour-status.util";
 
 class CommentService {
   /**
@@ -124,6 +125,9 @@ class CommentService {
     command: CreateCommentCommand
   ): Promise<CommentDto> {
     try {
+      // Prevent commenting on archived tours
+      await ensureTourNotArchived(supabase, tourId);
+
       const { data: comment, error } = await supabase
         .from("comments")
         .insert({
@@ -196,6 +200,21 @@ class CommentService {
     command: UpdateCommentCommand
   ): Promise<CommentDto> {
     try {
+      // First, fetch the comment to get the tour_id
+      const { data: existingComment, error: fetchError } = await supabase
+        .from("comments")
+        .select("tour_id")
+        .eq("id", commentId)
+        .single();
+
+      if (fetchError || !existingComment) {
+        secureError("Error fetching comment for update", fetchError);
+        throw new Error("Comment not found or you may not have permission.");
+      }
+
+      // Prevent updating comments on archived tours
+      await ensureTourNotArchived(supabase, existingComment.tour_id);
+
       const { data: comment, error } = await supabase
         .from("comments")
         .update({
@@ -263,6 +282,21 @@ class CommentService {
    */
   public async deleteComment(supabase: SupabaseClient, commentId: string): Promise<void> {
     try {
+      // First, fetch the comment to get the tour_id
+      const { data: existingComment, error: fetchError } = await supabase
+        .from("comments")
+        .select("tour_id")
+        .eq("id", commentId)
+        .single();
+
+      if (fetchError || !existingComment) {
+        secureError("Error fetching comment for deletion", fetchError);
+        throw new Error("Comment not found or you may not have permission.");
+      }
+
+      // Prevent deleting comments on archived tours
+      await ensureTourNotArchived(supabase, existingComment.tour_id);
+
       const { error } = await supabase.from("comments").delete().eq("id", commentId);
 
       if (error) {
