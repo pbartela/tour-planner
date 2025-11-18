@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { makeAuthenticatedRequest } from "@/lib/client/api-client";
+import { apiRequest } from "@/lib/client/api-client";
 
 /**
  * Hook for removing a participant from a tour.
@@ -12,9 +12,14 @@ export const useRemoveParticipantMutation = (tourId: string) => {
 
   return useMutation({
     mutationFn: async (userId: string) => {
-      await makeAuthenticatedRequest(`/api/tours/${tourId}/participants/${userId}`, {
+      const response = await apiRequest(`/api/tours/${tourId}/participants/${userId}`, {
         method: "DELETE",
       });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || "Failed to remove participant");
+      }
     },
     onSuccess: () => {
       // Invalidate participants query to refetch the list
