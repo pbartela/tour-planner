@@ -97,6 +97,14 @@ Local Supabase runs on:
 - Database: `localhost:54322`
 - Studio: `http://localhost:54323`
 
+**Important: Database Migration Strategy**
+
+This project does **not** have a production database. Therefore:
+- It's acceptable to edit existing migrations in `supabase/migrations/` directly
+- No need to create separate "fix" migrations for schema changes
+- When making schema changes, edit the original migration file and run `npx supabase db reset`
+- This approach keeps migration history clean and simple for local-only development
+
 ### Docker Testing
 
 The project includes Docker Compose setup for running E2E tests in isolated containers:

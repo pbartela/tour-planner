@@ -25,13 +25,14 @@ create type public.invitation_status as enum ('pending', 'accepted', 'declined')
 create table public.profiles (
     id uuid primary key,
     display_name text,
-    language text not null default 'en',
+    language text not null default 'en-US',
     theme text not null default 'system',
     onboarding_completed boolean not null default false,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
 );
 comment on table public.profiles is 'stores user profile information, extending the auth.users table.';
+comment on column public.profiles.language is 'User preferred language in full locale format (e.g., en-US, pl-PL). Must match locale codes used in URLs and i18n configuration.';
 
 alter table public.profiles enable row level security;
 
@@ -336,8 +337,23 @@ comment on function public.create_tour is 'Creates a new tour and adds the creat
 -- rls policies
 
 -- profiles
-create policy "users can view their own profile" on public.profiles
-  for select using (auth.uid() = id);
+create policy "users can view profiles in their tours" on public.profiles
+  for select using (
+    -- User can see their own profile
+    auth.uid() = id
+    or
+    -- User can see profiles of participants in tours they're in
+    exists (
+      select 1
+      from public.participants p1
+      inner join public.participants p2 on p1.tour_id = p2.tour_id
+      where p1.user_id = auth.uid()  -- Current user is a participant
+        and p2.user_id = profiles.id  -- This profile belongs to another participant in same tour
+    )
+  );
+
+comment on policy "users can view profiles in their tours" on public.profiles is
+  'SECURITY MODEL: Profile Visibility in Tours. Allows users to view their own profile and profiles of other participants in tours they are part of. This enables displaying participant avatars and names in tour lists.';
 
 create policy "users can update their own profile" on public.profiles
   for update using (auth.uid() = id) with check (auth.uid() = id);
