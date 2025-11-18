@@ -13,6 +13,7 @@ Last Updated: 2025-11-05
 - [Backlog](#backlog)
 - [Technical Implementation Notes](#technical-implementation-notes)
 - [PRD Status Matrix](#prd-status-matrix)
+- [Feature Gap Alignment (2025-11-18)](#feature-gap-alignment-2025-11-18)
 
 ---
 
@@ -192,6 +193,20 @@ Last Updated: 2025-11-05
 - en-US and pl-PL locales
 - Namespaced translations (common, auth, tours)
 - URL-based locale routing
+
+---
+
+## Feature Gap Alignment (2025-11-18)
+
+| Funkcja | Priorytet | Źródło | Link do planu | Notatki |
+| --- | --- | --- | --- | --- |
+| Śledzenie aktywności (`has_new_activity`) | Must | PRD US-010/020 | `.ai/feature-gap/plan.md#31-śledzenie-aktywności-i-wskaźnik-nowa-aktywność` | Wymaga nowych tabel `tour_activity` i `tour_activity_reads`, automatyczne oznaczanie przy wejściu w szczegóły. |
+| Automatyczne archiwizowanie | Must | `db-plan.md` §5, PRD US-023 | `.ai/feature-gap/plan.md#32-automatyczne-archiwizowanie-wycieczek` | Cron 03:00 UTC + walidacja read-only w API/UI. |
+| Cykl życia zaproszeń (`expired`) | Must | PRD US-015/017 | `.ai/feature-gap/plan.md#35-cykl-życia-zaproszeń-akceptacja-odrzucenie-cleanup` | Backend cleanup + statusy `declined/expired`, UI już dostępne. |
+| Tagowanie archiwów + wyszukiwarka | Should | PRD US-024/025, `ui-plan.md` §6 | `.ai/feature-gap/plan.md#33-tagowanie-archiwów-i-wyszukiwarka` | Combobox z autosugestią, filtrowanie po wielu tagach (AND). |
+| Dwustopniowe usuwanie konta | Should | PRD US-008 | `.ai/feature-gap/plan.md#34-dwustopniowe-usuwanie-konta` | Endpoint `DELETE /api/profiles/me` + token e-mail, audit log 30 dni. |
+
+> Aktualny, szczegółowy harmonogram i RICE znajdują się w `.ai/feature-gap/plan.md`. Po zakończeniu każdej funkcji należy zaktualizować zarówno niniejszy roadmap, jak i plan szczegółowy.
 
 ---
 

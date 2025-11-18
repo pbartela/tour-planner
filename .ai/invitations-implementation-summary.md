@@ -206,6 +206,18 @@ Zaimplementowano pełny system zapraszania użytkowników (zarówno zarejestrowa
 
 ---
 
+## Planowane rozszerzenia (stan na 2025-11-18)
+
+Zgodnie z dokumentem `.ai/feature-gap/plan.md` planujemy następujące usprawnienia systemu zaproszeń:
+
+- **TTL 14 dni + status `expired`:** wydłużenie `expires_at` do 14 dni i dodanie stanu `expired`, aby UI mogło pokazywać, że link jest nieważny bez usuwania rekordu (audyt).
+- **Nowy cron `cleanup_invitations`:** codzienny job (04:00 UTC) aktualizujący status pendingów z przekroczonym `expires_at` na `expired` oraz logujący wynik.
+- **Obsługa `decline/resend`:** dodatkowe endpointy `POST /api/invitations/{id}/accept|decline|resend`, które aktualizują status i odświeżają cache w React Query.
+- **Ujednolicone wejście `/invite/{token}`:** już istniejąca strona pozostaje jedynym miejscem akceptacji; backend dodaje walidację tokenu i dopasowanie e-maila przed dołączeniem do `participants`.
+- **Monitoring i KPI:** raportowanie wskaźników (liczba wygasłych zaproszeń, konwersja accepted/pending) w tym samym pipeline co nowe joby `pg_cron`.
+
+Te zmiany zostaną zsynchronizowane z roadmapą w sekcji „Feature Gap Alignment (2025-11-18)”.
+
 ## Konfiguracja
 
 ### `supabase/config.toml`
