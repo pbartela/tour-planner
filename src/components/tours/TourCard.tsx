@@ -18,9 +18,10 @@ export const TourCard = ({ tour }: Props) => {
     "https://i.pravatar.cc/150?img=2",
     "https://i.pravatar.cc/150?img=3",
   ];
+  // Don't slice here - let AvatarGroup handle showing "+N more"
   const avatars =
     tour.participantAvatars && tour.participantAvatars.length > 0
-      ? tour.participantAvatars.slice(0, 3)
+      ? tour.participantAvatars
       : placeholderAvatars;
 
   return (
