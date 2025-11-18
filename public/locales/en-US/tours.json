@@ -166,7 +166,18 @@
     "loadError": "Error loading participants",
     "unknownError": "Unknown error",
     "unknownUser": "Unknown User",
-    "noParticipants": "No participants yet"
+    "noParticipants": "No participants yet",
+    "leaveButton": "Leave Tour",
+    "removeButton": "Remove",
+    "leaveTitle": "Leave Tour",
+    "removeTitle": "Remove Participant",
+    "leaveConfirm": "Are you sure you want to leave this tour? You can be re-invited later.",
+    "removeConfirm": "Are you sure you want to remove {{name}} from this tour?",
+    "leaveSuccess": "You have successfully left the tour",
+    "removeSuccess": "{{name}} has been removed from the tour",
+    "removeError": "Failed to remove participant",
+    "leaving": "Leaving...",
+    "removing": "Removing..."
   },
   "voting": {
     "like": "Like",

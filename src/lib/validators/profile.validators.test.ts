@@ -14,8 +14,11 @@ describe("Profile Validators", () => {
     });
 
     it("should accept valid language", () => {
-      const result = updateProfileCommandSchema.safeParse({ language: "en" });
-      expect(result.success).toBe(true);
+      const validLanguages = ["en-US", "pl-PL"] as const;
+      validLanguages.forEach((language) => {
+        const result = updateProfileCommandSchema.safeParse({ language });
+        expect(result.success).toBe(true);
+      });
     });
 
     it("should accept valid theme", () => {

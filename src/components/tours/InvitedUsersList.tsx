@@ -74,7 +74,10 @@ export const InvitedUsersList = ({ tourId, isOwner }: InvitedUsersListProps) => 
     );
   }
 
-  if (!invitations || invitations.length === 0) {
+  // Filter out accepted invitations (they are now participants)
+  const pendingAndDeclinedInvitations = invitations?.filter((inv) => inv.status !== "accepted") || [];
+
+  if (pendingAndDeclinedInvitations.length === 0) {
     return <div className="text-base-content/70 text-sm">{t("invitations.noInvitations")}</div>;
   }
 
@@ -82,7 +85,7 @@ export const InvitedUsersList = ({ tourId, isOwner }: InvitedUsersListProps) => 
     <div className="space-y-2">
       <h3 className="font-semibold">{t("invitations.listTitle")}</h3>
       <ul className="space-y-2">
-        {invitations.map((invitation) => {
+        {pendingAndDeclinedInvitations.map((invitation) => {
           const isExpired = InvitationPermissions.isExpired(invitation);
           const status = invitation.status as "pending" | "accepted" | "declined";
           const actions = InvitationPermissions.getAvailableActions(invitation, isOwner);

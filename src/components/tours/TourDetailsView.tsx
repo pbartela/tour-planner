@@ -86,7 +86,7 @@ export const TourDetailsView = ({ tourId, currentUserId }: TourDetailsViewProps)
       {/* Participants Section */}
       <div className="card bg-base-100 shadow-xl">
         <div className="card-body">
-          <ParticipantsList tourId={tourId} ownerId={tour.owner_id} />
+          <ParticipantsList tourId={tourId} ownerId={tour.owner_id} currentUserId={currentUserId} />
         </div>
       </div>
 
