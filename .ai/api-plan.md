@@ -107,9 +107,10 @@ Endpoints for managing tours.
 
 - **Method:** `GET`
 - **URL:** `/api/tours`
-- **Description:** Retrieves a paginated list of tours the current user is participating in. Returns only tours where the user is a participant. Authorization is enforced by PostgreSQL RLS via request-scoped Supabase client.
+- **Description:** Retrieves a paginated list of tours the current user is participating in. Returns only tours where the user is a participant. Authorization is enforced by PostgreSQL RLS via request-scoped Supabase client. Supports filtering by status and multi-tag search.
 - **Query Parameters:**
   - `status` (string, optional): Filter by status. `active` or `archived`. Defaults to `active`.
+  - `tags` (string, optional): Comma-separated list of tags for filtering. Only returns tours that have ALL specified tags (logical AND). Example: `tags=summer,mountains`. Case-insensitive. Only applicable for archived tours.
   - `page` (integer, optional): Page number for pagination. Must be ≥ 1. Defaults to `1`.
   - `limit` (integer, optional): Number of results per page. Must be between 1 and 100. Defaults to `20`.
 - **Response (Success):**
@@ -472,28 +473,109 @@ Endpoints for voting on a tour.
 
 ### Tags
 
-Endpoints for managing tags on archived tours.
+Endpoints for managing tags on archived tours. Tags can only be added to archived tours and are used for categorization and search.
 
 ---
 
-#### Add Tags to a Tour
+#### Get Tags for a Tour
+
+- **Method:** `GET`
+- **URL:** `/api/tours/{tourId}/tags`
+- **Description:** Retrieves all tags assigned to a specific tour.
+- **Response (Success):**
+  - **Code:** `200 OK`
+  - **Body:**
+    ```json
+    [
+      {
+        "id": 1,
+        "name": "summer",
+        "created_at": "2025-11-18T10:00:00Z"
+      },
+      {
+        "id": 2,
+        "name": "mountains",
+        "created_at": "2025-11-18T10:00:00Z"
+      }
+    ]
+    ```
+- **Response (Error):**
+  - **Code:** `401 Unauthorized` - User is not authenticated.
+  - **Code:** `403 Forbidden` - User is not a participant of this tour.
+  - **Code:** `404 Not Found` - Tour does not exist.
+
+---
+
+#### Add a Tag to an Archived Tour
 
 - **Method:** `POST`
 - **URL:** `/api/tours/{tourId}/tags`
-- **Description:** Adds one or more tags to an archived tour.
+- **Description:** Adds a single tag to an archived tour. Tags can only be added to archived tours. Tag names are normalized to lowercase and deduplicated.
 - **Request Body:**
   ```json
   {
-    "tags": ["summer", "2026", "mountains"]
+    "name": "Summer Vacation"
   }
   ```
 - **Response (Success):**
-  - **Code:** `200 OK`
-  - **Body:** The full list of tags for the tour.
+  - **Code:** `201 Created`
+  - **Body:** The newly created tag object.
+    ```json
+    {
+      "id": 1,
+      "name": "summer vacation",
+      "created_at": "2025-11-18T10:00:00Z"
+    }
+    ```
 - **Response (Error):**
-  - **Code:** `400 Bad Request` - Invalid tags array.
-  - **Code:** `403 Forbidden` - User was not a participant or tour is not archived.
+  - **Code:** `400 Bad Request` - Invalid tag name (empty, too long, or validation failed).
+  - **Code:** `401 Unauthorized` - User is not authenticated.
+  - **Code:** `403 Forbidden` - User is not a participant or tour is not archived.
   - **Code:** `404 Not Found` - Tour not found.
+  - **Code:** `409 Conflict` - Tag already exists on this tour.
+
+---
+
+#### Remove a Tag from an Archived Tour
+
+- **Method:** `DELETE`
+- **URL:** `/api/tours/{tourId}/tags/{tagId}`
+- **Description:** Removes a tag from an archived tour. Only participants can remove tags.
+- **Response (Success):**
+  - **Code:** `204 No Content`
+- **Response (Error):**
+  - **Code:** `401 Unauthorized` - User is not authenticated.
+  - **Code:** `403 Forbidden` - User is not a participant of this tour.
+  - **Code:** `404 Not Found` - Tour or tag does not exist, or tag is not assigned to this tour.
+
+---
+
+#### Search or List All Tags
+
+- **Method:** `GET`
+- **URL:** `/api/tags`
+- **Description:** Retrieves all available tags in the system, optionally filtered by a search query. Used for autocomplete functionality.
+- **Query Parameters:**
+  - `q` (string, optional): Search query to filter tags. Case-insensitive partial match.
+- **Response (Success):**
+  - **Code:** `200 OK`
+  - **Body:**
+    ```json
+    [
+      {
+        "id": 1,
+        "name": "summer",
+        "created_at": "2025-11-18T10:00:00Z"
+      },
+      {
+        "id": 2,
+        "name": "summer vacation",
+        "created_at": "2025-11-18T10:00:00Z"
+      }
+    ]
+    ```
+- **Response (Error):**
+  - **Code:** `401 Unauthorized` - User is not authenticated.
 
 ---
 

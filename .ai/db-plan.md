@@ -34,12 +34,13 @@ Contains all information about a tour.
 | `description`       | `text`        |                                               | A detailed description of the tour.                    |
 | `start_date`        | `timestamptz` | Not Null                                      | The start date and time of the tour.                   |
 | `end_date`          | `timestamptz` | Not Null                                      | The end date and time of the tour.                     |
-| `participant_limit` | `integer`     | CHECK `(participant_limit > 0)`               | Optional limit on the number of participants.          |
-| `like_threshold`    | `integer`     | CHECK `(like_threshold > 0)`                  | Optional number of "likes" to confirm the tour.        |
-| `are_votes_hidden`  | `boolean`     | Not Null, Default `false`                     | If true, voting is disabled by the owner.              |
-| `status`            | `tour_status` | Not Null, Default `'active'`                  | The status of the tour. `ENUM ('active', 'archived')`. |
-| `created_at`        | `timestamptz` | Not Null, Default `now()`                     | Timestamp of tour creation.                            |
-| `updated_at`        | `timestamptz` | Not Null, Default `now()`                     | Timestamp of the last tour update.                     |
+| `participant_limit` | `integer`     | CHECK `(participant_limit > 0)`               | Optional limit on the number of participants.           |
+| `like_threshold`    | `integer`     | CHECK `(like_threshold > 0)`                  | Optional number of "likes" to confirm the tour.         |
+| `are_votes_hidden`  | `boolean`     | Not Null, Default `false`                     | If true, voting is disabled by the owner.               |
+| `voting_locked`     | `boolean`     | Not Null, Default `false`                     | If true, voting is locked and participants cannot vote. |
+| `status`            | `tour_status` | Not Null, Default `'active'`                  | The status of the tour. `ENUM ('active', 'archived')`.  |
+| `created_at`        | `timestamptz` | Not Null, Default `now()`                     | Timestamp of tour creation.                             |
+| `updated_at`        | `timestamptz` | Not Null, Default `now()`                     | Timestamp of the last tour update.                      |
 
 ---
 
@@ -86,14 +87,15 @@ Stores "likes" from users for a specific tour.
 
 Tracks invitations sent to users to join a tour.
 
-| Column       | Type                | Constraints                                                     | Description                                                               |
-| :----------- | :------------------ | :-------------------------------------------------------------- | :------------------------------------------------------------------------ |
-| `id`         | `uuid`              | Primary Key, Default `gen_random_uuid()`                        | Unique identifier for the invitation.                                     |
-| `tour_id`    | `uuid`              | Not Null, Foreign Key to `public.tours.id` ON DELETE CASCADE    | The tour the invitation is for.                                           |
-| `inviter_id` | `uuid`              | Not Null, Foreign Key to `public.profiles.id` ON DELETE CASCADE | The user who sent the invitation.                                         |
-| `email`      | `text`              | Not Null                                                        | The email address of the invited person.                                  |
-| `status`     | `invitation_status` | Not Null, Default `'pending'`                                   | The status of the invitation. `ENUM ('pending', 'accepted', 'declined')`. |
-| `created_at` | `timestamptz`       | Not Null, Default `now()`                                       | Timestamp of invitation creation.                                         |
+| Column       | Type                | Constraints                                                     | Description                                                                             |
+| :----------- | :------------------ | :-------------------------------------------------------------- | :-------------------------------------------------------------------------------------- |
+| `id`         | `uuid`              | Primary Key, Default `gen_random_uuid()`                        | Unique identifier for the invitation.                                                   |
+| `tour_id`    | `uuid`              | Not Null, Foreign Key to `public.tours.id` ON DELETE CASCADE    | The tour the invitation is for.                                                         |
+| `inviter_id` | `uuid`              | Not Null, Foreign Key to `public.profiles.id` ON DELETE CASCADE | The user who sent the invitation.                                                       |
+| `email`      | `text`              | Not Null                                                        | The email address of the invited person.                                                |
+| `status`     | `invitation_status` | Not Null, Default `'pending'`                                   | The status of the invitation. `ENUM ('pending', 'accepted', 'declined', 'expired')`.    |
+| `expires_at` | `timestamptz`       | Not Null, Default `now() + interval '14 days'`                  | Timestamp when the invitation expires. Defaults to 14 days from creation.               |
+| `created_at` | `timestamptz`       | Not Null, Default `now()`                                       | Timestamp of invitation creation.                                                       |
 
 ---
 
@@ -117,6 +119,40 @@ A joining table for the many-to-many relationship between `tours` and `tags`.
 | `tour_id` | `uuid`   | Primary Key, Foreign Key to `public.tours.id` ON DELETE CASCADE | The tour being tagged. |
 | `tag_id`  | `bigint` | Primary Key, Foreign Key to `public.tags.id` ON DELETE CASCADE  | The tag being applied. |
 
+---
+
+### `public.tour_activity`
+
+Tracks when users last viewed each tour for the "new activity" indicator.
+
+| Column         | Type          | Constraints                                                        | Description                                                |
+| :------------- | :------------ | :----------------------------------------------------------------- | :--------------------------------------------------------- |
+| `id`           | `bigint`      | Primary Key (generated)                                            | Unique identifier for the activity record.                 |
+| `tour_id`      | `uuid`        | Not Null, Foreign Key to `public.tours.id` ON DELETE CASCADE       | The tour being tracked.                                    |
+| `user_id`      | `uuid`        | Not Null, Foreign Key to `public.profiles.id` ON DELETE CASCADE    | The user whose view activity is tracked.                   |
+| `last_viewed_at` | `timestamptz` | Not Null, Default `now()`                                        | Timestamp when the user last viewed the tour.              |
+| `created_at`   | `timestamptz` | Not Null, Default `now()`                                          | Timestamp when the record was created.                     |
+
+**Constraint**: Unique constraint on `(tour_id, user_id)` - each user has one activity record per tour.
+
+---
+
+### `public.cron_job_logs`
+
+Stores logs from scheduled cron jobs for monitoring and debugging.
+
+| Column          | Type          | Constraints                   | Description                                                    |
+| :-------------- | :------------ | :---------------------------- | :------------------------------------------------------------- |
+| `id`            | `bigint`      | Primary Key (generated)       | Unique identifier for the log entry.                           |
+| `job_name`      | `text`        | Not Null                      | Name of the cron job (e.g., 'archive_finished_tours').         |
+| `tours_archived`| `integer`     |                               | Number of tours archived (for archiving job).                  |
+| `invitations_expired` | `integer` |                           | Number of invitations expired (for cleanup job).               |
+| `success`       | `boolean`     | Not Null, Default `true`      | Whether the job completed successfully.                        |
+| `error_message` | `text`        |                               | Error message if the job failed.                               |
+| `created_at`    | `timestamptz` | Not Null, Default `now()`     | Timestamp when the log was created.                            |
+
+---
+
 ## 2. Relationships
 
 - **Users and Profiles (`auth.users` & `profiles`)**: A one-to-one relationship. Each user in `auth.users` has exactly one corresponding record in `public.profiles`.
@@ -128,6 +164,8 @@ A joining table for the many-to-many relationship between `tours` and `tags`.
 - **Tours and Votes (`tours` & `votes`)**: A one-to-many relationship. A tour can have many votes.
 - **Profiles and Votes (`profiles` & `votes`)**: A one-to-many relationship. A user can cast many votes (but only one per tour).
 - **Tours and Tags (`tours`, `tags`, `tour_tags`)**: A many-to-many relationship. A tour can have multiple tags, and a tag can be applied to multiple tours.
+- **Tours and Activity (`tours` & `tour_activity`)**: A one-to-many relationship. A tour can have many activity tracking records.
+- **Profiles and Activity (`profiles` & `tour_activity`)**: A one-to-many relationship. A user can have many activity tracking records.
 
 ## 3. Indexes
 
@@ -137,6 +175,9 @@ A joining table for the many-to-many relationship between `tours` and `tags`.
 - `CREATE INDEX ON public.invitations (tour_id, email);` - To check for existing invitations for a specific tour and email.
 - `CREATE INDEX idx_tours_status ON public.tours (status);` - To optimize filtering by tour status (active/archived).
 - `CREATE INDEX idx_tours_owner_id ON public.tours (owner_id);` - To improve RLS policy checks and owner lookups.
+- `CREATE INDEX idx_tour_activity_tour_id ON public.tour_activity (tour_id);` - To quickly fetch activity records for a specific tour.
+- `CREATE INDEX idx_tour_activity_user_id ON public.tour_activity (user_id);` - To quickly fetch activity records for a specific user.
+- `CREATE INDEX idx_tags_name_lower ON public.tags (LOWER(name));` - For case-insensitive tag searches and autocomplete.
 
 ## 4. Row-Level Security (RLS) Policies
 
@@ -168,9 +209,18 @@ RLS is enabled on all tables to ensure data privacy and security.
   - `SELECT`: Users can see invitations for tours they own.
   - `INSERT`: Users can invite others to tours they own.
   - `DELETE`: Users can delete invitations for tours they own.
-- **`tags` & `tour_tags`**:
-  - `SELECT`: Authenticated users can view tags. Users can view tour_tags for tours they participated in.
-  - `INSERT`: Users can add tags to archived tours they were a participant in.
+- **`tags`**:
+  - `SELECT`: Authenticated users can view all tags.
+- **`tour_tags`**:
+  - `SELECT`: Users can view tour_tags for tours they are a participant in.
+  - `INSERT`: Users can add tags to archived tours they are a participant in.
+  - `DELETE`: Users can remove tags from archived tours they are a participant in.
+- **`tour_activity`**:
+  - `SELECT`: Users can only view their own activity records.
+  - `INSERT`: Users can insert their own activity records.
+  - `UPDATE`: Users can update their own activity records.
+- **`cron_job_logs`**:
+  - No RLS policies. Access is restricted to server-side service role only.
 
 ## 5. Additional Considerations & Automation
 
@@ -196,10 +246,27 @@ RLS is enabled on all tables to ensure data privacy and security.
 - **RLS Helper Functions**:
   - `public.is_participant(tour_id, user_id)`: A `SECURITY DEFINER` function to check participant status without causing RLS recursion issues.
 
-### Planned Features (Not Yet Implemented)
+- **Automatic Archiving** (Implemented 2025-11-18):
+  - A `pg_cron` job runs daily at 03:00 UTC to archive tours where `end_date` has passed.
+  - Function: `archive_finished_tours()` - Updates tour status to 'archived' and logs results.
+  - Logs stored in `cron_job_logs` table for monitoring.
+  - Returns count of archived tours.
 
-- **Automatic Archiving**: A `pg_cron` job to run daily and scan for tours where `end_date` has passed, updating their `status` to `'archived'`.
-- **Invitation Cleanup**: A `pg_cron` job to run periodically and delete old, `pending` invitations to keep the `invitations` table clean.
+- **Invitation Cleanup** (Implemented 2025-11-18):
+  - A `pg_cron` job runs daily at 04:00 UTC to expire old pending invitations.
+  - Function: `cleanup_expired_invitations()` - Updates expired pending invitations to 'expired' status.
+  - Checks `expires_at` timestamp (default 14 days from creation).
+  - Logs stored in `cron_job_logs` table for monitoring.
+  - Returns count of expired invitations.
+
+- **Tag Management Functions**:
+  - `get_or_create_tag(tag_name)`: A `SECURITY DEFINER` function for tag normalization and deduplication.
+  - Normalizes tag names to lowercase and creates tags if they don't exist.
+
+- **Invitation Lifecycle Functions**:
+  - `accept_invitation(invitation_id, accepting_user_id)`: Validates expiration before accepting.
+  - `decline_invitation(invitation_id, declining_user_id)`: Validates expiration before declining.
+  - Both functions return error if invitation has expired.
 
 ## 6. Implementation Status
 
@@ -224,6 +291,35 @@ RLS is enabled on all tables to ensure data privacy and security.
 4. **`20251024000001_add_performance_indexes.sql`**:
    - Added index on `tours.status` for filtering
    - Added index on `tours.owner_id` for RLS policies
+
+5. **`20251105110342_add_voting_lock_to_tours.sql`** (2025-11-05):
+   - Added `voting_locked` column to `tours` table
+   - Default value: `false`
+
+6. **`20251105120107_add_tour_activity_tracking.sql`** (2025-11-05):
+   - Created `tour_activity` table for tracking user views
+   - Added RLS policies for SELECT, INSERT, UPDATE
+   - Added indexes on `tour_id` and `user_id`
+   - Unique constraint on `(tour_id, user_id)`
+
+7. **`20251118000000_automatic_tour_archiving.sql`** (2025-11-18):
+   - Created `cron_job_logs` table
+   - Created `archive_finished_tours()` function
+   - Scheduled pg_cron job for daily archiving at 03:00 UTC
+   - Added error handling and logging
+
+8. **`20251118000001_invitation_lifecycle_enhancements.sql`** (2025-11-18):
+   - Added 'expired' status to `invitation_status` ENUM
+   - Added `expires_at` column with 14-day default
+   - Created `cleanup_expired_invitations()` function
+   - Scheduled pg_cron job for daily cleanup at 04:00 UTC
+   - Enhanced `accept_invitation()` and `decline_invitation()` functions with expiration checks
+
+9. **`20251118000002_tagging_system_enhancements.sql`** (2025-11-18):
+   - Added RLS policies for `tags` and `tour_tags` tables
+   - Created `get_or_create_tag()` function for tag normalization
+   - Added case-insensitive index on `tags.name`
+   - Enabled participant-based tag management for archived tours
 
 ### Environment Configuration
 
