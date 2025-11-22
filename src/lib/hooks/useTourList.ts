@@ -6,8 +6,20 @@ import { get, handleApiResponse } from "@/lib/client/api-client";
 import { getCachedMetadata, setBulkCachedMetadata, cleanupExpiredEntries } from "@/lib/utils/metadata-cache";
 import { queryClient } from "@/lib/queryClient";
 
-const getTours = async (): Promise<PaginatedToursDto> => {
-  const response = await get("/api/tours");
+interface UseTourListOptions {
+  status?: "active" | "archived";
+  tags?: string[];
+}
+
+const getTours = async (options: UseTourListOptions = {}): Promise<PaginatedToursDto> => {
+  const params = new URLSearchParams();
+  params.set("status", options.status || "active");
+
+  if (options.tags && options.tags.length > 0) {
+    params.set("tags", options.tags.join(","));
+  }
+
+  const response = await get(`/api/tours?${params.toString()}`);
   const data = await handleApiResponse<PaginatedToursDto>(response);
 
   // Merge with cached metadata for tours that might have missing metadata
@@ -47,7 +59,7 @@ const getTours = async (): Promise<PaginatedToursDto> => {
   };
 };
 
-export const useTourList = () => {
+export const useTourList = (options: UseTourListOptions = {}) => {
   // Cleanup expired cache entries on mount
   useEffect(() => {
     cleanupExpiredEntries();
@@ -55,8 +67,8 @@ export const useTourList = () => {
 
   return useQuery(
     {
-      queryKey: ["tours", { status: "active" }],
-      queryFn: getTours,
+      queryKey: ["tours", { status: options.status || "active", tags: options.tags }],
+      queryFn: () => getTours(options),
     },
     queryClient
   );

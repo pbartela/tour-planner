@@ -99,6 +99,7 @@ export interface TourCardViewModel {
   hasNewActivity: boolean;
   imageUrl?: string;
   participantAvatars?: string[];
+  status?: "active" | "archived";
 }
 
 /**

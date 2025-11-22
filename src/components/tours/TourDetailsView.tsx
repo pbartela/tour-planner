@@ -55,6 +55,8 @@ export const TourDetailsView = ({ tourId, currentUserId }: TourDetailsViewProps)
     );
   }
 
+  const isArchived = tour.status === "archived";
+
   return (
     <div className="container mx-auto max-w-4xl space-y-8 p-4">
       {/* Tour Header */}
@@ -65,8 +67,8 @@ export const TourDetailsView = ({ tourId, currentUserId }: TourDetailsViewProps)
         onDelete={() => setShowDeleteConfirm(true)}
       />
 
-      {/* Owner Controls (Invitations & Voting Lock) */}
-      {isOwner && (
+      {/* Owner Controls (Invitations & Voting Lock) - hide for archived tours */}
+      {isOwner && !isArchived && (
         <TourOwnerControls
           tourId={tourId}
           tour={tour}
