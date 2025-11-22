@@ -138,7 +138,12 @@
       "description": "Zaproś innych i omawiajcie wspólnie swoje plany"
     }
   },
+  "tourCard": {
+    "archived": "Zarchiwizowana"
+  },
   "tourDetails": {
+    "archived": "Zarchiwizowana",
+    "archivedInfo": "Ta wycieczka jest zarchiwizowana i tylko do odczytu. Nie możesz wprowadzać zmian w zarchiwizowanych wycieczkach.",
     "delete": "Usuń",
     "deleteConfirm": {
       "cancel": "Anuluj",
@@ -161,9 +166,31 @@
     "startDate": "Data rozpoczęcia"
   },
   "tourList": {
+    "archivedToursInfo": "Wycieczki są automatycznie archiwizowane po dacie zakończenia.",
     "loadingError": "Nie udało się załadować wycieczek",
     "newActivity": "Nowa aktywność",
-    "retry": "Spróbuj ponownie"
+    "noArchivedTours": "Brak zarchiwizowanych wycieczek",
+    "retry": "Spróbuj ponownie",
+    "tabs": {
+      "active": "Aktywne",
+      "archived": "Zarchiwizowane"
+    }
+  },
+  "tags": {
+    "add": "Dodaj tag",
+    "addError": "Nie udało się dodać tagu",
+    "addPlaceholder": "Wprowadź nazwę tagu...",
+    "addSuccess": "Tag dodany pomyślnie",
+    "adding": "Dodawanie...",
+    "clearFilter": "Wyczyść filtr",
+    "filterByTags": "Filtruj według tagów",
+    "noTags": "Brak tagów. Dodaj tagi, aby uporządkować swoje zarchiwizowane wycieczki.",
+    "remove": "Usuń tag",
+    "removeError": "Nie udało się usunąć tagu",
+    "removeSuccess": "Tag usunięty pomyślnie",
+    "removing": "Usuwanie...",
+    "searchPlaceholder": "Szukaj tagów...",
+    "title": "Tagi"
   },
   "participants": {
     "title": "Uczestnicy",

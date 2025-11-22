@@ -132,7 +132,12 @@
       "description": "Invite others and discuss your plans together"
     }
   },
+  "tourCard": {
+    "archived": "Archived"
+  },
   "tourDetails": {
+    "archived": "Archived",
+    "archivedInfo": "This tour is archived and read-only. You cannot make changes to archived tours.",
     "delete": "Delete",
     "deleteConfirm": {
       "cancel": "Cancel",
@@ -155,9 +160,31 @@
     "startDate": "Start Date"
   },
   "tourList": {
+    "archivedToursInfo": "Tours are automatically archived after their end date.",
     "loadingError": "Failed to load tours",
     "newActivity": "New Activity",
-    "retry": "Retry"
+    "noArchivedTours": "No archived tours",
+    "retry": "Retry",
+    "tabs": {
+      "active": "Active",
+      "archived": "Archived"
+    }
+  },
+  "tags": {
+    "add": "Add Tag",
+    "addError": "Failed to add tag",
+    "addPlaceholder": "Enter tag name...",
+    "addSuccess": "Tag added successfully",
+    "adding": "Adding...",
+    "clearFilter": "Clear filter",
+    "filterByTags": "Filter by tags",
+    "noTags": "No tags yet. Add tags to organize your archived tours.",
+    "remove": "Remove tag",
+    "removeError": "Failed to remove tag",
+    "removeSuccess": "Tag removed successfully",
+    "removing": "Removing...",
+    "searchPlaceholder": "Search tags...",
+    "title": "Tags"
   },
   "participants": {
     "title": "Participants",
