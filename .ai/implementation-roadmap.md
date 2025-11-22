@@ -2,7 +2,7 @@
 
 **⚠️ IMPORTANT: This file must be updated after each feature implementation!**
 
-Last Updated: 2025-11-05
+Last Updated: 2025-11-18
 
 ---
 
@@ -173,7 +173,199 @@ Last Updated: 2025-11-05
   - Added updated_at to TourSummaryDto
 - `src/db/database.types.ts` (regenerated with tour_activity table)
 
-#### 7. Dark Mode - ✅ Complete
+#### 7. Automatic Tour Archiving (US-023) - ✅ **NEWLY IMPLEMENTED (2025-11-18)**
+
+**Why**: Automatically archive tours after end_date passes, maintaining historical record while keeping active tours list clean
+
+**Backend**:
+
+- Migration: `supabase/migrations/20251118000000_automatic_tour_archiving.sql` (122 lines)
+  - Created `cron_job_logs` table for monitoring archiving operations
+  - Created `archive_finished_tours()` function with error handling
+  - Scheduled daily pg_cron job at 03:00 UTC
+  - Returns count of archived tours and logs success/failure
+- Read-only enforcement:
+  - Created shared utility `tour-status.util.ts` with `ensureTourNotArchived()` function
+  - Updated `tour.service.ts` to validate archive status before updates/deletes
+  - Updated `comment.service.ts` to prevent commenting on archived tours
+  - Updated `vote.service.ts` to prevent voting on archived tours
+  - Updated `invitation.service.ts` to prevent inviting to archived tours
+  - All throw "Cannot modify an archived tour" error when archive status detected
+- Updated `listToursForUser()` to support `status` parameter ("active" or "archived")
+
+**Frontend**:
+
+- `TourList.tsx` (lines 48-81, 93-116, 128):
+  - Added Active/Archived tabs using DaisyUI tabs-boxed component
+  - State management with `activeTab` useState hook
+  - Different empty states for active vs archived tours
+  - Archived empty state shows archive icon and descriptive text
+  - FAB (Floating Action Button) only visible on "active" tab
+- `TourCard.tsx` (lines 15, 32, 37, 42-62, 73, 86-88):
+  - Added grayscale filter to archived tour images
+  - Added "Archived" badge overlay with archive icon
+  - Opacity reduction for archived cards (opacity-80)
+  - Muted text colors for archived tour titles
+  - Hide activity indicator for archived tours
+- `TourHeader.tsx`:
+  - Added "Archived" badge next to tour title
+  - Show info alert explaining read-only status
+  - Hide edit/delete buttons when tour is archived
+- `TourDetailsView.tsx`:
+  - Hide `TourOwnerControls` component for archived tours
+  - Disable all modification UI elements
+- Translations added:
+  - `tourCard.archived` - "Archived"
+  - `tourList.tabs.active` - "Active"
+  - `tourList.tabs.archived` - "Archived"
+  - `tourList.noArchivedTours` - "No archived tours"
+  - `tourList.archivedToursInfo` - "Tours are automatically archived after their end date"
+  - `tourDetails.archived` - "Archived"
+  - `tourDetails.archivedInfo` - "This tour is archived and cannot be modified"
+
+**Files Created**:
+
+- `supabase/migrations/20251118000000_automatic_tour_archiving.sql` (NEW - 122 lines)
+- `src/lib/utils/tour-status.util.ts` (NEW - 26 lines)
+
+**Files Modified**:
+
+- `src/lib/services/tour.service.ts` (added archive validation to updateTour, deleteTour, lockVoting, unlockVoting, listToursForUser)
+- `src/lib/services/comment.service.ts` (added archive validation to createComment, updateComment, deleteComment)
+- `src/lib/services/vote.service.ts` (added archive validation to toggleVote)
+- `src/lib/services/invitation.service.ts` (added archive validation to sendInvitations, acceptInvitation, resendInvitation)
+- `src/lib/validators/tour.validators.ts` (updated getToursQuerySchema with status parameter)
+- `src/lib/hooks/useTourList.ts` (added status parameter support)
+- `src/components/tours/TourList.tsx` (lines 48-81, 93-116, 128)
+- `src/components/tours/TourCard.tsx` (lines 15, 32, 37, 42-62, 73, 86-88)
+- `src/components/tours/TourHeader.tsx` (added archived badge and alert)
+- `src/components/tours/TourDetailsView.tsx` (conditional rendering based on archive status)
+- `src/types.ts` (added status field to TourCardViewModel)
+- `src/db/database.types.ts` (regenerated with cron_job_logs table)
+- `public/locales/en-US/tours.json` (archiving translations)
+- `public/locales/pl-PL/tours.json` (archiving translations)
+
+#### 8. Invitation Lifecycle Enhancements - ✅ **NEWLY IMPLEMENTED (2025-11-18)**
+
+**Why**: Complete invitation lifecycle with expiration handling and automatic cleanup
+
+**Backend**:
+
+- Migration: `supabase/migrations/20251118000001_invitation_lifecycle_enhancements.sql` (277 lines)
+  - Added 'expired' status to `invitation_status` ENUM type
+  - Changed default `expires_at` from 7 to 14 days
+  - Created `cleanup_expired_invitations()` function
+    - Updates expired pending invitations to 'expired' status
+    - Returns count of expired invitations
+    - Includes error handling and logging
+  - Scheduled daily pg_cron job at 04:00 UTC for cleanup
+  - Enhanced `accept_invitation()` function:
+    - Check if invitation is expired before accepting
+    - Return error if expired: "This invitation has expired"
+  - Enhanced `decline_invitation()` function:
+    - Check if invitation is expired before declining
+    - Return error if expired: "This invitation has expired"
+- Updated `invitation.service.ts`:
+  - `acceptInvitation()` now handles expired status error
+  - `declineInvitation()` now handles expired status error
+
+**Frontend**:
+
+- Existing invitation UI already supports displaying 'expired' status
+- Toast notifications show appropriate error messages
+- Translation keys already existed for all statuses
+
+**Files Created**:
+
+- `supabase/migrations/20251118000001_invitation_lifecycle_enhancements.sql` (NEW - 277 lines)
+
+**Files Modified**:
+
+- `src/lib/services/invitation.service.ts` (error handling for expired invitations)
+- `src/db/database.types.ts` (regenerated with expired status)
+
+#### 9. Tagging System for Archived Tours (US-024, US-025) - ✅ **NEWLY IMPLEMENTED (2025-11-18)**
+
+**Why**: Enable categorization and search of archived tours with multi-tag filtering
+
+**Backend**:
+
+- Migration: `supabase/migrations/20251118000002_tagging_system_enhancements.sql`
+  - Added RLS policies for tag creation and removal (participant-only access)
+  - Created `get_or_create_tag()` database function for tag normalization
+  - Added case-insensitive index: `CREATE INDEX idx_tags_name_lower ON tags(LOWER(name))`
+  - Prevents duplicate tags with different casing
+- Service: `src/lib/services/tag.service.ts` (NEW - 167 lines)
+  - `getTagsForTour()` - Fetch all tags for a specific tour
+  - `searchTags()` - Autocomplete search with optional query parameter
+  - `addTagToTour()` - Add tag to archived tour (enforces archived-only)
+  - `removeTagFromTour()` - Remove tag from archived tour
+  - `getAllTags()` - List all available tags for autocomplete
+  - Uses `isTourArchived()` check to enforce archived-only tagging
+- Updated `tour.service.ts` listToursForUser():
+  - Added multi-tag filtering with logical AND (all tags must match)
+  - Implemented Set-based intersection for efficient filtering
+  - Tag names normalized to lowercase for case-insensitive matching
+- API Endpoints:
+  - `GET /api/tours/[tourId]/tags` - List tags for tour
+  - `POST /api/tours/[tourId]/tags` - Add tag to archived tour
+  - `DELETE /api/tours/[tourId]/tags/[tagId]` - Remove tag from archived tour
+  - `GET /api/tags` - Search/list all tags with optional query parameter
+- Validators: `src/lib/validators/tag.validators.ts` (NEW)
+  - `addTagCommandSchema` - Validates tag names (1-50 chars, trimmed)
+  - `tagIdSchema` - Validates tag ID parameter
+  - `tagSearchQuerySchema` - Validates search queries
+
+**Frontend**:
+
+- Hooks: `src/lib/hooks/useTags.ts` (NEW)
+  - `useTourTags()` - React Query hook for fetching tour tags
+  - `useSearchTags()` - Autocomplete with 5-minute stale time
+  - `useAddTag()` - Mutation with optimistic updates and cache invalidation
+  - `useRemoveTag()` - Mutation with cache invalidation
+- Components:
+  - `TagBadge.tsx` (NEW) - Displays tag with optional remove button and loading state
+  - `TagInput.tsx` (NEW) - Input with autocomplete dropdown, filters existing tags, 50 char max
+  - `TagsSection.tsx` (NEW) - Complete tag management UI with input, badges, and error handling
+- Integration:
+  - `TourDetailsView.tsx` - Added `TagsSection` component for archived tours (positioned between Participants and Comments)
+- Updated `useTourList.ts`:
+  - Added `tags` parameter support for filtering
+  - Query key includes tags for proper cache invalidation
+  - Passes tags as comma-separated query string
+- Translations added:
+  - `tags.title` - "Tags"
+  - `tags.add` - "Add tag"
+  - `tags.addError` - "Failed to add tag"
+  - `tags.removeError` - "Failed to remove tag"
+  - `tags.noTags` - "No tags yet. Add tags to categorize this tour."
+  - `tags.placeholder` - "Enter tag name..."
+  - `tags.maxLength` - "Tag name is too long (max 50 characters)"
+
+**Files Created**:
+
+- `supabase/migrations/20251118000002_tagging_system_enhancements.sql` (NEW)
+- `src/lib/services/tag.service.ts` (NEW - 167 lines)
+- `src/lib/validators/tag.validators.ts` (NEW)
+- `src/lib/hooks/useTags.ts` (NEW)
+- `src/pages/api/tours/[tourId]/tags.ts` (NEW)
+- `src/pages/api/tours/[tourId]/tags/[tagId].ts` (NEW)
+- `src/pages/api/tags.ts` (NEW)
+- `src/components/tours/TagBadge.tsx` (NEW)
+- `src/components/tours/TagInput.tsx` (NEW)
+- `src/components/tours/TagsSection.tsx` (NEW)
+
+**Files Modified**:
+
+- `src/lib/services/tour.service.ts` (updated listToursForUser with tag filtering)
+- `src/lib/validators/tour.validators.ts` (added tags parameter to getToursQuerySchema)
+- `src/lib/hooks/useTourList.ts` (added tags parameter support)
+- `src/components/tours/TourDetailsView.tsx` (integrated TagsSection)
+- `src/db/database.types.ts` (regenerated)
+- `public/locales/en-US/tours.json` (tags translations)
+- `public/locales/pl-PL/tours.json` (tags translations)
+
+#### 10. Dark Mode - ✅ Complete
 
 - 30+ DaisyUI themes
 - Persistent theme storage
@@ -198,97 +390,23 @@ Last Updated: 2025-11-05
 
 ## Feature Gap Alignment (2025-11-18)
 
-| Funkcja | Priorytet | Źródło | Link do planu | Notatki |
+| Funkcja | Priorytet | Status | Źródło | Notatki |
 | --- | --- | --- | --- | --- |
-| Śledzenie aktywności (`has_new_activity`) | Must | PRD US-010/020 | `.ai/feature-gap/plan.md#31-śledzenie-aktywności-i-wskaźnik-nowa-aktywność` | Wymaga nowych tabel `tour_activity` i `tour_activity_reads`, automatyczne oznaczanie przy wejściu w szczegóły. |
-| Automatyczne archiwizowanie | Must | `db-plan.md` §5, PRD US-023 | `.ai/feature-gap/plan.md#32-automatyczne-archiwizowanie-wycieczek` | Cron 03:00 UTC + walidacja read-only w API/UI. |
-| Cykl życia zaproszeń (`expired`) | Must | PRD US-015/017 | `.ai/feature-gap/plan.md#35-cykl-życia-zaproszeń-akceptacja-odrzucenie-cleanup` | Backend cleanup + statusy `declined/expired`, UI już dostępne. |
-| Tagowanie archiwów + wyszukiwarka | Should | PRD US-024/025, `ui-plan.md` §6 | `.ai/feature-gap/plan.md#33-tagowanie-archiwów-i-wyszukiwarka` | Combobox z autosugestią, filtrowanie po wielu tagach (AND). |
-| Dwustopniowe usuwanie konta | Should | PRD US-008 | `.ai/feature-gap/plan.md#34-dwustopniowe-usuwanie-konta` | Endpoint `DELETE /api/profiles/me` + token e-mail, audit log 30 dni. |
+| Śledzenie aktywności (`has_new_activity`) | Must | ✅ **COMPLETE** | PRD US-010/020 | Implemented 2025-11-05. Tables `tour_activity`, auto-mark on view. |
+| Automatyczne archiwizowanie | Must | ✅ **COMPLETE** | `db-plan.md` §5, PRD US-023 | Implemented 2025-11-18. pg_cron 03:00 UTC + read-only validation. |
+| Cykl życia zaproszeń (`expired`) | Must | ✅ **COMPLETE** | PRD US-015/017 | Implemented 2025-11-18. 14-day TTL + cleanup cron 04:00 UTC. |
+| Tagowanie archiwów + wyszukiwarka | Should | ✅ **COMPLETE** | PRD US-024/025, `ui-plan.md` §6 | Implemented 2025-11-18. Autocomplete + multi-tag AND filtering. |
+| Dwustopniowe usuwanie konta | Should | ⏸️ **DEFERRED** | PRD US-008 | Not implemented. Requires `DELETE /api/profiles/me` + email token. |
 
-> Aktualny, szczegółowy harmonogram i RICE znajdują się w `.ai/feature-gap/plan.md`. Po zakończeniu każdej funkcji należy zaktualizować zarówno niniejszy roadmap, jak i plan szczegółowy.
+> **Implementation Status**: 4 out of 5 high-priority feature gaps completed (80%). Account deletion deferred as optional "Should" priority.
+>
+> Detailed planning documentation in `.ai/feature-gap/plan.md` can now be archived.
 
 ---
 
 ## 🎯 Next Steps (Priority Order)
 
-### Phase 2: Archive Management (1-2 days)
-
-#### 1. Auto-archiving System (US-023)
-
-**Estimated Time**: 3-4 hours
-
-**Implementation Options**:
-
-1. **Supabase Edge Function** (Recommended):
-   - Cron job runs daily at midnight
-   - Updates tours where `end_date < CURRENT_DATE` and `status = 'active'`
-   - Set `status = 'archived'`
-
-2. **PostgreSQL Trigger**:
-   - Computed column based on end_date
-   - Automatically updates status
-
-3. **Client-side Check**:
-   - Check on tour list fetch
-   - Archive tours client-side if needed
-
-**Backend**:
-
-- Edge Function: `supabase/functions/archive-tours/index.ts`
-- Schedule: Daily cron job
-- Service: `tourService.archiveTour(tourId)`
-
-**Frontend**:
-
-- Filter tabs: "Active" / "Archived"
-- Read-only mode for archived tours
-- Grey/muted styling for archived cards
-
-**Files to Create/Modify**:
-
-- `supabase/functions/archive-tours/index.ts` (NEW)
-- `src/lib/services/tour.service.ts`
-- `src/components/tours/TourList.tsx`
-- `src/components/tours/TourCard.tsx`
-
-#### 4. Tags System for Archived Tours (US-024, US-025)
-
-**Estimated Time**: 5-6 hours
-
-**Backend**:
-
-- New table: `tour_tags`
-  ```sql
-  CREATE TABLE tour_tags (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tour_id UUID REFERENCES tours(id) ON DELETE CASCADE,
-    tag_name TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    UNIQUE(tour_id, tag_name)
-  );
-  ```
-- Only available for archived tours
-- Endpoints:
-  - `POST /api/tours/{tourId}/tags` - Add tag
-  - `DELETE /api/tours/{tourId}/tags/{tagName}` - Remove tag
-  - `GET /api/tours/search?tag={tagName}` - Search by tag
-
-**Frontend**:
-
-- Tag input component (pills/chips)
-- Search/filter by tags on archive page
-- Auto-complete for existing tags
-
-**Files to Create/Modify**:
-
-- `supabase/migrations/*_tour_tags.sql` (NEW)
-- `src/pages/api/tours/[tourId]/tags.ts` (NEW)
-- `src/lib/services/tour-tag.service.ts` (NEW)
-- `src/components/tours/TourTagInput.tsx` (NEW)
-- `src/components/tours/TourCard.tsx`
-
-### Phase 3: Account Management (2 days)
+### Phase 3: Account Management (Optional - Deferred)
 
 #### 5. Account Deletion (US-008)
 
@@ -578,11 +696,11 @@ Complete status of all User Stories from `prd.md`:
 
 ### Archive and Search
 
-| ID     | Title                            | Status             | Notes             |
-| ------ | -------------------------------- | ------------------ | ----------------- |
-| US-023 | Automatic tour archiving         | ❌ Not Implemented | **Next: Phase 2** |
-| US-024 | Adding tags to an archived tour  | ❌ Not Implemented | **Next: Phase 2** |
-| US-025 | Searching archived tours by tags | ❌ Not Implemented | **Next: Phase 2** |
+| ID     | Title                            | Status      | Notes                                   |
+| ------ | -------------------------------- | ----------- | --------------------------------------- |
+| US-023 | Automatic tour archiving         | ✅ Complete | **NEW** pg_cron job + UI (2025-11-18)   |
+| US-024 | Adding tags to an archived tour  | ✅ Complete | **NEW** Full tagging system (2025-11-18) |
+| US-025 | Searching archived tours by tags | ✅ Complete | **NEW** Multi-tag filtering (2025-11-18) |
 
 ### Edge Cases
 
@@ -594,51 +712,37 @@ Complete status of all User Stories from `prd.md`:
 
 ## 🚀 Quick Start for Next Session
 
-### To Continue with Auto-archiving System (US-023):
+### Current Implementation Status (2025-11-18)
 
-1. **Choose implementation approach**:
-   - **Option A (Recommended)**: Supabase Edge Function with cron job
-   - **Option B**: PostgreSQL trigger based on end_date
-   - **Option C**: Client-side check on tour list fetch
+**Recently Completed (2025-11-18)**:
+- ✅ Automatic tour archiving with pg_cron (US-023)
+- ✅ Invitation lifecycle with expiration (US-015/017)
+- ✅ Tagging system for archived tours (US-024/025)
+- ✅ Read-only enforcement for archived tours
 
-2. **If using Edge Function** (Option A):
+**Available Next Steps**:
 
-   ```bash
-   npx supabase functions new archive-tours
-   ```
+1. **Account Deletion (US-008)** - Optional "Should" priority
+   - Two-step confirmation with email verification
+   - Estimated: 4-5 hours
+   - See Phase 3 section above for details
 
-   Edge function code:
+2. **Owner Transfer on Deletion (US-026)** - Depends on US-008
+   - Automatic ownership transfer to next participant
+   - Estimated: 3-4 hours
 
-   ```typescript
-   import { createClient } from "@supabase/supabase-js";
+3. **Backlog Features** - Lower priority enhancements
+   - Participant limit enforcement (US-009)
+   - Like threshold achievements (US-009)
+   - Tour images/photo gallery
+   - Email notifications system
+   - Mobile app (React Native)
 
-   Deno.serve(async () => {
-     const supabase = createClient(/* ... */);
-
-     const { data, error } = await supabase
-       .from("tours")
-       .update({ status: "archived" })
-       .eq("status", "active")
-       .lt("end_date", new Date().toISOString());
-
-     return new Response(JSON.stringify({ archived: data?.length }));
-   });
-   ```
-
-3. **Configure cron job**:
-   - Schedule daily execution at midnight
-   - Add to `supabase/functions/archive-tours/cron.yml`
-
-4. **Update frontend**:
-   - Add filter tabs: "Active" / "Archived" in TourList
-   - Grey/muted styling for archived tour cards
-   - Make archived tours read-only
-
-5. **Test**:
-   - Create tour with end_date in the past
-   - Manually trigger edge function or wait for cron
-   - Verify tour status changes to "archived"
-   - Verify archived tour appears in "Archived" tab
+**Testing Recommendations**:
+- Add E2E tests for archiving workflow
+- Add E2E tests for tagging system
+- Add unit tests for tag.service.ts
+- Add unit tests for tour-status.util.ts
 
 ---
 
