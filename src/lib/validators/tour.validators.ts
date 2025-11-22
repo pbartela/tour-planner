@@ -4,6 +4,17 @@ export const getToursQuerySchema = z.object({
   status: z.enum(["active", "archived"]).default("active"),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
+  tags: z
+    .string()
+    .optional()
+    .transform((val) => {
+      if (!val) return undefined;
+      // Split by comma and filter out empty strings
+      return val
+        .split(",")
+        .map((tag) => tag.trim().toLowerCase())
+        .filter((tag) => tag.length > 0);
+    }),
 });
 
 const baseTourSchema = z.object({
