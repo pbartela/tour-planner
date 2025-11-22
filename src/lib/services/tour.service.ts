@@ -90,18 +90,63 @@ class TourService {
     userId: string,
     options: z.infer<typeof getToursQuerySchema>
   ): Promise<PaginatedToursDto> {
-    const { status, page, limit } = options;
+    const { status, page, limit, tags } = options;
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
     try {
-      // Combine data and count into a single query to avoid N+1 issue
-      // Query participants table and join with tours using RLS-safe relationship filter
-      const {
-        data: tours,
-        error: toursError,
-        count,
-      } = await supabase
+      // If tags are provided, we need to filter tours that have ALL specified tags
+      // This requires a different query strategy
+      let tourIdsWithTags: string[] | undefined;
+
+      if (tags && tags.length > 0) {
+        // Get tours that have all the specified tags using a SQL query
+        // For each tag, find tours that have it, then intersect the results
+        const { data: tourTagsData, error: tourTagsError } = await supabase
+          .from("tour_tags")
+          .select("tour_id, tags!tour_tags_tag_id_fkey(name)")
+          .in(
+            "tags.name",
+            tags.map((t) => t.toLowerCase())
+          );
+
+        if (tourTagsError) {
+          secureError("Error fetching tour tags for filtering", tourTagsError);
+          throw new Error("Failed to filter tours by tags.");
+        }
+
+        // Group by tour_id and count how many tags match
+        const tourTagCounts = new Map<string, Set<string>>();
+        (tourTagsData || []).forEach((tt) => {
+          const tag = Array.isArray(tt.tags) ? tt.tags[0] : tt.tags;
+          if (tag?.name) {
+            if (!tourTagCounts.has(tt.tour_id)) {
+              tourTagCounts.set(tt.tour_id, new Set());
+            }
+            tourTagCounts.get(tt.tour_id)!.add(tag.name.toLowerCase());
+          }
+        });
+
+        // Filter to tours that have ALL requested tags (logical AND)
+        tourIdsWithTags = Array.from(tourTagCounts.entries())
+          .filter(([_, tagSet]) => tags.every((tag) => tagSet.has(tag.toLowerCase())))
+          .map(([tourId, _]) => tourId);
+
+        // If no tours match the tag criteria, return empty result early
+        if (tourIdsWithTags.length === 0) {
+          return {
+            data: [],
+            pagination: {
+              page,
+              limit,
+              total: 0,
+            },
+          };
+        }
+      }
+
+      // Build the main query
+      let query = supabase
         .from("participants")
         .select(
           `
@@ -118,9 +163,17 @@ class TourService {
           { count: "exact" }
         )
         .eq("user_id", userId)
-        .eq("tour.status", status)
-        .range(from, to)
-        .returns<{ tour: TourSummaryDto }[]>();
+        .eq("tour.status", status);
+
+      // Apply tag filtering if we have specific tour IDs
+      if (tourIdsWithTags) {
+        query = query.in("tour.id", tourIdsWithTags);
+      }
+
+      // Apply pagination
+      query = query.range(from, to);
+
+      const { data: tours, error: toursError, count } = await query.returns<{ tour: TourSummaryDto }[]>();
 
       if (toursError) {
         secureError("Error fetching user tours from database", toursError);
