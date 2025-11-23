@@ -61,11 +61,7 @@ export const TagsSection = ({ tourId }: TagsSectionProps) => {
 
         {/* Tag Input */}
         <div className="mb-4">
-          <TagInput
-            onAddTag={handleAddTag}
-            existingTags={existingTagNames}
-            isAdding={addTagMutation.isPending}
-          />
+          <TagInput onAddTag={handleAddTag} existingTags={existingTagNames} isAdding={addTagMutation.isPending} />
           {addTagMutation.isError && (
             <p className="mt-2 text-sm text-error">
               {addTagMutation.error instanceof Error ? addTagMutation.error.message : t("tags.addError")}

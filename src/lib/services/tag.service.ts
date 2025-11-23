@@ -48,7 +48,7 @@ class TagService {
    * Searches for tags by name prefix (for autocomplete).
    * Returns all matching tags.
    */
-  public async searchTags(supabase: SupabaseClient, query: string, limit: number = 10): Promise<TagDto[]> {
+  public async searchTags(supabase: SupabaseClient, query: string, limit = 10): Promise<TagDto[]> {
     try {
       const { data, error } = await supabase
         .from("tags")

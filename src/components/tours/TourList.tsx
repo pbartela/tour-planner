@@ -66,10 +66,7 @@ export const TourList = ({ onAddTripClick }: TourListProps = {}) => {
     <div className="space-y-6">
       {/* Status Tabs */}
       <div className="tabs tabs-boxed bg-base-200">
-        <button
-          className={`tab ${activeTab === "active" ? "tab-active" : ""}`}
-          onClick={() => setActiveTab("active")}
-        >
+        <button className={`tab ${activeTab === "active" ? "tab-active" : ""}`} onClick={() => setActiveTab("active")}>
           {t("tourList.tabs.active")}
         </button>
         <button

@@ -1,7 +1,39 @@
-import { useMutation } from "@tanstack/react-query";
-import { patch, handleApiResponse, apiRequest } from "@/lib/client/api-client";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { get, patch, handleApiResponse, apiRequest } from "@/lib/client/api-client";
 import type { ProfileDto, UpdateProfileCommand } from "@/types";
 import { queryClient } from "@/lib/queryClient";
+
+/**
+ * Fetches the current user's profile
+ */
+const fetchProfile = async (): Promise<ProfileDto> => {
+  const response = await get("/api/profiles/me");
+  return handleApiResponse<ProfileDto>(response);
+};
+
+/**
+ * React Query hook for fetching user profile
+ *
+ * @param placeholderData - Optional placeholder data from SSR (e.g., from server)
+ * @example
+ * ```tsx
+ * const { data: profile, isLoading } = useProfile();
+ *
+ * // With placeholder data from SSR
+ * const { data: profile } = useProfile(serverProfile);
+ * ```
+ */
+export const useProfile = (placeholderData?: ProfileDto) => {
+  return useQuery(
+    {
+      queryKey: ["profile", "me"],
+      queryFn: fetchProfile,
+      placeholderData,
+      staleTime: 0, // Always refetch to ensure fresh data
+    },
+    queryClient
+  );
+};
 
 /**
  * Updates the current user's profile
@@ -79,8 +111,10 @@ export const useUploadAvatarMutation = () => {
     {
       mutationFn: uploadAvatar,
       onSuccess: (data) => {
+        console.log("[Avatar Upload] Success - New avatar_url:", data.avatar_url);
         // Update the profile cache with the new data
         queryClient.setQueryData(["profile", "me"], data);
+        console.log("[Avatar Upload] Cache updated with new profile data");
         // Invalidate to refetch user data
         queryClient.invalidateQueries({ queryKey: ["user"] });
       },

@@ -193,9 +193,7 @@ class TourService {
       // Create a map of tour_id -> array of avatar URLs
       const participantAvatarsMap = new Map<string, string[]>();
       (participantsData || []).forEach((participant) => {
-        const profile = Array.isArray(participant.profiles)
-          ? participant.profiles[0]
-          : participant.profiles;
+        const profile = Array.isArray(participant.profiles) ? participant.profiles[0] : participant.profiles;
         const avatarUrl = profile?.avatar_url;
 
         if (avatarUrl) {
