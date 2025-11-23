@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { get, post, del, handleApiResponse } from "@/lib/client/api-client";
 import { queryClient as defaultQueryClient } from "@/lib/queryClient";
 import type { TagDto } from "@/lib/services/tag.service";
+import { QUERY_STALE_TIME } from "@/lib/constants/query";
 
 /**
  * Hook to fetch tags for a specific tour
@@ -32,7 +33,7 @@ export const useSearchTags = (query?: string) => {
         return handleApiResponse<TagDto[]>(response);
       },
       // Keep cached for a while since tags don't change often
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: QUERY_STALE_TIME.INFREQUENT,
     },
     defaultQueryClient
   );

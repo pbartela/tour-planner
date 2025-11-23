@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { get, handleApiResponse } from "@/lib/client/api-client";
 import type { ParticipantDto } from "@/types";
 import { queryClient } from "@/lib/queryClient";
+import { QUERY_STALE_TIME } from "@/lib/constants/query";
 
 /**
  * Fetches participants for a specific tour
@@ -24,7 +25,7 @@ export const useParticipants = (tourId: string) => {
     {
       queryKey: ["participants", tourId],
       queryFn: () => fetchParticipants(tourId),
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: QUERY_STALE_TIME.INFREQUENT,
       enabled: !!tourId,
     },
     queryClient

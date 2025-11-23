@@ -163,12 +163,7 @@ export const TagInput = ({ onAddTag, existingTags, isAdding }: TagInputProps) =>
         >
           <ul className="menu p-2" role="listbox" id={listboxId}>
             {visibleSuggestions.map((tag, index) => (
-              <li
-                key={tag.id}
-                id={getOptionId(index)}
-                role="option"
-                aria-selected={activeIndex === index}
-              >
+              <li key={tag.id} id={getOptionId(index)} role="option" aria-selected={activeIndex === index}>
                 <button
                   onClick={() => {
                     setInputValue(tag.name);

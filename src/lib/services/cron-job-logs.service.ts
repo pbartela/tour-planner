@@ -33,14 +33,12 @@ interface GetCronJobLogsOptions {
  */
 export async function getRecentCronJobLogs(
   adminClient: AdminClient,
-  { limit = 50, jobName }: GetCronJobLogsOptions = {},
+  { limit = 50, jobName }: GetCronJobLogsOptions = {}
 ): Promise<CronJobLogDto[]> {
   try {
     let query = adminClient
       .from("cron_job_logs")
-      .select(
-        "id, job_name, execution_time, success, error_message, tours_archived, invitations_expired",
-      )
+      .select("id, job_name, execution_time, success, error_message, tours_archived, invitations_expired")
       .order("execution_time", { ascending: false })
       .limit(limit);
 
@@ -61,5 +59,3 @@ export async function getRecentCronJobLogs(
     throw error instanceof Error ? error : new Error("An unexpected error occurred.");
   }
 }
-
-
