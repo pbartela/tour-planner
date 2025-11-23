@@ -38,6 +38,9 @@ export const TagsSection = ({ tourId }: TagsSectionProps) => {
     }
   };
 
+  // Dynamic error/success/empty-state translation keys (extracted by i18next-parser):
+  // t('tags.error'), t('tags.success'), t('tags.empty')
+
   if (isLoading) {
     return (
       <div className="card bg-base-100 shadow-xl">

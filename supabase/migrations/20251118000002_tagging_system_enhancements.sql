@@ -17,7 +17,7 @@ COMMENT ON POLICY "authenticated users can create tags" ON public.tags IS
   'Allows any authenticated user to create new tag names. Tags are shared globally across all tours.';
 
 -- ============================================================================
--- RLS Policy: Allow participants to remove tags from archived tours
+-- RLS Policies: Allow participants to manage tags on archived tours
 -- ============================================================================
 
 CREATE POLICY "users can remove tags from archived tours they participated in"
@@ -36,8 +36,27 @@ CREATE POLICY "users can remove tags from archived tours they participated in"
     )
   );
 
+CREATE POLICY "users can add tags only to archived tours they participated in"
+  ON public.tour_tags
+  FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM public.participants
+      WHERE tour_id = tour_tags.tour_id AND user_id = auth.uid()
+    ) AND
+    EXISTS (
+      SELECT 1
+      FROM public.tours
+      WHERE id = tour_tags.tour_id AND status = 'archived'
+    )
+  );
+
 COMMENT ON POLICY "users can remove tags from archived tours they participated in" ON public.tour_tags IS
   'Allows participants to remove tags from archived tours they were part of. Only works on archived tours.';
+
+COMMENT ON POLICY "users can add tags only to archived tours they participated in" ON public.tour_tags IS
+  'Allows participants to add tags only to tours they participated in and that are archived.';
 
 -- ============================================================================
 -- Add index for tag name lookup (case-insensitive search)
