@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS public.cron_job_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   job_name TEXT NOT NULL,
   execution_time TIMESTAMPTZ NOT NULL DEFAULT now(),
-  tours_archived INTEGER DEFAULT 0,
+  tours_archived INTEGER,
+  invitations_expired INTEGER,
   success BOOLEAN NOT NULL,
   error_message TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -33,8 +34,7 @@ BEGIN
   UPDATE public.tours
   SET status = 'archived'
   WHERE status = 'active'
-    AND end_date < now()
-  RETURNING id INTO archived_count;
+    AND end_date < now();
 
   -- Get the count of archived tours
   GET DIAGNOSTICS archived_count = ROW_COUNT;
