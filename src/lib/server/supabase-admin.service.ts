@@ -47,4 +47,3 @@ export async function getUserByEmail(adminClient: AdminClient, email: string): P
 
   return { user, error: null };
 }
-

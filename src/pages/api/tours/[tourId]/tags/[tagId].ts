@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { validateSession } from "@/lib/server/session-validation.service";
 import { secureError } from "@/lib/server/logger.service";
-import { tagService } from "@/lib/services/tag.service";
+import { tagService, ArchiveError } from "@/lib/services/tag.service";
 import { tagIdSchema } from "@/lib/validators/tag.validators";
 import { checkRateLimit, getClientIdentifier, RATE_LIMIT_CONFIGS } from "@/lib/server/rate-limit.service";
 
@@ -91,19 +91,17 @@ export const DELETE: APIRoute = async ({ params, locals, request }) => {
   } catch (error) {
     secureError("Error in DELETE /api/tours/[tourId]/tags/[tagId]", error);
 
-    // Check for specific error messages
-    if (error instanceof Error) {
-      if (error.message.includes("archived")) {
-        return new Response(
-          JSON.stringify({
-            error: {
-              code: "FORBIDDEN",
-              message: error.message,
-            },
-          }),
-          { status: 403 }
-        );
-      }
+    // Check for ArchiveError (tags can only be removed from archived tours)
+    if (error instanceof ArchiveError) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "FORBIDDEN",
+            message: error.message,
+          },
+        }),
+        { status: 403 }
+      );
     }
 
     return new Response(
