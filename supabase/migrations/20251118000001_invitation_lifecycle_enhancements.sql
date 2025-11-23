@@ -49,7 +49,7 @@ BEGIN
   GET DIAGNOSTICS expired_count = ROW_COUNT;
 
   -- Log successful execution
-  INSERT INTO public.cron_job_logs (job_name, tours_archived, success)
+  INSERT INTO public.cron_job_logs (job_name, invitations_expired, success)
   VALUES ('cleanup_expired_invitations', expired_count, true);
 
   RETURN expired_count;
@@ -57,7 +57,7 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   -- Log error
   GET STACKED DIAGNOSTICS error_msg = MESSAGE_TEXT;
-  INSERT INTO public.cron_job_logs (job_name, tours_archived, success, error_message)
+  INSERT INTO public.cron_job_logs (job_name, invitations_expired, success, error_message)
   VALUES ('cleanup_expired_invitations', 0, false, error_msg);
 
   -- Re-raise the error
