@@ -286,19 +286,19 @@ class InvitationService {
         );
       }
 
-      // Get existing pending invitations for this tour
+      // Get existing pending and declined invitations for this tour
       const { data: existingInvitations, error: invitationsError } = await supabase
         .from("invitations")
         .select("email")
         .eq("tour_id", tourId)
-        .eq("status", "pending");
+        .in("status", ["pending", "declined"]);
 
       if (invitationsError) {
         secureError("Error fetching existing invitations", invitationsError);
         throw new Error("Failed to check existing invitations.");
       }
 
-      const pendingEmails = new Set((existingInvitations || []).map((inv) => inv.email.toLowerCase()));
+      const blockedEmails = new Set((existingInvitations || []).map((inv) => inv.email.toLowerCase()));
 
       // Dynamic import of email service (avoid loading in server context where it's not needed)
       const { sendInvitationEmail } = await import("@/lib/server/email.service");
@@ -312,8 +312,8 @@ class InvitationService {
             continue;
           }
 
-          // Skip if already has pending invitation
-          if (pendingEmails.has(email)) {
+          // Skip if already has pending or declined invitation
+          if (blockedEmails.has(email)) {
             skipped.push(email);
             continue;
           }
