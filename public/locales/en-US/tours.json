@@ -96,8 +96,8 @@
     "sending": "Sending...",
     "sentSuccess_one": "Invitation sent to {{count}} email: {{emails}}",
     "sentSuccess_other": "Invitations sent to {{count}} emails: {{emails}}",
-    "skippedMessage_one": "Skipped {{count}} email (already participants or have pending invitations): {{emails}}",
-    "skippedMessage_other": "Skipped {{count}} emails (already participants or have pending invitations): {{emails}}",
+    "skippedMessage_one": "Skipped {{count}} email (already invited or declined): {{emails}}",
+    "skippedMessage_other": "Skipped {{count}} emails (already invited or declined): {{emails}}",
     "status": {
       "accepted": "Accepted",
       "declined": "Declined",
