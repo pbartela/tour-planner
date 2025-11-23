@@ -72,8 +72,6 @@
     "avatarDeleteSuccess": "Avatar deleted successfully",
     "avatarHint": "JPG, PNG, WebP, or GIF. Max 5MB.",
     "avatarSet": "Avatar set",
-    "avatarUploadError": "Failed to upload avatar",
-    "avatarUploadSuccess": "Avatar uploaded successfully",
     "cancel": "Cancel",
     "deleteAvatar": "Delete Avatar",
     "deleteAvatarConfirm": "Are you sure you want to delete your avatar?",

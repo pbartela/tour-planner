@@ -13,6 +13,13 @@ export interface TourTagDto {
   tag_name: string;
 }
 
+export class ArchiveError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ArchiveError";
+  }
+}
+
 class TagService {
   /**
    * Gets all tags for a specific tour.
@@ -46,7 +53,14 @@ class TagService {
 
   /**
    * Searches for tags by name prefix (for autocomplete).
-   * Returns all matching tags.
+   *
+   * Notes on performance:
+   * - Uses a simple `ILIKE '<query>%'` pattern which is fast enough for the current scale.
+   * - The `idx_tags_name_lower` index optimizes case-insensitive equality lookups via `LOWER(name)`,
+   *   but it will not help with patterns that start with wildcards (e.g. `'%foo'`) or future
+   *   full-text search on tag descriptions.
+   * - If we later add tag descriptions or need richer search (e.g. partial matches anywhere in
+   *   the string), consider adding a dedicated GIN/trigram index and switching to full-text search.
    */
   public async searchTags(supabase: SupabaseClient, query: string, limit = 10): Promise<TagDto[]> {
     try {
@@ -80,7 +94,7 @@ class TagService {
       // Verify tour is archived
       const isArchived = await isTourArchived(supabase, tourId);
       if (!isArchived) {
-        throw new Error("Tags can only be added to archived tours.");
+        throw new ArchiveError("Tags can only be added to archived tours.");
       }
 
       // Get or create tag (case-insensitive)
@@ -108,8 +122,18 @@ class TagService {
             return existingTag;
           }
         }
+
+        // Check for RLS policy violation (insufficient privileges)
+        if (insertError.code === "42501") {
+          secureError("RLS policy violation when adding tag to tour", insertError);
+          throw new Error(
+            "You don't have permission to add tags to this tour. Only participants of archived tours can add tags."
+          );
+        }
+
+        // Other database errors
         secureError("Error adding tag to tour", insertError);
-        throw new Error("Failed to add tag to tour. You may not have permission.");
+        throw new Error("Failed to add tag to tour.");
       }
 
       // Fetch the created tag
@@ -137,14 +161,23 @@ class TagService {
       // Verify tour is archived
       const isArchived = await isTourArchived(supabase, tourId);
       if (!isArchived) {
-        throw new Error("Tags can only be removed from archived tours.");
+        throw new ArchiveError("Tags can only be removed from archived tours.");
       }
 
       const { error } = await supabase.from("tour_tags").delete().eq("tour_id", tourId).eq("tag_id", tagId);
 
       if (error) {
+        // Check for RLS policy violation (insufficient privileges)
+        if (error.code === "42501") {
+          secureError("RLS policy violation when removing tag from tour", error);
+          throw new Error(
+            "You don't have permission to remove tags from this tour. Only participants of archived tours can remove tags."
+          );
+        }
+
+        // Other database errors
         secureError("Error removing tag from tour", error);
-        throw new Error("Failed to remove tag from tour. You may not have permission.");
+        throw new Error("Failed to remove tag from tour.");
       }
     } catch (error) {
       secureError("Unexpected error in removeTagFromTour", error);

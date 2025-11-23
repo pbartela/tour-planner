@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { validateSession } from "@/lib/server/session-validation.service";
 import { secureError } from "@/lib/server/logger.service";
-import { tagService } from "@/lib/services/tag.service";
+import { ArchiveError, tagService } from "@/lib/services/tag.service";
 import { addTagCommandSchema } from "@/lib/validators/tag.validators";
 import { checkRateLimit, getClientIdentifier, RATE_LIMIT_CONFIGS } from "@/lib/server/rate-limit.service";
 
@@ -179,19 +179,16 @@ export const POST: APIRoute = async ({ params, locals, request }) => {
   } catch (error) {
     secureError("Error in POST /api/tours/[tourId]/tags", error);
 
-    // Check for specific error messages
-    if (error instanceof Error) {
-      if (error.message.includes("archived")) {
-        return new Response(
-          JSON.stringify({
-            error: {
-              code: "FORBIDDEN",
-              message: error.message,
-            },
-          }),
-          { status: 403 }
-        );
-      }
+    if (error instanceof ArchiveError) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "FORBIDDEN",
+            message: error.message,
+          },
+        }),
+        { status: 403 }
+      );
     }
 
     return new Response(
