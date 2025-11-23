@@ -140,7 +140,8 @@ class InvitationService {
           expires_at,
           created_at,
           tours!tour_id (
-            title
+            title,
+            status
           )
         `
         )
@@ -178,11 +179,15 @@ class InvitationService {
         .eq("id", invitation.inviter_id)
         .maybeSingle();
 
-      const tours = invitation.tours as { title: string }[] | null | undefined;
+      const tours = invitation.tours as
+        | { title: string; status: "planning" | "confirmed" | "archived" }[]
+        | null
+        | undefined;
       return {
         id: invitation.id,
         tour_id: invitation.tour_id,
         tour_title: tours && tours.length > 0 ? tours[0].title : "",
+        tour_status: tours && tours.length > 0 ? tours[0].status : "planning",
         inviter_email: inviterEmail,
         inviter_display_name: profile?.display_name || undefined,
         email: invitation.email,
@@ -434,7 +439,9 @@ class InvitationService {
       }
 
       // Prevent accepting invitations to archived tours
-      await ensureTourNotArchived(supabase, invitation.tour_id);
+      if (invitation.tour_status === "archived") {
+        throw new Error("Cannot accept invitation to an archived tour. Archived tours are read-only.");
+      }
 
       // Call the database function
       const { data, error } = await supabase.rpc("accept_invitation", {

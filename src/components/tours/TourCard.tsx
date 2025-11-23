@@ -81,9 +81,7 @@ export const TourCard = ({ tour }: Props) => {
           {(avatars.length > 0 || tour.hasNewActivity) && (
             <div className="flex items-center gap-2 mt-2">
               {avatars.length > 0 && <AvatarGroup avatars={avatars} maxVisible={3} />}
-              {!isArchived && (
-                <ActivityIndicator hasActivity={tour.hasNewActivity} label={t("tourList.newActivity")} />
-              )}
+              {!isArchived && <ActivityIndicator hasActivity={tour.hasNewActivity} label={t("tourList.newActivity")} />}
             </div>
           )}
         </div>

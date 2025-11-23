@@ -196,6 +196,7 @@ export interface InvitationByTokenDto {
   id: string;
   tour_id: string;
   tour_title: string;
+  tour_status: "planning" | "confirmed" | "archived";
   inviter_email: string;
   inviter_display_name?: string;
   email: string;

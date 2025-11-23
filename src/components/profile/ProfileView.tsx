@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/Avatar";
 import { DeleteAccountDialog } from "./DeleteAccountDialog";
 import { useDeleteAccountMutation } from "@/lib/hooks/useAccountMutations";
+import { useProfile } from "@/lib/hooks/useProfileMutations";
 
 interface ProfileViewProps {
   user: User;
@@ -30,6 +31,14 @@ export const ProfileView = ({ user }: ProfileViewProps) => {
     }
   };
 
+  // Use React Query to get profile data - this will automatically update when mutations change the cache
+  const { data: profile } = useProfile(user.profile);
+
+  // Fallback to initial user.profile if profile is not loaded yet (shouldn't happen with initialData)
+  const currentProfile = profile || user.profile;
+
+  console.log("[ProfileView] Render - avatar_url:", currentProfile.avatar_url);
+
   return (
     <div className="container mx-auto max-w-2xl space-y-6 p-4">
       <div className="card bg-base-100 shadow-xl">
@@ -44,7 +53,7 @@ export const ProfileView = ({ user }: ProfileViewProps) => {
           {isEditing ? (
             <>
               <ProfileEditForm
-                profile={user.profile}
+                profile={currentProfile}
                 email={user.email}
                 onSuccess={() => {
                   setIsEditing(false);
@@ -58,10 +67,12 @@ export const ProfileView = ({ user }: ProfileViewProps) => {
             <div className="space-y-4">
               {/* Avatar */}
               <div className="flex items-center gap-4">
-                <Avatar src={user.profile.avatar_url} alt={user.profile.display_name || user.email} size="xl" />
+                <Avatar src={currentProfile.avatar_url} alt={currentProfile.display_name || user.email} size="xl" />
                 <div>
                   <p className="text-sm text-base-content/60">{t("profile.avatar")}</p>
-                  <p className="text-sm">{user.profile.avatar_url ? t("profile.avatarSet") : t("profile.noAvatar")}</p>
+                  <p className="text-sm">
+                    {currentProfile.avatar_url ? t("profile.avatarSet") : t("profile.noAvatar")}
+                  </p>
                 </div>
               </div>
 
@@ -72,24 +83,24 @@ export const ProfileView = ({ user }: ProfileViewProps) => {
 
               <div>
                 <p className="text-sm text-base-content/60">{t("profile.displayName")}</p>
-                <p className="text-lg">{user.profile.display_name || t("profile.notSet")}</p>
+                <p className="text-lg">{currentProfile.display_name || t("profile.notSet")}</p>
               </div>
 
               {/* Dynamic language keys: t('profile.languages.en-US'), t('profile.languages.pl-PL') */}
               <div>
                 <p className="text-sm text-base-content/60">{t("profile.language")}</p>
-                <p className="text-lg">{t(`profile.languages.${user.profile.language}`)}</p>
+                <p className="text-lg">{t(`profile.languages.${currentProfile.language}`)}</p>
               </div>
 
               {/* Dynamic theme keys: t('profile.themes.light'), t('profile.themes.dark'), t('profile.themes.system') */}
               <div>
                 <p className="text-sm text-base-content/60">{t("profile.theme")}</p>
-                <p className="text-lg">{t(`profile.themes.${user.profile.theme}`)}</p>
+                <p className="text-lg">{t(`profile.themes.${currentProfile.theme}`)}</p>
               </div>
 
               <div>
                 <p className="text-sm text-base-content/60">{t("profile.memberSince")}</p>
-                <p className="text-lg">{new Date(user.profile.created_at).toLocaleDateString()}</p>
+                <p className="text-lg">{new Date(currentProfile.created_at).toLocaleDateString()}</p>
               </div>
             </div>
           )}

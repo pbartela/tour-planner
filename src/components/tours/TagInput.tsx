@@ -23,9 +23,7 @@ export const TagInput = ({ onAddTag, existingTags, isAdding }: TagInputProps) =>
   const { data: suggestions = [] } = useSearchTags(inputValue.trim() || undefined);
 
   // Filter out tags that already exist on this tour
-  const filteredSuggestions = suggestions.filter(
-    (tag) => !existingTags.includes(tag.name.toLowerCase())
-  );
+  const filteredSuggestions = suggestions.filter((tag) => !existingTags.includes(tag.name.toLowerCase()));
 
   // Handle click outside to close suggestions
   useEffect(() => {
