@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { validateSession } from "@/lib/server/session-validation.service";
 import { secureError } from "@/lib/server/logger.service";
-import { tagService } from "@/lib/services/tag.service";
+import { tagService, type TagSuggestionDto } from "@/lib/services/tag.service";
 import { profileService } from "@/lib/services/profile.service";
 import { tagSearchQuerySchema } from "@/lib/validators/tag.validators";
 import { checkRateLimit, getClientIdentifier, RATE_LIMIT_CONFIGS } from "@/lib/server/rate-limit.service";
@@ -82,23 +82,28 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
     }
 
     // 4. Search or get recently used tags
-    let tags;
+    let suggestions: TagSuggestionDto[];
     if (parsed.data.q) {
-      // Search tags by query
-      tags = await tagService.searchTags(supabase, parsed.data.q, parsed.data.limit);
+      // Search tags by query - these are database tags with real IDs
+      const dbTags = await tagService.searchTags(supabase, parsed.data.q, parsed.data.limit);
+      suggestions = dbTags.map((tag) => ({
+        source: "database" as const,
+        id: tag.id,
+        name: tag.name,
+      }));
     } else {
-      // Get user's recently used tags
+      // Get user's recently used tags - these are just strings, no real IDs
       const { data: profile } = await profileService.getProfile(supabase, user.id);
       const recentTagNames = (profile?.recently_used_tags as string[]) || [];
 
-      // Convert tag names to TagDto format
-      tags = recentTagNames.map((name, index) => ({
-        id: -(index + 1), // Use negative IDs to indicate these are not real tag IDs
+      suggestions = recentTagNames.map((name) => ({
+        source: "recent" as const,
+        id: null,
         name,
       }));
     }
 
-    return new Response(JSON.stringify(tags), {
+    return new Response(JSON.stringify(suggestions), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });

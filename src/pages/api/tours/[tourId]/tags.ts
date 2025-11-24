@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { validateSession } from "@/lib/server/session-validation.service";
 import { secureError } from "@/lib/server/logger.service";
 import { ArchiveError, tagService } from "@/lib/services/tag.service";
+import { TourNotFoundError, TourStatusVerificationError } from "@/lib/utils/tour-status.util";
 import { addTagCommandSchema } from "@/lib/validators/tag.validators";
 import { checkRateLimit, getClientIdentifier, RATE_LIMIT_CONFIGS } from "@/lib/server/rate-limit.service";
 
@@ -179,6 +180,33 @@ export const POST: APIRoute = async ({ params, locals, request }) => {
   } catch (error) {
     secureError("Error in POST /api/tours/[tourId]/tags", error);
 
+    // Handle tour not found
+    if (error instanceof TourNotFoundError) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "NOT_FOUND",
+            message: "Tour not found.",
+          },
+        }),
+        { status: 404 }
+      );
+    }
+
+    // Handle tour status verification errors (RLS denial, etc.)
+    if (error instanceof TourStatusVerificationError) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "FORBIDDEN",
+            message: "You don't have permission to access this tour.",
+          },
+        }),
+        { status: 403 }
+      );
+    }
+
+    // Handle archive constraint (tags only on archived tours)
     if (error instanceof ArchiveError) {
       return new Response(
         JSON.stringify({

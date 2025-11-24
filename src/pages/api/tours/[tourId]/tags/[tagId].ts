@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { validateSession } from "@/lib/server/session-validation.service";
 import { secureError } from "@/lib/server/logger.service";
 import { tagService, ArchiveError } from "@/lib/services/tag.service";
+import { TourNotFoundError, TourStatusVerificationError } from "@/lib/utils/tour-status.util";
 import { tagIdSchema } from "@/lib/validators/tag.validators";
 import { checkRateLimit, getClientIdentifier, RATE_LIMIT_CONFIGS } from "@/lib/server/rate-limit.service";
 
@@ -90,6 +91,32 @@ export const DELETE: APIRoute = async ({ params, locals, request }) => {
     return new Response(null, { status: 204 });
   } catch (error) {
     secureError("Error in DELETE /api/tours/[tourId]/tags/[tagId]", error);
+
+    // Handle tour not found
+    if (error instanceof TourNotFoundError) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "NOT_FOUND",
+            message: "Tour not found.",
+          },
+        }),
+        { status: 404 }
+      );
+    }
+
+    // Handle tour status verification errors (RLS denial, etc.)
+    if (error instanceof TourStatusVerificationError) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "FORBIDDEN",
+            message: "You don't have permission to access this tour.",
+          },
+        }),
+        { status: 403 }
+      );
+    }
 
     // Check for ArchiveError (tags can only be removed from archived tours)
     if (error instanceof ArchiveError) {

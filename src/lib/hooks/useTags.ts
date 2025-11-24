@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { get, post, del, handleApiResponse } from "@/lib/client/api-client";
 import { queryClient as defaultQueryClient } from "@/lib/queryClient";
-import type { TagDto } from "@/lib/services/tag.service";
+import type { TagDto, TagSuggestionDto } from "@/lib/services/tag.service";
 import { QUERY_STALE_TIME } from "@/lib/constants/query";
 
 /**
@@ -22,15 +22,17 @@ export const useTourTags = (tourId: string) => {
 
 /**
  * Hook to search/list all available tags
+ * Returns TagSuggestionDto which uses discriminated unions to distinguish
+ * between database tags (with real IDs) and recent tags (with null IDs)
  */
 export const useSearchTags = (query?: string) => {
   return useQuery(
     {
       queryKey: ["tags", { q: query }],
-      queryFn: async (): Promise<TagDto[]> => {
+      queryFn: async (): Promise<TagSuggestionDto[]> => {
         const params = query ? `?q=${encodeURIComponent(query)}` : "";
         const response = await get(`/api/tags${params}`);
-        return handleApiResponse<TagDto[]>(response);
+        return handleApiResponse<TagSuggestionDto[]>(response);
       },
       // Keep cached for a while since tags don't change often
       staleTime: QUERY_STALE_TIME.INFREQUENT,
