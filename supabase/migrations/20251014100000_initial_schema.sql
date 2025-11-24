@@ -16,7 +16,7 @@
 -- Data integrity for regular users is maintained by a trigger that creates a profile
 -- for each new user in 'auth.users'.
 
-begin;
+BEGIN;
 
 -- ============================================================================
 -- CUSTOM TYPES
@@ -44,7 +44,10 @@ comment on table public.profiles is 'Stores user profile information, extending 
 comment on column public.profiles.language is 'User preferred language in full locale format (e.g., en-US, pl-PL). Must match locale codes used in URLs and i18n configuration.';
 comment on column public.profiles.avatar_url is 'URL to the user''s avatar image stored in Supabase Storage';
 
-alter table public.profiles enable row level security;
+COMMENT ON TABLE public.profiles IS 'Stores user profile information, extending the auth.users table.';
+COMMENT ON COLUMN public.profiles.language IS 'User preferred language in full locale format (e.g., en-US, pl-PL). Must match locale codes used in URLs and i18n configuration.';
+COMMENT ON COLUMN public.profiles.avatar_url IS 'URL to the user''s avatar image stored in Supabase Storage';
+COMMENT ON COLUMN public.profiles.recently_used_tags IS 'Array of recently used tag names (max 10), stored in reverse chronological order. Updated when user adds tags to tours.';
 
 -- Tours table
 create table public.tours (
@@ -66,7 +69,8 @@ create table public.tours (
 comment on table public.tours is 'Contains all information about a tour.';
 comment on column public.tours.voting_locked is 'When true, participants cannot vote or change their votes. Only owner can modify.';
 
-alter table public.tours enable row level security;
+COMMENT ON TABLE public.tours IS 'Contains all information about a tour.';
+COMMENT ON COLUMN public.tours.voting_locked IS 'When true, participants cannot vote or change their votes. Only owner can modify.';
 
 -- Participants table
 create table public.participants (
@@ -77,7 +81,7 @@ create table public.participants (
 );
 comment on table public.participants is 'Joining table for the many-to-many relationship between profiles and tours.';
 
-alter table public.participants enable row level security;
+COMMENT ON TABLE public.participants IS 'Joining table for the many-to-many relationship between profiles and tours.';
 
 -- Comments table
 create table public.comments (
@@ -90,7 +94,7 @@ create table public.comments (
 );
 comment on table public.comments is 'Stores comments made by users on tours.';
 
-alter table public.comments enable row level security;
+COMMENT ON TABLE public.comments IS 'Stores comments made by users on tours.';
 
 -- Votes table
 create table public.votes (
@@ -101,7 +105,7 @@ create table public.votes (
 );
 comment on table public.votes is 'Stores "likes" from users for a specific tour.';
 
-alter table public.votes enable row level security;
+COMMENT ON TABLE public.votes IS 'Stores "likes" from users for a specific tour.';
 
 -- Invitations table
 create table public.invitations (
@@ -118,7 +122,9 @@ comment on table public.invitations is 'Tracks invitations sent to users to join
 comment on column public.invitations.token is 'Unique token used in invitation link. Automatically generated as 32-character hex string.';
 comment on column public.invitations.expires_at is 'Expiration date of the invitation. Defaults to 7 days from creation.';
 
-alter table public.invitations enable row level security;
+COMMENT ON TABLE public.invitations IS 'Tracks invitations sent to users to join a tour.';
+COMMENT ON COLUMN public.invitations.token IS 'Unique token used in invitation link. Automatically generated as 32-character hex string.';
+COMMENT ON COLUMN public.invitations.expires_at IS 'Expiration date of the invitation. Defaults to 14 days from creation.';
 
 -- Tags table
 create table public.tags (
@@ -127,7 +133,7 @@ create table public.tags (
 );
 comment on table public.tags is 'Stores unique tags for categorizing archived tours.';
 
-alter table public.tags enable row level security;
+COMMENT ON TABLE public.tags IS 'Stores unique tags for categorizing archived tours.';
 
 -- Tour tags table
 create table public.tour_tags (
@@ -137,7 +143,7 @@ create table public.tour_tags (
 );
 comment on table public.tour_tags is 'Joining table for the many-to-many relationship between tours and tags.';
 
-alter table public.tour_tags enable row level security;
+COMMENT ON TABLE public.tour_tags IS 'Joining table for the many-to-many relationship between tours and tags.';
 
 -- Tour activity table (for tracking when users last viewed tours)
 create table public.tour_activity (
@@ -320,19 +326,19 @@ create or replace function public.create_tour(
   p_participant_limit integer default null,
   p_like_threshold integer default null
 )
-returns table (
-  id uuid,
-  owner_id uuid,
-  title text,
-  destination text,
-  description text,
-  start_date timestamptz,
-  end_date timestamptz,
-  participant_limit integer,
-  like_threshold integer,
-  are_votes_hidden boolean,
-  status text,
-  created_at timestamptz
+RETURNS TABLE (
+    id UUID,
+    owner_id UUID,
+    title TEXT,
+    destination TEXT,
+    description TEXT,
+    start_date TIMESTAMPTZ,
+    end_date TIMESTAMPTZ,
+    participant_limit INTEGER,
+    like_threshold INTEGER,
+    are_votes_hidden BOOLEAN,
+    status TEXT,
+    created_at TIMESTAMPTZ
 )
 language plpgsql
 security definer
@@ -632,13 +638,29 @@ create policy "users can view profiles in their tours" on public.profiles
       where p1.user_id = auth.uid()
         and p2.user_id = profiles.id
     )
-  );
+    RETURNING tours.id INTO v_tour_id;
 
-comment on policy "users can view profiles in their tours" on public.profiles is
-  'SECURITY MODEL: Profile Visibility in Tours. Allows users to view their own profile and profiles of other participants in tours they are part of. This enables displaying participant avatars and names in tour lists.';
+    INSERT INTO public.participants (tour_id, user_id)
+    VALUES (v_tour_id, v_user_id);
 
-create policy "users can update their own profile" on public.profiles
-  for update using (auth.uid() = id) with check (auth.uid() = id);
+    RETURN QUERY
+    SELECT
+        t.id,
+        t.owner_id,
+        t.title,
+        t.destination,
+        t.description,
+        t.start_date,
+        t.end_date,
+        t.participant_limit,
+        t.like_threshold,
+        t.are_votes_hidden,
+        t.status::TEXT,
+        t.created_at
+    FROM public.tours t
+    WHERE t.id = v_tour_id;
+END;
+$$;
 
 -- ============================================================================
 -- RLS POLICIES: TOURS
@@ -647,14 +669,40 @@ create policy "users can update their own profile" on public.profiles
 create policy "users can view tours they are a participant in" on public.tours
   for select using (exists (select 1 from participants where tour_id = tours.id and user_id = auth.uid()));
 
-create policy "authenticated users can create tours" on public.tours
-  for insert with check (auth.role() = 'authenticated');
+COMMENT ON FUNCTION public.create_tour IS 'Creates a new tour and adds the creator as a participant. Uses SECURITY DEFINER to bypass RLS evaluation issues with server-side clients.';
 
-create policy "tour owners can update their tours" on public.tours
-  for update using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+-- Function to get user by email from auth.users table
+CREATE OR REPLACE FUNCTION public.get_user_by_email(search_email TEXT)
+RETURNS TABLE (
+    id UUID,
+    email VARCHAR(255),
+    email_confirmed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ,
+    raw_user_meta_data JSONB,
+    raw_app_meta_data JSONB
+)
+SECURITY DEFINER
+SET search_path = public
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        u.id,
+        u.email,
+        u.email_confirmed_at,
+        u.created_at,
+        u.updated_at,
+        u.raw_user_meta_data,
+        u.raw_app_meta_data
+    FROM auth.users u
+    WHERE LOWER(TRIM(u.email)) = LOWER(TRIM(search_email))
+    LIMIT 1;
+END;
+$$;
 
-create policy "tour owners can delete their tours" on public.tours
-  for delete using (owner_id = auth.uid());
+GRANT EXECUTE ON FUNCTION public.get_user_by_email(TEXT) TO authenticated, service_role;
 
 -- ============================================================================
 -- RLS POLICIES: PARTICIPANTS
@@ -663,11 +711,23 @@ create policy "tour owners can delete their tours" on public.tours
 create policy "users can view participants of tours they are in" on public.participants
   for select using (public.is_participant(tour_id, auth.uid()));
 
-create policy "tour owners can add new participants" on public.participants
-  for insert with check (exists (select 1 from tours where id = participants.tour_id and owner_id = auth.uid()));
+-- ============================================================================
+-- INVITATION SYSTEM FUNCTIONS
+-- ============================================================================
 
-create policy "users can leave tours, and owners can remove participants" on public.participants
-  for delete using (user_id = auth.uid() or exists (select 1 from tours where id = participants.tour_id and owner_id = auth.uid()));
+-- Function: Automatic token generation for invitations
+CREATE OR REPLACE FUNCTION public.generate_invitation_token()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    token_value TEXT;
+    max_attempts INT := 100;
+    attempts INT := 0;
+BEGIN
+    IF NEW.token IS NOT NULL THEN
+        RETURN NEW;
+    END IF;
 
 -- ============================================================================
 -- RLS POLICIES: COMMENTS
@@ -676,14 +736,17 @@ create policy "users can leave tours, and owners can remove participants" on pub
 create policy "users can read comments on tours they are a participant in" on public.comments
   for select using (exists (select 1 from participants where tour_id = comments.tour_id and user_id = auth.uid()));
 
-create policy "users can create comments on tours they are a participant in" on public.comments
-  for insert with check (exists (select 1 from participants where tour_id = comments.tour_id and user_id = auth.uid()));
+        EXIT WHEN NOT EXISTS (SELECT 1 FROM public.invitations WHERE token = token_value);
 
-create policy "users can only update their own comments" on public.comments
-  for update using (user_id = auth.uid()) with check (user_id = auth.uid());
+        IF attempts >= max_attempts THEN
+            RAISE EXCEPTION 'Failed to generate unique invitation token after % attempts', max_attempts;
+        END IF;
+    END LOOP;
 
-create policy "users can only delete their own comments" on public.comments
-  for delete using (user_id = auth.uid());
+    NEW.token := token_value;
+    RETURN NEW;
+END;
+$$;
 
 -- ============================================================================
 -- RLS POLICIES: VOTES
@@ -692,11 +755,12 @@ create policy "users can only delete their own comments" on public.comments
 create policy "users can view votes on tours they are a participant in" on public.votes
   for select using (exists (select 1 from participants where tour_id = votes.tour_id and user_id = auth.uid()));
 
-create policy "users can vote on tours they participate in" on public.votes
-  for insert with check (
-    exists (select 1 from participants where tour_id = votes.tour_id and user_id = auth.uid()) and
-    not (select are_votes_hidden from tours where id = votes.tour_id)
-  );
+-- Trigger to automatically generate token on INSERT
+CREATE TRIGGER invitation_token_generator
+    BEFORE INSERT ON public.invitations
+    FOR EACH ROW
+    WHEN (new.token IS NULL)
+    EXECUTE FUNCTION public.generate_invitation_token();
 
 create policy "users can remove their own vote" on public.votes
   for delete using (
@@ -735,8 +799,9 @@ create policy "tour owners can view tour invitations"
 comment on policy "tour owners can view tour invitations" on public.invitations is
   E'SECURITY MODEL: Tour Owners Can View All Tour Invitations. Allows tour owners to view all invitations for tours they own.';
 
-create policy "users can invite others to tours they own" on public.invitations
-  for insert with check (inviter_id = auth.uid() and exists(select 1 from tours where id = invitations.tour_id and owner_id = auth.uid()));
+    IF v_invitation_id IS NULL THEN
+        RAISE EXCEPTION 'Invalid invitation token';
+    END IF;
 
 create policy "users can update invitations for tours they own"
   on public.invitations
@@ -778,11 +843,9 @@ create policy "authenticated users can view tags" on public.tags
 create policy "users can view tags for tours they participated in" on public.tour_tags
   for select using (exists (select 1 from participants where tour_id = tour_tags.tour_id and user_id = auth.uid()));
 
-create policy "users can add tags to archived tours they participated in" on public.tour_tags
-  for insert with check (
-    exists (select 1 from participants where tour_id = tour_tags.tour_id and user_id = auth.uid()) and
-    exists (select 1 from tours where id = tour_tags.tour_id and status = 'archived')
-  );
+    IF v_invitee_email != v_user_email THEN
+        RAISE EXCEPTION 'Invitation email does not match user email';
+    END IF;
 
 -- ============================================================================
 -- RLS POLICIES: TOUR_ACTIVITY

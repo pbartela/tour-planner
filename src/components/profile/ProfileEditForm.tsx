@@ -91,6 +91,14 @@ export const ProfileEditForm = ({ profile, email, onSuccess }: ProfileEditFormPr
       onSuccess?.();
     } catch (error) {
       // Error occurred during avatar upload or profile update
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+      setAvatarPreview(null);
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       toast.error(error instanceof Error ? error.message : t("profile.updateError"));
     }
   };

@@ -20,6 +20,36 @@ export interface Database {
   };
   public: {
     Tables: {
+      auth_otp: {
+        Row: {
+          created_at: string | null;
+          email: string;
+          expires_at: string;
+          id: string;
+          otp_token: string;
+          redirect_to: string | null;
+          used: boolean | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          email: string;
+          expires_at: string;
+          id?: string;
+          otp_token: string;
+          redirect_to?: string | null;
+          used?: boolean | null;
+        };
+        Update: {
+          created_at?: string | null;
+          email?: string;
+          expires_at?: string;
+          id?: string;
+          otp_token?: string;
+          redirect_to?: string | null;
+          used?: boolean | null;
+        };
+        Relationships: [];
+      };
       comments: {
         Row: {
           content: string;
@@ -62,6 +92,69 @@ export interface Database {
           },
         ];
       };
+      cron_job_logs: {
+        Row: {
+          created_at: string;
+          error_message: string | null;
+          execution_time: string;
+          id: string;
+          invitations_expired: number | null;
+          job_name: string;
+          success: boolean;
+          tours_archived: number | null;
+        };
+        Insert: {
+          created_at?: string;
+          error_message?: string | null;
+          execution_time?: string;
+          id?: string;
+          invitations_expired?: number | null;
+          job_name: string;
+          success: boolean;
+          tours_archived?: number | null;
+        };
+        Update: {
+          created_at?: string;
+          error_message?: string | null;
+          execution_time?: string;
+          id?: string;
+          invitations_expired?: number | null;
+          job_name?: string;
+          success?: boolean;
+          tours_archived?: number | null;
+        };
+        Relationships: [];
+      };
+      invitation_otp: {
+        Row: {
+          created_at: string | null;
+          email: string;
+          expires_at: string;
+          id: string;
+          invitation_token: string;
+          otp_token: string;
+          used: boolean | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          email: string;
+          expires_at: string;
+          id?: string;
+          invitation_token: string;
+          otp_token: string;
+          used?: boolean | null;
+        };
+        Update: {
+          created_at?: string | null;
+          email?: string;
+          expires_at?: string;
+          id?: string;
+          invitation_token?: string;
+          otp_token?: string;
+          used?: boolean | null;
+        };
+        Relationships: [];
+      };
       invitations: {
         Row: {
           created_at: string;
@@ -72,7 +165,6 @@ export interface Database {
           status: Database["public"]["Enums"]["invitation_status"];
           token: string | null;
           tour_id: string;
-          updated_at: string;
         };
         Insert: {
           created_at?: string;
@@ -83,7 +175,6 @@ export interface Database {
           status?: Database["public"]["Enums"]["invitation_status"];
           token?: string | null;
           tour_id: string;
-          updated_at?: string;
         };
         Update: {
           created_at?: string;
@@ -94,7 +185,6 @@ export interface Database {
           status?: Database["public"]["Enums"]["invitation_status"];
           token?: string | null;
           tour_id?: string;
-          updated_at?: string;
         };
         Relationships: [
           {
@@ -154,6 +244,7 @@ export interface Database {
           id: string;
           language: string;
           onboarding_completed: boolean;
+          recently_used_tags: Json;
           theme: string;
           updated_at: string;
         };
@@ -164,6 +255,7 @@ export interface Database {
           id: string;
           language?: string;
           onboarding_completed?: boolean;
+          recently_used_tags?: Json;
           theme?: string;
           updated_at?: string;
         };
@@ -174,6 +266,7 @@ export interface Database {
           id?: string;
           language?: string;
           onboarding_completed?: boolean;
+          recently_used_tags?: Json;
           theme?: string;
           updated_at?: string;
         };
@@ -355,7 +448,10 @@ export interface Database {
         Args: { accepting_user_id: string; invitation_token: string };
         Returns: string;
       };
-      cleanup_expired_invitations: { Args: never; Returns: undefined };
+      archive_finished_tours: { Args: never; Returns: number };
+      cleanup_expired_auth_otps: { Args: never; Returns: undefined };
+      cleanup_expired_invitation_otps: { Args: never; Returns: undefined };
+      cleanup_expired_invitations: { Args: never; Returns: number };
       cleanup_unconfirmed_users: { Args: never; Returns: undefined };
       create_tour: {
         Args: {
@@ -386,13 +482,26 @@ export interface Database {
         Args: { declining_user_id: string; invitation_token: string };
         Returns: string;
       };
+      get_or_create_tag: { Args: { tag_name: string }; Returns: number };
+      get_user_by_email: {
+        Args: { search_email: string };
+        Returns: {
+          created_at: string;
+          email: string;
+          email_confirmed_at: string;
+          id: string;
+          raw_app_meta_data: Json;
+          raw_user_meta_data: Json;
+          updated_at: string;
+        }[];
+      };
       is_participant: {
         Args: { tour_id_to_check: string; user_id_to_check: string };
         Returns: boolean;
       };
     };
     Enums: {
-      invitation_status: "pending" | "accepted" | "declined";
+      invitation_status: "pending" | "accepted" | "declined" | "expired";
       tour_status: "active" | "archived";
     };
     CompositeTypes: Record<never, never>;
@@ -514,7 +623,7 @@ export const Constants = {
   },
   public: {
     Enums: {
-      invitation_status: ["pending", "accepted", "declined"],
+      invitation_status: ["pending", "accepted", "declined", "expired"],
       tour_status: ["active", "archived"],
     },
   },
