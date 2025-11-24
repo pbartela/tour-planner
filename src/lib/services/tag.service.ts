@@ -1,12 +1,31 @@
 import type { SupabaseClient } from "@/db/supabase.client";
 import { secureError } from "@/lib/server/logger.service";
-import { isTourArchived } from "@/lib/utils/tour-status.util";
+import { isTourArchived, TourNotFoundError, TourStatusVerificationError } from "@/lib/utils/tour-status.util";
 import { profileService } from "./profile.service";
 
+/**
+ * A tag from the database with a real ID.
+ */
 export interface TagDto {
   id: number;
   name: string;
 }
+
+/**
+ * A tag suggestion - either from the database or from recently used tags.
+ * Uses a discriminated union to distinguish between the two sources.
+ */
+export type TagSuggestionDto =
+  | {
+      source: "database";
+      id: number;
+      name: string;
+    }
+  | {
+      source: "recent";
+      id: null;
+      name: string;
+    };
 
 export interface TourTagDto {
   tour_id: string;
@@ -97,7 +116,7 @@ class TagService {
     tagName: string
   ): Promise<TagDto> {
     try {
-      // Verify tour is archived
+      // Verify tour is archived (throws if tour not found or verification fails)
       const isArchived = await isTourArchived(supabase, tourId);
       if (!isArchived) {
         throw new ArchiveError("Tags can only be added to archived tours.");
@@ -157,6 +176,10 @@ class TagService {
 
       return tag;
     } catch (error) {
+      // Re-throw known error types without wrapping
+      if (error instanceof ArchiveError || error instanceof TourNotFoundError || error instanceof TourStatusVerificationError) {
+        throw error;
+      }
       secureError("Unexpected error in addTagToTour", error);
       throw error instanceof Error ? error : new Error("An unexpected error occurred.");
     }
@@ -169,7 +192,7 @@ class TagService {
    */
   public async removeTagFromTour(supabase: SupabaseClient, tourId: string, tagId: number): Promise<void> {
     try {
-      // Verify tour is archived
+      // Verify tour is archived (throws if tour not found or verification fails)
       const isArchived = await isTourArchived(supabase, tourId);
       if (!isArchived) {
         throw new ArchiveError("Tags can only be removed from archived tours.");
@@ -191,6 +214,10 @@ class TagService {
         throw new Error("Failed to remove tag from tour.");
       }
     } catch (error) {
+      // Re-throw known error types without wrapping
+      if (error instanceof ArchiveError || error instanceof TourNotFoundError || error instanceof TourStatusVerificationError) {
+        throw error;
+      }
       secureError("Unexpected error in removeTagFromTour", error);
       throw error instanceof Error ? error : new Error("An unexpected error occurred.");
     }

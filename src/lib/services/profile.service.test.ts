@@ -220,4 +220,208 @@ describe("ProfileService", () => {
       expect(updateCommand).not.toHaveProperty("avatar_url");
     });
   });
+
+  describe("updateRecentlyUsedTags", () => {
+    const setupMockForUpdateRecentlyUsedTags = (
+      currentTags: string[] | null,
+      fetchError: { message?: string } | null,
+      updateError: { message?: string } | null
+    ) => {
+      let fromCallCount = 0;
+
+      (mockSupabase.from as any).mockImplementation(() => {
+        fromCallCount++;
+
+        if (fromCallCount === 1) {
+          // First call: select to fetch current tags
+          const mockSelect = vi.fn().mockReturnThis();
+          const mockEq = vi.fn().mockReturnThis();
+          const mockSingle = vi.fn().mockResolvedValue({
+            data: { recently_used_tags: currentTags },
+            error: fetchError,
+          });
+
+          return {
+            select: () => ({
+              eq: () => ({
+                single: mockSingle,
+              }),
+            }),
+          };
+        } else {
+          // Second call: update
+          const mockUpdate = vi.fn().mockReturnThis();
+          const mockEq = vi.fn().mockResolvedValue({
+            error: updateError,
+          });
+
+          return {
+            update: () => ({
+              eq: mockEq,
+            }),
+          };
+        }
+      });
+    };
+
+    it("should add a new tag to empty recently used tags", async () => {
+      setupMockForUpdateRecentlyUsedTags(null, null, null);
+
+      await expect(profileService.updateRecentlyUsedTags(mockSupabase, "user-123", "summer")).resolves.not.toThrow();
+    });
+
+    it("should add tag to front of existing tags", async () => {
+      const currentTags = ["winter", "spring"];
+      let capturedUpdate: { recently_used_tags: string[] } | null = null;
+
+      (mockSupabase.from as any).mockImplementation((table: string) => {
+        return {
+          select: () => ({
+            eq: () => ({
+              single: vi.fn().mockResolvedValue({
+                data: { recently_used_tags: currentTags },
+                error: null,
+              }),
+            }),
+          }),
+          update: (data: { recently_used_tags: string[] }) => {
+            capturedUpdate = data;
+            return {
+              eq: vi.fn().mockResolvedValue({ error: null }),
+            };
+          },
+        };
+      });
+
+      await profileService.updateRecentlyUsedTags(mockSupabase, "user-123", "summer");
+
+      expect(capturedUpdate?.recently_used_tags[0]).toBe("summer");
+      expect(capturedUpdate?.recently_used_tags).toContain("winter");
+      expect(capturedUpdate?.recently_used_tags).toContain("spring");
+    });
+
+    it("should move existing tag to front when added again", async () => {
+      const currentTags = ["winter", "summer", "spring"];
+      let capturedUpdate: { recently_used_tags: string[] } | null = null;
+
+      (mockSupabase.from as any).mockImplementation(() => {
+        return {
+          select: () => ({
+            eq: () => ({
+              single: vi.fn().mockResolvedValue({
+                data: { recently_used_tags: currentTags },
+                error: null,
+              }),
+            }),
+          }),
+          update: (data: { recently_used_tags: string[] }) => {
+            capturedUpdate = data;
+            return {
+              eq: vi.fn().mockResolvedValue({ error: null }),
+            };
+          },
+        };
+      });
+
+      await profileService.updateRecentlyUsedTags(mockSupabase, "user-123", "summer");
+
+      expect(capturedUpdate?.recently_used_tags[0]).toBe("summer");
+      expect(capturedUpdate?.recently_used_tags.filter((t) => t === "summer").length).toBe(1);
+    });
+
+    it("should limit to 10 tags", async () => {
+      const currentTags = ["tag1", "tag2", "tag3", "tag4", "tag5", "tag6", "tag7", "tag8", "tag9", "tag10"];
+      let capturedUpdate: { recently_used_tags: string[] } | null = null;
+
+      (mockSupabase.from as any).mockImplementation(() => {
+        return {
+          select: () => ({
+            eq: () => ({
+              single: vi.fn().mockResolvedValue({
+                data: { recently_used_tags: currentTags },
+                error: null,
+              }),
+            }),
+          }),
+          update: (data: { recently_used_tags: string[] }) => {
+            capturedUpdate = data;
+            return {
+              eq: vi.fn().mockResolvedValue({ error: null }),
+            };
+          },
+        };
+      });
+
+      await profileService.updateRecentlyUsedTags(mockSupabase, "user-123", "new-tag");
+
+      expect(capturedUpdate?.recently_used_tags.length).toBe(10);
+      expect(capturedUpdate?.recently_used_tags[0]).toBe("new-tag");
+      expect(capturedUpdate?.recently_used_tags).not.toContain("tag10");
+    });
+
+    it("should throw error when tag name exceeds 50 characters", async () => {
+      const longTagName = "a".repeat(51);
+
+      await expect(profileService.updateRecentlyUsedTags(mockSupabase, "user-123", longTagName)).rejects.toThrow(
+        "Tag name cannot exceed 50 characters."
+      );
+    });
+
+    it("should throw error when fetch fails", async () => {
+      setupMockForUpdateRecentlyUsedTags(null, { message: "DB error" }, null);
+
+      await expect(profileService.updateRecentlyUsedTags(mockSupabase, "user-123", "summer")).rejects.toThrow(
+        "Failed to fetch profile."
+      );
+    });
+
+    it("should throw error when update fails", async () => {
+      (mockSupabase.from as any).mockImplementation(() => {
+        return {
+          select: () => ({
+            eq: () => ({
+              single: vi.fn().mockResolvedValue({
+                data: { recently_used_tags: [] },
+                error: null,
+              }),
+            }),
+          }),
+          update: () => ({
+            eq: vi.fn().mockResolvedValue({ error: { message: "Update failed" } }),
+          }),
+        };
+      });
+
+      await expect(profileService.updateRecentlyUsedTags(mockSupabase, "user-123", "summer")).rejects.toThrow(
+        "Failed to update recently used tags."
+      );
+    });
+
+    it("should handle empty array as current tags", async () => {
+      let capturedUpdate: { recently_used_tags: string[] } | null = null;
+
+      (mockSupabase.from as any).mockImplementation(() => {
+        return {
+          select: () => ({
+            eq: () => ({
+              single: vi.fn().mockResolvedValue({
+                data: { recently_used_tags: [] },
+                error: null,
+              }),
+            }),
+          }),
+          update: (data: { recently_used_tags: string[] }) => {
+            capturedUpdate = data;
+            return {
+              eq: vi.fn().mockResolvedValue({ error: null }),
+            };
+          },
+        };
+      });
+
+      await profileService.updateRecentlyUsedTags(mockSupabase, "user-123", "summer");
+
+      expect(capturedUpdate?.recently_used_tags).toEqual(["summer"]);
+    });
+  });
 });

@@ -44,52 +44,53 @@ class ProfileService {
   }
 
   /**
+   * Maximum number of recently used tags to store per user.
+   */
+  private static readonly MAX_RECENT_TAGS = 10;
+
+  /**
    * Updates the recently used tags for a user.
    * Adds the new tag to the front of the array, removes duplicates,
    * and keeps only the last 10 tags.
+   *
+   * @throws Error if the operation fails
    */
-  public async updateRecentlyUsedTags(
-    supabase: SupabaseClient,
-    userId: string,
-    tagName: string
-  ): Promise<{ error: Error | null }> {
-    try {
-      // Get current profile
-      const { data: profile, error: fetchError } = await supabase
-        .from("profiles")
-        .select("recently_used_tags")
-        .eq("id", userId)
-        .single();
+  public async updateRecentlyUsedTags(supabase: SupabaseClient, userId: string, tagName: string): Promise<void> {
+    // Validate tag name length
+    if (tagName.length > 50) {
+      throw new Error("Tag name cannot exceed 50 characters.");
+    }
 
-      if (fetchError) {
-        logger.error("Error fetching profile for recently used tags", fetchError);
-        throw new Error("Failed to fetch profile.");
-      }
+    // Get current profile
+    const { data: profile, error: fetchError } = await supabase
+      .from("profiles")
+      .select("recently_used_tags")
+      .eq("id", userId)
+      .single();
 
-      // Parse current tags (default to empty array if null)
-      const currentTags = (profile?.recently_used_tags as string[]) || [];
+    if (fetchError) {
+      logger.error("Error fetching profile for recently used tags", fetchError);
+      throw new Error("Failed to fetch profile.");
+    }
 
-      // Remove the tag if it already exists (to move it to the front)
-      const filteredTags = currentTags.filter((tag) => tag !== tagName);
+    // Parse current tags (default to empty array if null)
+    const currentTags = (profile?.recently_used_tags as string[]) || [];
 
-      // Add the new tag to the front and keep only the last 10
-      const updatedTags = [tagName, ...filteredTags].slice(0, 10);
+    // Remove the tag if it already exists (to move it to the front)
+    const filteredTags = currentTags.filter((tag) => tag !== tagName);
 
-      // Update profile with new tags
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ recently_used_tags: updatedTags })
-        .eq("id", userId);
+    // Add the new tag to the front and keep only the max limit
+    const updatedTags = [tagName, ...filteredTags].slice(0, ProfileService.MAX_RECENT_TAGS);
 
-      if (updateError) {
-        logger.error("Error updating recently used tags", updateError);
-        throw new Error("Failed to update recently used tags.");
-      }
+    // Update profile with new tags
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({ recently_used_tags: updatedTags })
+      .eq("id", userId);
 
-      return { error: null };
-    } catch (error) {
-      logger.error("Unexpected error in updateRecentlyUsedTags", error instanceof Error ? error : undefined);
-      return { error: error instanceof Error ? error : new Error("An unexpected error occurred.") };
+    if (updateError) {
+      logger.error("Error updating recently used tags", updateError);
+      throw new Error("Failed to update recently used tags.");
     }
   }
 }
