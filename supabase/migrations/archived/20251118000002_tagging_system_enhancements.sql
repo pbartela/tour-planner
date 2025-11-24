@@ -115,4 +115,14 @@ GRANT EXECUTE ON FUNCTION public.get_or_create_tag(TEXT) TO authenticated;
 COMMENT ON FUNCTION public.get_or_create_tag(TEXT) IS
   'Gets existing tag ID by name (case-insensitive) or creates a new tag if it does not exist. Returns tag ID. Validates length (max 50 chars) and non-empty.';
 
+-- ============================================================================
+-- Add recently_used_tags column to profiles table
+-- ============================================================================
+
+ALTER TABLE public.profiles
+ADD COLUMN recently_used_tags JSONB NOT NULL DEFAULT '[]'::JSONB;
+
+COMMENT ON COLUMN public.profiles.recently_used_tags IS
+  'Array of recently used tag names (max 10), stored in reverse chronological order. Updated when user adds tags to tours.';
+
 COMMIT;

@@ -156,7 +156,7 @@ export const TagInput = ({ onAddTag, existingTags, isAdding }: TagInputProps) =>
       </div>
 
       {/* Autocomplete Suggestions */}
-      {showSuggestions && visibleSuggestions.length > 0 && inputValue.trim() && (
+      {showSuggestions && visibleSuggestions.length > 0 && (
         <div
           ref={suggestionsRef}
           className="absolute z-10 mt-1 w-full rounded-lg border border-base-300 bg-base-100 shadow-lg"

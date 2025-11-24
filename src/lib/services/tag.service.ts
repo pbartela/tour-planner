@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@/db/supabase.client";
 import { secureError } from "@/lib/server/logger.service";
 import { isTourArchived } from "@/lib/utils/tour-status.util";
+import { profileService } from "./profile.service";
 
 export interface TagDto {
   id: number;
@@ -89,7 +90,12 @@ class TagService {
    * User must be a participant (enforced by RLS).
    * Only works on archived tours (enforced by RLS).
    */
-  public async addTagToTour(supabase: SupabaseClient, tourId: string, tagName: string): Promise<TagDto> {
+  public async addTagToTour(
+    supabase: SupabaseClient,
+    userId: string,
+    tourId: string,
+    tagName: string
+  ): Promise<TagDto> {
     try {
       // Verify tour is archived
       const isArchived = await isTourArchived(supabase, tourId);
@@ -119,6 +125,8 @@ class TagService {
           // Not an error - tag already exists, just fetch and return it
           const { data: existingTag } = await supabase.from("tags").select("id, name").eq("id", tagId).single();
           if (existingTag) {
+            // Update recently used tags even if tag already existed on tour
+            await profileService.updateRecentlyUsedTags(supabase, userId, tagName);
             return existingTag;
           }
         }
@@ -143,6 +151,9 @@ class TagService {
         secureError("Error fetching created tag", fetchError);
         throw new Error("Failed to fetch tag after creation.");
       }
+
+      // Update recently used tags in user profile
+      await profileService.updateRecentlyUsedTags(supabase, userId, tagName);
 
       return tag;
     } catch (error) {

@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { validateSession } from "@/lib/server/session-validation.service";
 import { secureError } from "@/lib/server/logger.service";
 import { tagService } from "@/lib/services/tag.service";
+import { profileService } from "@/lib/services/profile.service";
 import { tagSearchQuerySchema } from "@/lib/validators/tag.validators";
 import { checkRateLimit, getClientIdentifier, RATE_LIMIT_CONFIGS } from "@/lib/server/rate-limit.service";
 
@@ -9,12 +10,12 @@ export const prerender = false;
 
 /**
  * GET /api/tags
- * Search or list all tags.
+ * Search tags or get recently used tags.
  * Query parameters:
  *   - q: Search query (optional) - returns tags starting with this string
  *   - limit: Max results (optional, default: 10, max: 50)
  *
- * If no query is provided, returns all tags.
+ * If no query is provided, returns the user's recently used tags (last 10).
  */
 export const GET: APIRoute = async ({ url, locals, request }) => {
   const { supabase } = locals;
@@ -80,12 +81,21 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
       );
     }
 
-    // 4. Search or list tags
+    // 4. Search or get recently used tags
     let tags;
     if (parsed.data.q) {
+      // Search tags by query
       tags = await tagService.searchTags(supabase, parsed.data.q, parsed.data.limit);
     } else {
-      tags = await tagService.getAllTags(supabase);
+      // Get user's recently used tags
+      const { data: profile } = await profileService.getProfile(supabase, user.id);
+      const recentTagNames = (profile?.recently_used_tags as string[]) || [];
+
+      // Convert tag names to TagDto format
+      tags = recentTagNames.map((name, index) => ({
+        id: -(index + 1), // Use negative IDs to indicate these are not real tag IDs
+        name,
+      }));
     }
 
     return new Response(JSON.stringify(tags), {

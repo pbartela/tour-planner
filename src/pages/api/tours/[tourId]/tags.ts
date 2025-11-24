@@ -170,7 +170,7 @@ export const POST: APIRoute = async ({ params, locals, request }) => {
     }
 
     // 5. Add tag to tour
-    const tag = await tagService.addTagToTour(supabase, tourId, parsed.data.tag_name);
+    const tag = await tagService.addTagToTour(supabase, user.id, tourId, parsed.data.tag_name);
 
     return new Response(JSON.stringify(tag), {
       status: 201,
