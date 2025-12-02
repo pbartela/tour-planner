@@ -53,9 +53,6 @@
   },
   "invitations": {
     "acceptButton": "Dołącz do wycieczki",
-    "acceptError": "Nie udało się dołączyć do wycieczki",
-    "accepting": "Dołączanie...",
-    "acceptSuccess": "Pomyślnie dołączono do wycieczki!",
     "alreadyProcessed": "To zaproszenie zostało już {{status}}",
     "cancelButton": "Anuluj",
     "cancelConfirm": "Czy na pewno chcesz anulować zaproszenie dla {{email}}?",
@@ -65,10 +62,7 @@
     "cancelTitle": "Anuluj zaproszenie",
     "confirmDecline": "Czy na pewno chcesz odrzucić to zaproszenie?",
     "declineButton": "Odrzuć",
-    "declineError": "Nie udało się odrzucić zaproszenia",
-    "declineSuccess": "Zaproszenie odrzucone",
     "declineTitle": "Odrzuć zaproszenie",
-    "declining": "Odrzucanie...",
     "emailHint": "Możesz zaprosić kilka osób jednocześnie. Oddziel adresy e-mail przecinkami lub nowymi liniami.",
     "emailLabel": "Adresy e-mail",
     "emailMismatchInstructions": "Proszę wylogować się i zalogować na zaproszony adres e-mail, aby zaakceptować lub odrzucić to zaproszenie.",
@@ -83,7 +77,6 @@
     "expiredMessage": "To zaproszenie wygasło. Proszę skontaktować się z organizatorem wycieczki w celu uzyskania nowego zaproszenia.",
     "expiredTitle": "Zaproszenie wygasło",
     "expiresOn": "Wygasa",
-    "fetchError": "Nie udało się załadować szczegółów zaproszenia",
     "goHome": "Przejdź do strony głównej",
     "invalidEmails": "Nieprawidłowe adresy e-mail: {{emails}}",
     "invitationTitle": "Zostałeś zaproszony!",
@@ -94,7 +87,6 @@
     "loadError": "Błąd ładowania zaproszeń",
     "noEmails": "Proszę wprowadzić co najmniej jeden adres e-mail",
     "noInvitations": "Nie wysłano jeszcze żadnych zaproszeń",
-    "notFound": "Zaproszenie nie znalezione lub nieprawidłowe",
     "removeButton": "Usuń",
     "removing": "Usuwanie...",
     "resendButton": "Wyślij ponownie",
@@ -108,10 +100,10 @@
     "sentSuccess_few": "Zaproszenia wysłane do {{count}} adresów e-mail: {{emails}}",
     "sentSuccess_many": "Zaproszenia wysłane do {{count}} adresów e-mail: {{emails}}",
     "sentSuccess_other": "Zaproszenia wysłane do {{count}} adresów e-mail: {{emails}}",
-    "skippedMessage_one": "Pominięto {{count}} adres e-mail (już uczestnicy lub mają oczekujące zaproszenia): {{emails}}",
-    "skippedMessage_few": "Pominięto {{count}} adresy e-mail (już uczestnicy lub mają oczekujące zaproszenia): {{emails}}",
-    "skippedMessage_many": "Pominięto {{count}} adresów e-mail (już uczestnicy lub mają oczekujące zaproszenia): {{emails}}",
-    "skippedMessage_other": "Pominięto {{count}} adresów e-mail (już uczestnicy lub mają oczekujące zaproszenia): {{emails}}",
+    "skippedMessage_one": "Pominięto {{count}} adres e-mail (już zaproszeni lub odrzucili): {{emails}}",
+    "skippedMessage_few": "Pominięto {{count}} adresy e-mail (już zaproszeni lub odrzucili): {{emails}}",
+    "skippedMessage_many": "Pominięto {{count}} adresów e-mail (już zaproszeni lub odrzucili): {{emails}}",
+    "skippedMessage_other": "Pominięto {{count}} adresów e-mail (już zaproszeni lub odrzucili): {{emails}}",
     "status": {
       "accepted": "Zaakceptowane",
       "declined": "Odrzucone",
@@ -124,21 +116,47 @@
     "error": "Coś poszło nie tak. Proszę spróbować ponownie.",
     "finish": "Zakończ",
     "next": "Dalej",
-    "skip": "Pomiń",
-    "step1": {
-      "title": "Witaj w Plannerze Wycieczek",
-      "description": "Planuj wycieczki ze znajomymi i rodziną w prosty sposób"
-    },
-    "step2": {
-      "title": "Twórz i głosuj",
-      "description": "Twórz propozycje wycieczek i głosuj na ulubione"
-    },
-    "step3": {
-      "title": "Współpracuj",
-      "description": "Zaproś innych i omawiajcie wspólnie swoje plany"
-    }
+    "skip": "Pomiń"
+  },
+  "participants": {
+    "joinedOn": "Dołączył",
+    "leaveButton": "Opuść wycieczkę",
+    "leaveConfirm": "Czy na pewno chcesz opuścić tę wycieczkę? Możesz zostać zaproszony ponownie później.",
+    "leaveSuccess": "Pomyślnie opuściłeś wycieczkę",
+    "leaveTitle": "Opuść wycieczkę",
+    "leaving": "Opuszczanie...",
+    "loadError": "Błąd ładowania uczestników",
+    "noParticipants": "Brak uczestników",
+    "owner": "Właściciel",
+    "removeButton": "Usuń",
+    "removeConfirm": "Czy na pewno chcesz usunąć {{name}} z tej wycieczki?",
+    "removeError": "Nie udało się usunąć uczestnika",
+    "removeSuccess": "{{name}} został usunięty z wycieczki",
+    "removeTitle": "Usuń uczestnika",
+    "removing": "Usuwanie...",
+    "title": "Uczestnicy",
+    "unknownError": "Nieznany błąd",
+    "unknownUser": "Nieznany użytkownik"
+  },
+  "tags": {
+    "add": "Dodaj tag",
+    "addError": "Nie udało się dodać tagu",
+    "adding": "Dodawanie...",
+    "addPlaceholder": "Wprowadź nazwę tagu...",
+    "empty": "__NOT_TRANSLATED__",
+    "error": "__NOT_TRANSLATED__",
+    "noTags": "Brak tagów. Dodaj tagi, aby uporządkować swoje zarchiwizowane wycieczki.",
+    "remove": "Usuń tag",
+    "removeError": "Nie udało się usunąć tagu",
+    "success": "__NOT_TRANSLATED__",
+    "title": "Tagi"
+  },
+  "tourCard": {
+    "archived": "Zarchiwizowana"
   },
   "tourDetails": {
+    "archived": "Zarchiwizowana",
+    "archivedInfo": "Ta wycieczka jest zarchiwizowana i tylko do odczytu. Nie możesz wprowadzać zmian w zarchiwizowanych wycieczkach.",
     "delete": "Usuń",
     "deleteConfirm": {
       "cancel": "Anuluj",
@@ -161,29 +179,15 @@
     "startDate": "Data rozpoczęcia"
   },
   "tourList": {
+    "archivedToursInfo": "Wycieczki są automatycznie archiwizowane po dacie zakończenia.",
     "loadingError": "Nie udało się załadować wycieczek",
     "newActivity": "Nowa aktywność",
-    "retry": "Spróbuj ponownie"
-  },
-  "participants": {
-    "title": "Uczestnicy",
-    "joinedOn": "Dołączył",
-    "owner": "Właściciel",
-    "loadError": "Błąd ładowania uczestników",
-    "unknownError": "Nieznany błąd",
-    "unknownUser": "Nieznany użytkownik",
-    "noParticipants": "Brak uczestników",
-    "leaveButton": "Opuść wycieczkę",
-    "removeButton": "Usuń",
-    "leaveTitle": "Opuść wycieczkę",
-    "removeTitle": "Usuń uczestnika",
-    "leaveConfirm": "Czy na pewno chcesz opuścić tę wycieczkę? Możesz zostać zaproszony ponownie później.",
-    "removeConfirm": "Czy na pewno chcesz usunąć {{name}} z tej wycieczki?",
-    "leaveSuccess": "Pomyślnie opuściłeś wycieczkę",
-    "removeSuccess": "{{name}} został usunięty z wycieczki",
-    "removeError": "Nie udało się usunąć uczestnika",
-    "leaving": "Opuszczanie...",
-    "removing": "Usuwanie..."
+    "noArchivedTours": "Brak zarchiwizowanych wycieczek",
+    "retry": "Spróbuj ponownie",
+    "tabs": {
+      "active": "Aktywne",
+      "archived": "Zarchiwizowane"
+    }
   },
   "voting": {
     "like": "Lubię to",

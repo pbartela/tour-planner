@@ -72,8 +72,6 @@
     "avatarDeleteSuccess": "Awatar usunięty pomyślnie",
     "avatarHint": "JPG, PNG, WebP lub GIF. Maks. 5MB.",
     "avatarSet": "Awatar ustawiony",
-    "avatarUploadError": "Nie udało się przesłać awatara",
-    "avatarUploadSuccess": "Awatar przesłany pomyślnie",
     "cancel": "Anuluj",
     "deleteAvatar": "Usuń awatar",
     "deleteAvatarConfirm": "Czy na pewno chcesz usunąć swój awatar?",

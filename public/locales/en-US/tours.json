@@ -53,9 +53,6 @@
   },
   "invitations": {
     "acceptButton": "Join Tour",
-    "acceptError": "Failed to join the tour",
-    "accepting": "Joining...",
-    "acceptSuccess": "Successfully joined the tour!",
     "alreadyProcessed": "This invitation has already been {{status}}",
     "cancelButton": "Cancel",
     "cancelConfirm": "Are you sure you want to cancel the invitation for {{email}}?",
@@ -65,10 +62,7 @@
     "cancelTitle": "Cancel Invitation",
     "confirmDecline": "Are you sure you want to decline this invitation?",
     "declineButton": "Decline",
-    "declineError": "Failed to decline invitation",
-    "declineSuccess": "Invitation declined",
     "declineTitle": "Decline Invitation",
-    "declining": "Declining...",
     "emailHint": "You can invite multiple people at once. Separate email addresses with commas or new lines.",
     "emailLabel": "Email Addresses",
     "emailMismatchInstructions": "Please log out and sign in with the invited email address to accept or decline this invitation.",
@@ -81,7 +75,6 @@
     "expiredMessage": "This invitation has expired. Please contact the tour organizer for a new invitation.",
     "expiredTitle": "Invitation Expired",
     "expiresOn": "Expires on",
-    "fetchError": "Failed to load invitation details",
     "goHome": "Go to Home",
     "invalidEmails": "Invalid email addresses: {{emails}}",
     "invitationTitle": "You've been invited!",
@@ -92,7 +85,6 @@
     "loadError": "Error loading invitations",
     "noEmails": "Please enter at least one email address",
     "noInvitations": "No invitations sent yet",
-    "notFound": "Invitation not found or invalid",
     "removeButton": "Remove",
     "removing": "Removing...",
     "resendButton": "Resend",
@@ -104,8 +96,8 @@
     "sending": "Sending...",
     "sentSuccess_one": "Invitation sent to {{count}} email: {{emails}}",
     "sentSuccess_other": "Invitations sent to {{count}} emails: {{emails}}",
-    "skippedMessage_one": "Skipped {{count}} email (already participants or have pending invitations): {{emails}}",
-    "skippedMessage_other": "Skipped {{count}} emails (already participants or have pending invitations): {{emails}}",
+    "skippedMessage_one": "Skipped {{count}} email (already invited or declined): {{emails}}",
+    "skippedMessage_other": "Skipped {{count}} emails (already invited or declined): {{emails}}",
     "status": {
       "accepted": "Accepted",
       "declined": "Declined",
@@ -118,21 +110,47 @@
     "error": "Something went wrong. Please try again.",
     "finish": "Finish",
     "next": "Next",
-    "skip": "Skip",
-    "step1": {
-      "title": "Welcome to Tour Planner",
-      "description": "Plan your trips with friends and family easily"
-    },
-    "step2": {
-      "title": "Create and Vote",
-      "description": "Create trip proposals and vote on your favorites"
-    },
-    "step3": {
-      "title": "Collaborate",
-      "description": "Invite others and discuss your plans together"
-    }
+    "skip": "Skip"
+  },
+  "participants": {
+    "joinedOn": "Joined on",
+    "leaveButton": "Leave Tour",
+    "leaveConfirm": "Are you sure you want to leave this tour? You can be re-invited later.",
+    "leaveSuccess": "You have successfully left the tour",
+    "leaveTitle": "Leave Tour",
+    "leaving": "Leaving...",
+    "loadError": "Error loading participants",
+    "noParticipants": "No participants yet",
+    "owner": "Owner",
+    "removeButton": "Remove",
+    "removeConfirm": "Are you sure you want to remove {{name}} from this tour?",
+    "removeError": "Failed to remove participant",
+    "removeSuccess": "{{name}} has been removed from the tour",
+    "removeTitle": "Remove Participant",
+    "removing": "Removing...",
+    "title": "Participants",
+    "unknownError": "Unknown error",
+    "unknownUser": "Unknown User"
+  },
+  "tags": {
+    "add": "Add Tag",
+    "addError": "Failed to add tag",
+    "adding": "Adding...",
+    "addPlaceholder": "Enter tag name...",
+    "empty": "__NOT_TRANSLATED__",
+    "error": "__NOT_TRANSLATED__",
+    "noTags": "No tags yet. Add tags to organize your archived tours.",
+    "remove": "Remove tag",
+    "removeError": "Failed to remove tag",
+    "success": "__NOT_TRANSLATED__",
+    "title": "Tags"
+  },
+  "tourCard": {
+    "archived": "Archived"
   },
   "tourDetails": {
+    "archived": "Archived",
+    "archivedInfo": "This tour is archived and read-only. You cannot make changes to archived tours.",
     "delete": "Delete",
     "deleteConfirm": {
       "cancel": "Cancel",
@@ -155,29 +173,15 @@
     "startDate": "Start Date"
   },
   "tourList": {
+    "archivedToursInfo": "Tours are automatically archived after their end date.",
     "loadingError": "Failed to load tours",
     "newActivity": "New Activity",
-    "retry": "Retry"
-  },
-  "participants": {
-    "title": "Participants",
-    "joinedOn": "Joined on",
-    "owner": "Owner",
-    "loadError": "Error loading participants",
-    "unknownError": "Unknown error",
-    "unknownUser": "Unknown User",
-    "noParticipants": "No participants yet",
-    "leaveButton": "Leave Tour",
-    "removeButton": "Remove",
-    "leaveTitle": "Leave Tour",
-    "removeTitle": "Remove Participant",
-    "leaveConfirm": "Are you sure you want to leave this tour? You can be re-invited later.",
-    "removeConfirm": "Are you sure you want to remove {{name}} from this tour?",
-    "leaveSuccess": "You have successfully left the tour",
-    "removeSuccess": "{{name}} has been removed from the tour",
-    "removeError": "Failed to remove participant",
-    "leaving": "Leaving...",
-    "removing": "Removing..."
+    "noArchivedTours": "No archived tours",
+    "retry": "Retry",
+    "tabs": {
+      "active": "Active",
+      "archived": "Archived"
+    }
   },
   "voting": {
     "like": "Like",

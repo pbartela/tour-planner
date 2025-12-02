@@ -7,6 +7,7 @@ import { TourHeader } from "./TourHeader";
 import { TourOwnerControls } from "./TourOwnerControls";
 import { EditTourModal } from "./EditTourModal";
 import { ParticipantsList } from "./ParticipantsList";
+import { TagsSection } from "./TagsSection";
 import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 import { SkeletonLoader } from "@/components/shared/SkeletonLoader";
 
@@ -55,6 +56,8 @@ export const TourDetailsView = ({ tourId, currentUserId }: TourDetailsViewProps)
     );
   }
 
+  const isArchived = tour.status === "archived";
+
   return (
     <div className="container mx-auto max-w-4xl space-y-8 p-4">
       {/* Tour Header */}
@@ -65,8 +68,8 @@ export const TourDetailsView = ({ tourId, currentUserId }: TourDetailsViewProps)
         onDelete={() => setShowDeleteConfirm(true)}
       />
 
-      {/* Owner Controls (Invitations & Voting Lock) */}
-      {isOwner && (
+      {/* Owner Controls (Invitations & Voting Lock) - hide for archived tours */}
+      {isOwner && !isArchived && (
         <TourOwnerControls
           tourId={tourId}
           tour={tour}
@@ -89,6 +92,9 @@ export const TourDetailsView = ({ tourId, currentUserId }: TourDetailsViewProps)
           <ParticipantsList tourId={tourId} ownerId={tour.owner_id} currentUserId={currentUserId} />
         </div>
       </div>
+
+      {/* Tags Section - only for archived tours */}
+      {isArchived && <TagsSection tourId={tourId} />}
 
       {/* Comments Section */}
       <div className="card bg-base-100 shadow-xl">

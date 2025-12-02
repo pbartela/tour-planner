@@ -57,7 +57,7 @@ describe("Profile Validators", () => {
     it("should accept multiple fields", () => {
       const result = updateProfileCommandSchema.safeParse({
         display_name: "John Doe",
-        language: "pl",
+        language: "pl-PL",
         theme: "dark",
       });
       expect(result.success).toBe(true);

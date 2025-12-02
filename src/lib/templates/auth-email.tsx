@@ -18,7 +18,7 @@ export function AuthEmail({ email, loginUrl }: AuthEmailProps) {
       </Text>
 
       <Text className="mb-6 text-sm text-gray-600">
-        Click the button below to securely sign in. If you don't have an account yet, one will be created for you
+        Click the button below to securely sign in. If you don&apos;t have an account yet, one will be created for you
         automatically.
       </Text>
 

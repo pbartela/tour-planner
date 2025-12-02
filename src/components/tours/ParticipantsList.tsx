@@ -149,11 +149,7 @@ export const ParticipantsList = ({ tourId, ownerId, currentUserId }: Participant
             <Button variant="neutral-outline" onClick={closeDialog} disabled={removeParticipantMutation.isPending}>
               {t("common.cancel")}
             </Button>
-            <Button
-              variant="error"
-              onClick={handleRemoveConfirm}
-              disabled={removeParticipantMutation.isPending}
-            >
+            <Button variant="error" onClick={handleRemoveConfirm} disabled={removeParticipantMutation.isPending}>
               {removeParticipantMutation.isPending
                 ? dialogState.isOwnerRemoving
                   ? t("participants.removing")

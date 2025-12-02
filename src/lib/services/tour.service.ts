@@ -12,6 +12,7 @@ import type {
   TourMetadata,
 } from "@/types";
 import getTripMetaData from "@/lib/server/metadata-extract.service";
+import { ensureTourNotArchived } from "@/lib/utils/tour-status.util";
 
 class TourService {
   // Server-side metadata cache
@@ -89,18 +90,66 @@ class TourService {
     userId: string,
     options: z.infer<typeof getToursQuerySchema>
   ): Promise<PaginatedToursDto> {
-    const { status, page, limit } = options;
+    const { status, page, limit, tags } = options;
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
     try {
-      // Combine data and count into a single query to avoid N+1 issue
-      // Query participants table and join with tours using RLS-safe relationship filter
-      const {
-        data: tours,
-        error: toursError,
-        count,
-      } = await supabase
+      // If tags are provided, we need to filter tours that have ALL specified tags
+      // This requires a different query strategy
+      let tourIdsWithTags: string[] | undefined;
+
+      if (tags && tags.length > 0) {
+        // Get tours that have all the specified tags using a SQL query
+        // For each tag, find tours that have it, then intersect the results
+        const { data: tourTagsData, error: tourTagsError } = await supabase
+          .from("tour_tags")
+          .select("tour_id, tags!tour_tags_tag_id_fkey(name)")
+          .in(
+            "tags.name",
+            tags.map((t) => t.toLowerCase())
+          );
+
+        if (tourTagsError) {
+          secureError("Error fetching tour tags for filtering", tourTagsError);
+          throw new Error("Failed to filter tours by tags.");
+        }
+
+        // Group by tour_id and count how many tags match
+        const tourTagCounts = new Map<string, Set<string>>();
+        (tourTagsData || []).forEach((tt) => {
+          const tag = Array.isArray(tt.tags) ? tt.tags[0] : tt.tags;
+          if (tag?.name) {
+            if (!tourTagCounts.has(tt.tour_id)) {
+              tourTagCounts.set(tt.tour_id, new Set());
+            }
+            const tagSet = tourTagCounts.get(tt.tour_id);
+            if (tagSet) {
+              tagSet.add(tag.name.toLowerCase());
+            }
+          }
+        });
+
+        // Filter to tours that have ALL requested tags (logical AND)
+        tourIdsWithTags = Array.from(tourTagCounts.entries())
+          .filter(([_, tagSet]) => tags.every((tag) => tagSet.has(tag.toLowerCase())))
+          .map(([tourId, _]) => tourId);
+
+        // If no tours match the tag criteria, return empty result early
+        if (tourIdsWithTags.length === 0) {
+          return {
+            data: [],
+            pagination: {
+              page,
+              limit,
+              total: 0,
+            },
+          };
+        }
+      }
+
+      // Build the main query
+      let query = supabase
         .from("participants")
         .select(
           `
@@ -117,9 +166,17 @@ class TourService {
           { count: "exact" }
         )
         .eq("user_id", userId)
-        .eq("tour.status", status)
-        .range(from, to)
-        .returns<{ tour: TourSummaryDto }[]>();
+        .eq("tour.status", status);
+
+      // Apply tag filtering if we have specific tour IDs
+      if (tourIdsWithTags) {
+        query = query.in("tour.id", tourIdsWithTags);
+      }
+
+      // Apply pagination
+      query = query.range(from, to);
+
+      const { data: tours, error: toursError, count } = await query.returns<{ tour: TourSummaryDto }[]>();
 
       if (toursError) {
         secureError("Error fetching user tours from database", toursError);
@@ -139,16 +196,17 @@ class TourService {
       // Create a map of tour_id -> array of avatar URLs
       const participantAvatarsMap = new Map<string, string[]>();
       (participantsData || []).forEach((participant) => {
-        const profile = Array.isArray(participant.profiles)
-          ? participant.profiles[0]
-          : participant.profiles;
+        const profile = Array.isArray(participant.profiles) ? participant.profiles[0] : participant.profiles;
         const avatarUrl = profile?.avatar_url;
 
         if (avatarUrl) {
           if (!participantAvatarsMap.has(participant.tour_id)) {
             participantAvatarsMap.set(participant.tour_id, []);
           }
-          participantAvatarsMap.get(participant.tour_id)!.push(avatarUrl);
+          const avatarList = participantAvatarsMap.get(participant.tour_id);
+          if (avatarList) {
+            avatarList.push(avatarUrl);
+          }
         }
       });
 
@@ -365,6 +423,9 @@ class TourService {
     command: UpdateTourCommand
   ): Promise<{ data: TourDetailsDto | null; error: Error | null }> {
     try {
+      // Prevent updating archived tours
+      await ensureTourNotArchived(supabase, tourId);
+
       const { data, error } = await supabase.from("tours").update(command).eq("id", tourId).select().single();
 
       if (error) {
@@ -383,6 +444,9 @@ class TourService {
 
   public async deleteTour(supabase: SupabaseClient, tourId: string): Promise<{ error: Error | null }> {
     try {
+      // Prevent deleting archived tours
+      await ensureTourNotArchived(supabase, tourId);
+
       const { error } = await supabase.from("tours").delete().eq("id", tourId);
 
       if (error) {
@@ -408,6 +472,9 @@ class TourService {
     tourId: string
   ): Promise<{ data: TourDetailsDto | null; error: Error | null }> {
     try {
+      // Prevent locking voting on archived tours
+      await ensureTourNotArchived(supabase, tourId);
+
       const { data, error } = await supabase
         .from("tours")
         .update({ voting_locked: true })
@@ -437,6 +504,9 @@ class TourService {
     tourId: string
   ): Promise<{ data: TourDetailsDto | null; error: Error | null }> {
     try {
+      // Prevent unlocking voting on archived tours
+      await ensureTourNotArchived(supabase, tourId);
+
       const { data, error } = await supabase
         .from("tours")
         .update({ voting_locked: false })

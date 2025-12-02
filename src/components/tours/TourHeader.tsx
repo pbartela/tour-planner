@@ -11,17 +11,39 @@ interface TourHeaderProps {
 
 /**
  * Tour header component displaying tour title, destination, dates, and details
- * Shows edit/delete buttons for tour owners
+ * Shows edit/delete buttons for tour owners (except for archived tours)
  */
 export const TourHeader = ({ tour, isOwner, onEdit, onDelete }: TourHeaderProps) => {
   const { t } = useTranslation("tours");
+  const isArchived = tour.status === "archived";
 
   return (
     <div className="card bg-base-100 shadow-xl">
       <div className="card-body">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <h1 className="card-title text-3xl">{tour.title}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="card-title text-3xl">{tour.title}</h1>
+              {isArchived && (
+                <span className="badge badge-neutral gap-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+                    />
+                  </svg>
+                  {t("tourDetails.archived")}
+                </span>
+              )}
+            </div>
             <p className="mt-2 text-lg text-base-content/70">
               📍{" "}
               <a href={tour.destination} target="_blank" rel="noopener noreferrer" className="link">
@@ -29,7 +51,7 @@ export const TourHeader = ({ tour, isOwner, onEdit, onDelete }: TourHeaderProps)
               </a>
             </p>
           </div>
-          {isOwner && (
+          {isOwner && !isArchived && (
             <div className="flex gap-2">
               <Button variant="neutral-outline" onClick={onEdit}>
                 {t("tourDetails.edit")}
@@ -40,6 +62,25 @@ export const TourHeader = ({ tour, isOwner, onEdit, onDelete }: TourHeaderProps)
             </div>
           )}
         </div>
+
+        {isArchived && (
+          <div className="alert alert-info">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              className="h-6 w-6 shrink-0 stroke-current"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
+            </svg>
+            <span>{t("tourDetails.archivedInfo")}</span>
+          </div>
+        )}
 
         <div className="divider"></div>
 
