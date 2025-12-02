@@ -52,7 +52,16 @@ export const GET: APIRoute = async ({ params, locals }) => {
     }
 
     // Transform the data to match ParticipantDto shape
-    const participantDtos: ParticipantDto[] = (participants || []).map((p: any) => ({
+    interface ParticipantWithProfile {
+      user_id: string;
+      joined_at: string;
+      profiles: {
+        display_name: string | null;
+        avatar_url: string | null;
+      } | null;
+    }
+
+    const participantDtos: ParticipantDto[] = (participants || []).map((p: ParticipantWithProfile) => ({
       user_id: p.user_id,
       joined_at: p.joined_at,
       display_name: p.profiles?.display_name || null,

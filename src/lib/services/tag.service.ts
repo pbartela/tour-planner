@@ -177,7 +177,11 @@ class TagService {
       return tag;
     } catch (error) {
       // Re-throw known error types without wrapping
-      if (error instanceof ArchiveError || error instanceof TourNotFoundError || error instanceof TourStatusVerificationError) {
+      if (
+        error instanceof ArchiveError ||
+        error instanceof TourNotFoundError ||
+        error instanceof TourStatusVerificationError
+      ) {
         throw error;
       }
       secureError("Unexpected error in addTagToTour", error);
@@ -215,7 +219,11 @@ class TagService {
       }
     } catch (error) {
       // Re-throw known error types without wrapping
-      if (error instanceof ArchiveError || error instanceof TourNotFoundError || error instanceof TourStatusVerificationError) {
+      if (
+        error instanceof ArchiveError ||
+        error instanceof TourNotFoundError ||
+        error instanceof TourStatusVerificationError
+      ) {
         throw error;
       }
       secureError("Unexpected error in removeTagFromTour", error);

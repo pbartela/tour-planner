@@ -111,10 +111,8 @@ export const useUploadAvatarMutation = () => {
     {
       mutationFn: uploadAvatar,
       onSuccess: (data) => {
-        console.log("[Avatar Upload] Success - New avatar_url:", data.avatar_url);
         // Update the profile cache with the new data
         queryClient.setQueryData(["profile", "me"], data);
-        console.log("[Avatar Upload] Cache updated with new profile data");
         // Invalidate to refetch user data
         queryClient.invalidateQueries({ queryKey: ["user"] });
       },

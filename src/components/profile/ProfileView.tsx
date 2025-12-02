@@ -37,8 +37,6 @@ export const ProfileView = ({ user }: ProfileViewProps) => {
   // Fallback to initial user.profile if profile is not loaded yet (shouldn't happen with initialData)
   const currentProfile = profile || user.profile;
 
-  console.log("[ProfileView] Render - avatar_url:", currentProfile.avatar_url);
-
   return (
     <div className="container mx-auto max-w-2xl space-y-6 p-4">
       <div className="card bg-base-100 shadow-xl">

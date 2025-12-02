@@ -36,7 +36,9 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify(parsedData.error), { status: 400 });
   }
 
-  const { email, redirectTo, locale } = parsedData.data;
+  const { email, redirectTo } = parsedData.data;
+  // Note: locale is parsed but not currently used in email template
+  // It's kept for potential future i18n email support
 
   // Use admin client for server-side auth operations
   const supabaseAdmin = createSupabaseAdminClient();
