@@ -123,7 +123,10 @@ class TourService {
             if (!tourTagCounts.has(tt.tour_id)) {
               tourTagCounts.set(tt.tour_id, new Set());
             }
-            tourTagCounts.get(tt.tour_id)!.add(tag.name.toLowerCase());
+            const tagSet = tourTagCounts.get(tt.tour_id);
+            if (tagSet) {
+              tagSet.add(tag.name.toLowerCase());
+            }
           }
         });
 
@@ -200,7 +203,10 @@ class TourService {
           if (!participantAvatarsMap.has(participant.tour_id)) {
             participantAvatarsMap.set(participant.tour_id, []);
           }
-          participantAvatarsMap.get(participant.tour_id)!.push(avatarUrl);
+          const avatarList = participantAvatarsMap.get(participant.tour_id);
+          if (avatarList) {
+            avatarList.push(avatarUrl);
+          }
         }
       });
 
