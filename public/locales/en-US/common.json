@@ -102,6 +102,22 @@
     },
     "title": "Profile",
     "updateError": "Error",
-    "updateSuccess": "Profile updated successfully!"
+    "updateSuccess": "Profile updated successfully!",
+    "dangerZone": {
+      "title": "Danger Zone",
+      "description": "Once you delete your account, there is no going back. Please be certain.",
+      "deleteButton": "Delete Account"
+    },
+    "deleteAccount": {
+      "title": "Delete Account",
+      "description": "This action cannot be undone. This will permanently delete your account and all associated data.",
+      "checkboxLabel": "I understand this action is permanent and cannot be undone",
+      "confirmLabel": "Type DELETE to confirm",
+      "confirmPlaceholder": "DELETE",
+      "confirmButton": "Delete My Account",
+      "deleting": "Deleting...",
+      "success": "Your account has been deleted",
+      "error": "Failed to delete account. Please try again."
+    }
   }
 }

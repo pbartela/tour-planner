@@ -102,6 +102,22 @@
     },
     "title": "Profil",
     "updateError": "Błąd",
-    "updateSuccess": "Profil zaktualizowany pomyślnie!"
+    "updateSuccess": "Profil zaktualizowany pomyślnie!",
+    "dangerZone": {
+      "title": "Strefa Zagrożenia",
+      "description": "Po usunięciu konta nie ma możliwości powrotu. Upewnij się, że tego chcesz.",
+      "deleteButton": "Usuń Konto"
+    },
+    "deleteAccount": {
+      "title": "Usuń Konto",
+      "description": "Ta akcja jest nieodwracalna. Trwale usunie Twoje konto i wszystkie powiązane dane.",
+      "checkboxLabel": "Rozumiem, że ta akcja jest trwała i nie można jej cofnąć",
+      "confirmLabel": "Wpisz USUŃ aby potwierdzić",
+      "confirmPlaceholder": "USUŃ",
+      "confirmButton": "Usuń Moje Konto",
+      "deleting": "Usuwanie...",
+      "success": "Twoje konto zostało usunięte",
+      "error": "Nie udało się usunąć konta. Spróbuj ponownie."
+    }
   }
 }

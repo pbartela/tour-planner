@@ -220,4 +220,338 @@ describe("ProfileService", () => {
       expect(updateCommand).not.toHaveProperty("avatar_url");
     });
   });
+
+  describe("deleteAccount", () => {
+    it("should successfully delete account with avatar", async () => {
+      const userId = "user-123";
+      const avatarUrl = "https://example.com/storage/v1/object/public/avatars/user-123/avatar.jpg";
+
+      // Mock profile query
+      const mockSelect = vi.fn().mockReturnThis();
+      const mockEq = vi.fn().mockReturnThis();
+      const mockSingle = vi.fn().mockResolvedValue({
+        data: { avatar_url: avatarUrl },
+        error: null,
+      });
+
+      // Mock storage.from().remove()
+      const mockRemove = vi.fn().mockResolvedValue({
+        data: null,
+        error: null,
+      });
+
+      // Mock tour_activity deletion
+      const mockDelete = vi.fn().mockReturnThis();
+      const mockActivityEq = vi.fn().mockResolvedValue({
+        data: null,
+        error: null,
+      });
+
+      // Mock auth.admin.deleteUser()
+      const mockDeleteUser = vi.fn().mockResolvedValue({
+        data: {},
+        error: null,
+      });
+
+      (mockSupabase.from as any).mockImplementation((table: string) => {
+        if (table === "profiles") {
+          return {
+            select: mockSelect,
+          };
+        }
+        if (table === "tour_activity") {
+          return {
+            delete: mockDelete,
+          };
+        }
+      });
+
+      mockSelect.mockReturnValue({
+        eq: mockEq,
+      });
+      mockEq.mockReturnValue({
+        single: mockSingle,
+      });
+
+      mockDelete.mockReturnValue({
+        eq: mockActivityEq,
+      });
+
+      (mockSupabase as any).storage = {
+        from: vi.fn().mockReturnValue({
+          remove: mockRemove,
+        }),
+      };
+
+      (mockSupabase as any).auth = {
+        admin: {
+          deleteUser: mockDeleteUser,
+        },
+      };
+
+      const result = await profileService.deleteAccount(mockSupabase, userId);
+
+      expect(mockSupabase.from).toHaveBeenCalledWith("profiles");
+      expect(mockRemove).toHaveBeenCalledWith(["user-123/avatar.jpg"]);
+      expect(mockDelete).toHaveBeenCalled();
+      expect(mockActivityEq).toHaveBeenCalledWith("user_id", userId);
+      expect(mockDeleteUser).toHaveBeenCalledWith(userId);
+      expect(result.error).toBeNull();
+    });
+
+    it("should successfully delete account without avatar", async () => {
+      const userId = "user-456";
+
+      // Mock profile query (no avatar)
+      const mockSelect = vi.fn().mockReturnThis();
+      const mockEq = vi.fn().mockReturnThis();
+      const mockSingle = vi.fn().mockResolvedValue({
+        data: { avatar_url: null },
+        error: null,
+      });
+
+      // Mock tour_activity deletion
+      const mockDelete = vi.fn().mockReturnThis();
+      const mockActivityEq = vi.fn().mockResolvedValue({
+        data: null,
+        error: null,
+      });
+
+      // Mock auth.admin.deleteUser()
+      const mockDeleteUser = vi.fn().mockResolvedValue({
+        data: {},
+        error: null,
+      });
+
+      (mockSupabase.from as any).mockImplementation((table: string) => {
+        if (table === "profiles") {
+          return {
+            select: mockSelect,
+          };
+        }
+        if (table === "tour_activity") {
+          return {
+            delete: mockDelete,
+          };
+        }
+      });
+
+      mockSelect.mockReturnValue({
+        eq: mockEq,
+      });
+      mockEq.mockReturnValue({
+        single: mockSingle,
+      });
+
+      mockDelete.mockReturnValue({
+        eq: mockActivityEq,
+      });
+
+      (mockSupabase as any).auth = {
+        admin: {
+          deleteUser: mockDeleteUser,
+        },
+      };
+
+      const result = await profileService.deleteAccount(mockSupabase, userId);
+
+      expect(mockDeleteUser).toHaveBeenCalledWith(userId);
+      expect(result.error).toBeNull();
+    });
+
+    it("should continue deletion even if avatar storage deletion fails", async () => {
+      const userId = "user-789";
+      const avatarUrl = "https://example.com/storage/v1/object/public/avatars/user-789/avatar.jpg";
+
+      // Mock profile query
+      const mockSelect = vi.fn().mockReturnThis();
+      const mockEq = vi.fn().mockReturnThis();
+      const mockSingle = vi.fn().mockResolvedValue({
+        data: { avatar_url: avatarUrl },
+        error: null,
+      });
+
+      // Mock storage.from().remove() - fails
+      const mockRemove = vi.fn().mockResolvedValue({
+        data: null,
+        error: { message: "Storage deletion failed" },
+      });
+
+      // Mock tour_activity deletion
+      const mockDelete = vi.fn().mockReturnThis();
+      const mockActivityEq = vi.fn().mockResolvedValue({
+        data: null,
+        error: null,
+      });
+
+      // Mock auth.admin.deleteUser()
+      const mockDeleteUser = vi.fn().mockResolvedValue({
+        data: {},
+        error: null,
+      });
+
+      (mockSupabase.from as any).mockImplementation((table: string) => {
+        if (table === "profiles") {
+          return {
+            select: mockSelect,
+          };
+        }
+        if (table === "tour_activity") {
+          return {
+            delete: mockDelete,
+          };
+        }
+      });
+
+      mockSelect.mockReturnValue({
+        eq: mockEq,
+      });
+      mockEq.mockReturnValue({
+        single: mockSingle,
+      });
+
+      mockDelete.mockReturnValue({
+        eq: mockActivityEq,
+      });
+
+      (mockSupabase as any).storage = {
+        from: vi.fn().mockReturnValue({
+          remove: mockRemove,
+        }),
+      };
+
+      (mockSupabase as any).auth = {
+        admin: {
+          deleteUser: mockDeleteUser,
+        },
+      };
+
+      const result = await profileService.deleteAccount(mockSupabase, userId);
+
+      // Should still succeed despite storage error
+      expect(mockDeleteUser).toHaveBeenCalledWith(userId);
+      expect(result.error).toBeNull();
+    });
+
+    it("should return error when tour_activity deletion fails", async () => {
+      const userId = "user-fail";
+
+      // Mock profile query
+      const mockSelect = vi.fn().mockReturnThis();
+      const mockEq = vi.fn().mockReturnThis();
+      const mockSingle = vi.fn().mockResolvedValue({
+        data: { avatar_url: null },
+        error: null,
+      });
+
+      // Mock tour_activity deletion - fails
+      const mockDelete = vi.fn().mockReturnThis();
+      const mockActivityEq = vi.fn().mockResolvedValue({
+        data: null,
+        error: { message: "Failed to delete tour_activity" },
+      });
+
+      (mockSupabase.from as any).mockImplementation((table: string) => {
+        if (table === "profiles") {
+          return {
+            select: mockSelect,
+          };
+        }
+        if (table === "tour_activity") {
+          return {
+            delete: mockDelete,
+          };
+        }
+      });
+
+      mockSelect.mockReturnValue({
+        eq: mockEq,
+      });
+      mockEq.mockReturnValue({
+        single: mockSingle,
+      });
+
+      mockDelete.mockReturnValue({
+        eq: mockActivityEq,
+      });
+
+      const result = await profileService.deleteAccount(mockSupabase, userId);
+
+      expect(result.error).toBeInstanceOf(Error);
+      expect(result.error?.message).toContain("Failed to clean up tour activity data");
+    });
+
+    it("should return error when auth user deletion fails", async () => {
+      const userId = "user-auth-fail";
+
+      // Mock profile query
+      const mockSelect = vi.fn().mockReturnThis();
+      const mockEq = vi.fn().mockReturnThis();
+      const mockSingle = vi.fn().mockResolvedValue({
+        data: { avatar_url: null },
+        error: null,
+      });
+
+      // Mock tour_activity deletion
+      const mockDelete = vi.fn().mockReturnThis();
+      const mockActivityEq = vi.fn().mockResolvedValue({
+        data: null,
+        error: null,
+      });
+
+      // Mock auth.admin.deleteUser() - fails
+      const mockDeleteUser = vi.fn().mockResolvedValue({
+        data: null,
+        error: { message: "Auth deletion failed" },
+      });
+
+      (mockSupabase.from as any).mockImplementation((table: string) => {
+        if (table === "profiles") {
+          return {
+            select: mockSelect,
+          };
+        }
+        if (table === "tour_activity") {
+          return {
+            delete: mockDelete,
+          };
+        }
+      });
+
+      mockSelect.mockReturnValue({
+        eq: mockEq,
+      });
+      mockEq.mockReturnValue({
+        single: mockSingle,
+      });
+
+      mockDelete.mockReturnValue({
+        eq: mockActivityEq,
+      });
+
+      (mockSupabase as any).auth = {
+        admin: {
+          deleteUser: mockDeleteUser,
+        },
+      };
+
+      const result = await profileService.deleteAccount(mockSupabase, userId);
+
+      expect(result.error).toBeInstanceOf(Error);
+      expect(result.error?.message).toContain("Failed to delete user account");
+    });
+
+    it("should handle unexpected errors during account deletion", async () => {
+      const userId = "user-unexpected";
+
+      (mockSupabase.from as any).mockImplementation(() => {
+        throw new Error("Unexpected error");
+      });
+
+      const result = await profileService.deleteAccount(mockSupabase, userId);
+
+      expect(result.error).toBeInstanceOf(Error);
+      expect(result.error).toBeDefined();
+    });
+  });
 });

@@ -1,40 +1,40 @@
 # Chromatic Setup Guide
 
-Chromatic to platforma do testowania wizualnej regresji dla Storybook. Ten przewodnik opisuje jak skonfigurować Chromatic dla projektu Plan Tour.
+Chromatic is a visual regression testing platform for Storybook. This guide describes how to configure Chromatic for the Plan Tour project.
 
-## Czym jest Chromatic?
+## What is Chromatic?
 
-Chromatic automatycznie:
+Chromatic automatically:
 
-- Buduje Storybook przy każdym commit
-- Robi snapshoty wszystkich stories
-- Porównuje z poprzednimi wersjami
-- Wykrywa zmiany wizualne
-- Pozwala zaakceptować lub odrzucić zmiany
+- Builds Storybook on every commit
+- Takes snapshots of all stories
+- Compares with previous versions
+- Detects visual changes
+- Allows you to accept or reject changes
 
-## Krok 1: Założenie Konta
+## Step 1: Create an Account
 
-1. Przejdź na [chromatic.com](https://www.chromatic.com/)
-2. Zaloguj się przez GitHub
-3. Kliknij "Add project"
-4. Wybierz repozytorium `tour-planner`
+1. Go to [chromatic.com](https://www.chromatic.com/)
+2. Sign in via GitHub
+3. Click "Add project"
+4. Select the `tour-planner` repository
 
-## Krok 2: Otrzymanie Project Token
+## Step 2: Get the Project Token
 
-Po dodaniu projektu:
+After adding the project:
 
-1. Skopiuj wyświetlony **Project Token**
-2. Zapisz go bezpiecznie - będzie potrzebny w następnych krokach
+1. Copy the displayed **Project Token**
+2. Save it securely - you'll need it in the next steps
 
-## Krok 3: Konfiguracja Lokalna
+## Step 3: Local Configuration
 
-Utwórz plik konfiguracyjny dla lokalnego użycia:
+Create a configuration file for local use:
 
 ```bash
 cp .chromatic.config.example.json .chromatic.config.json
 ```
 
-Otwórz `.chromatic.config.json` i wklej swój token:
+Open `.chromatic.config.json` and paste your token:
 
 ```json
 {
@@ -48,153 +48,153 @@ Otwórz `.chromatic.config.json` i wklej swój token:
 }
 ```
 
-**⚠️ Uwaga:** Plik `.chromatic.config.json` jest w `.gitignore` i nie powinien być commitowany!
+**⚠️ Note:** The `.chromatic.config.json` file is in `.gitignore` and should not be committed!
 
-## Krok 4: Konfiguracja GitHub Actions
+## Step 4: GitHub Actions Configuration
 
-Dodaj token jako GitHub Secret:
+Add the token as a GitHub Secret:
 
-1. Przejdź do Settings repozytorium na GitHub
-2. Kliknij **Secrets and variables** → **Actions**
-3. Kliknij **New repository secret**
+1. Go to your repository Settings on GitHub
+2. Click **Secrets and variables** → **Actions**
+3. Click **New repository secret**
 4. Name: `CHROMATIC_PROJECT_TOKEN`
-5. Secret: Wklej swój Project Token
-6. Kliknij **Add secret**
+5. Secret: Paste your Project Token
+6. Click **Add secret**
 
-## Krok 5: Pierwsze Uruchomienie
+## Step 5: First Run
 
-Uruchom Chromatic lokalnie:
+Run Chromatic locally:
 
 ```bash
 npm run test:chromatic
 ```
 
-To:
+This will:
 
-1. Zbuduje Storybook (`npm run build-storybook`)
-2. Przesle build do Chromatic
-3. Utworzy baseline snapshots
-4. Wyświetli link do rezultatów
+1. Build Storybook (`npm run build-storybook`)
+2. Upload the build to Chromatic
+3. Create baseline snapshots
+4. Display a link to the results
 
-## Krok 6: Review w Chromatic UI
+## Step 6: Review in Chromatic UI
 
-1. Kliknij link z outputu (lub przejdź do chromatic.com)
-2. Zobacz wszystkie stories jako snapshoty
-3. Przy pierwszym uruchomieniu wszystko będzie "New" - zaakceptuj je jako baseline
+1. Click the link from the output (or go to chromatic.com)
+2. See all stories as snapshots
+3. On the first run, everything will be "New" - accept them as the baseline
 
-## Workflow CI/CD
+## CI/CD Workflow
 
-Po skonfigurowaniu, Chromatic automatycznie uruchamia się:
+After configuration, Chromatic runs automatically:
 
 ### Pull Request
 
-1. Otwierasz PR
-2. GitHub Actions uruchamia workflow `test.yml`
-3. Job `chromatic` buduje i uploaduje snapshoty
-4. Chromatic porównuje z baseline
-5. Jeśli są różnice - pokazuje je w PR jako check
+1. You open a PR
+2. GitHub Actions runs the `test.yml` workflow
+3. The `chromatic` job builds and uploads snapshots
+4. Chromatic compares with the baseline
+5. If there are differences - shows them in the PR as a check
 
 ### Main Branch
 
-1. Po merge do `main`
-2. Chromatic aktualizuje baseline automatycznie (dzięki `autoAcceptChanges: "main"`)
+1. After merging to `main`
+2. Chromatic updates the baseline automatically (thanks to `autoAcceptChanges: "main"`)
 
-## Użycie
+## Usage
 
-### Lokalne Testowanie
+### Local Testing
 
 ```bash
-# Uruchom Chromatic
+# Run Chromatic
 npm run test:chromatic
 
-# Chromatic automatycznie:
-# - Wykryje zmiany w stories
-# - Porówna tylko zmienione komponenty (onlyChanged: true)
-# - Exit z kodem 0 nawet jeśli są zmiany (exitZeroOnChanges: true)
+# Chromatic automatically:
+# - Detects changes in stories
+# - Compares only changed components (onlyChanged: true)
+# - Exits with code 0 even if there are changes (exitZeroOnChanges: true)
 ```
 
-### Akceptowanie Zmian
+### Accepting Changes
 
-**W UI Chromatic:**
+**In Chromatic UI:**
 
-1. Przejdź do buildu na chromatic.com
-2. Zobacz różnice (diff view)
-3. Kliknij ✓ Approve lub ✗ Deny dla każdej zmiany
+1. Go to the build on chromatic.com
+2. See the differences (diff view)
+3. Click ✓ Approve or ✗ Deny for each change
 
-**Automatycznie:**
+**Automatically:**
 
-- Zmiany na branchu `main` są auto-akceptowane
+- Changes on the `main` branch are auto-accepted
 
-### Odrzucanie Zmian
+### Rejecting Changes
 
-Jeśli Chromatic pokazuje niezamierzone zmiany:
+If Chromatic shows unintended changes:
 
-1. Odrzuć je w UI
-2. Napraw kod
-3. Push nowy commit
-4. Chromatic uruchomi się ponownie
+1. Reject them in the UI
+2. Fix the code
+3. Push a new commit
+4. Chromatic will run again
 
-## Opcje Konfiguracji
+## Configuration Options
 
 ### `.chromatic.config.json`
 
-| Opcja               | Opis                                       |
-| ------------------- | ------------------------------------------ |
-| `projectToken`      | Token projektu Chromatic                   |
-| `buildScriptName`   | Skrypt do budowania Storybook              |
-| `storybookBuildDir` | Katalog z zbudowanym Storybook             |
-| `onlyChanged`       | Testuj tylko zmienione komponenty          |
-| `exitZeroOnChanges` | Exit 0 nawet jeśli są zmiany (dla CI)      |
-| `exitOnceUploaded`  | Exit od razu po upload (szybsze)           |
-| `autoAcceptChanges` | Auto-akceptuj zmiany na określonym branchu |
+| Option              | Description                               |
+| ------------------- | ----------------------------------------- |
+| `projectToken`      | Chromatic project token                   |
+| `buildScriptName`   | Script for building Storybook             |
+| `storybookBuildDir` | Directory with built Storybook            |
+| `onlyChanged`       | Test only changed components              |
+| `exitZeroOnChanges` | Exit 0 even if there are changes (for CI) |
+| `exitOnceUploaded`  | Exit right after upload (faster)          |
+| `autoAcceptChanges` | Auto-accept changes on specified branch   |
 
-### Zaawansowane Opcje
+### Advanced Options
 
 ```json
 {
   "projectToken": "...",
-  "skip": "true", // Pomiń test (użyteczne w branch names)
-  "ignoreLastBuildOnBranch": "main", // Ignoruj ostatni build z brancha
-  "externals": ["public/**"], // Dodatkowe pliki do trackowania
-  "fileHashing": true, // Hashuj pliki dla lepszego cachowania
-  "zip": true // Kompresuj przed uploadem
+  "skip": "true", // Skip test (useful in branch names)
+  "ignoreLastBuildOnBranch": "main", // Ignore last build from branch
+  "externals": ["public/**"], // Additional files to track
+  "fileHashing": true, // Hash files for better caching
+  "zip": true // Compress before upload
 }
 ```
 
-## Integracja z Pull Requests
+## Pull Request Integration
 
-Chromatic dodaje status check do PR:
+Chromatic adds a status check to PRs:
 
-- ✓ **Passed** - Brak zmian wizualnych
-- ⚠️ **Changes detected** - Znaleziono zmiany, wymaga review
-- ✗ **Failed** - Błąd w buildzie
+- ✓ **Passed** - No visual changes
+- ⚠️ **Changes detected** - Found changes, requires review
+- ✗ **Failed** - Build error
 
-Kliknij "Details" przy checku aby zobaczyć zmiany.
+Click "Details" next to the check to see changes.
 
-## Limity Free Tier
+## Free Tier Limits
 
-Plan darmowy Chromatic oferuje:
+Chromatic's free plan offers:
 
-- **5,000 snapshots/miesiąc**
-- Nieograniczoną liczbę użytkowników
-- Wszystkie podstawowe funkcje
+- **5,000 snapshots/month**
+- Unlimited number of users
+- All basic features
 
-Monitoruj użycie w Settings → Billing na chromatic.com
+Monitor usage in Settings → Billing on chromatic.com
 
-## Optymalizacja Snapshots
+## Snapshot Optimization
 
-### Redukuj Liczbę Stories
+### Reduce Number of Stories
 
-Zamiast 10 podobnych stories:
+Instead of 10 similar stories:
 
 ```typescript
 export const PrimarySmall: Story = { ... };
 export const PrimaryMedium: Story = { ... };
 export const PrimaryLarge: Story = { ... };
-// ... x10 kombinacji
+// ... x10 combinations
 ```
 
-Użyj jednej story z wszystkimi wariantami:
+Use one story with all variants:
 
 ```typescript
 export const AllVariants: Story = {
@@ -208,7 +208,7 @@ export const AllVariants: Story = {
 };
 ```
 
-### Skip Stories Nie-Wizualnych
+### Skip Non-Visual Stories
 
 ```typescript
 export const Interactive: Story = {
@@ -218,12 +218,12 @@ export const Interactive: Story = {
 };
 ```
 
-### Delay dla Animacji
+### Delay for Animations
 
 ```typescript
 export const WithAnimation: Story = {
   parameters: {
-    chromatic: { delay: 300 }, // Czekaj 300ms przed snapshot
+    chromatic: { delay: 300 }, // Wait 300ms before snapshot
   },
 };
 ```
@@ -232,38 +232,38 @@ export const WithAnimation: Story = {
 
 ### Problem: "Project token is invalid"
 
-**Rozwiązanie:**
+**Solution:**
 
-- Sprawdź czy token jest poprawnie skopiowany
-- Sprawdź czy nie ma spacji na początku/końcu
-- Zweryfikuj token na chromatic.com
+- Check if the token is correctly copied
+- Check for spaces at the beginning/end
+- Verify the token on chromatic.com
 
 ### Problem: Build timeouts
 
-**Rozwiązanie:**
+**Solution:**
 
 ```bash
-# Zbuduj Storybook lokalnie najpierw
+# Build Storybook locally first
 npm run build-storybook
 
-# Sprawdź czy nie ma błędów
+# Check for errors
 ```
 
 ### Problem: Too many snapshots
 
-**Rozwiązanie:**
+**Solution:**
 
-- Włącz `onlyChanged: true` w konfiguracji
-- Zredukuj liczbę stories (patrz Optymalizacja)
-- Użyj `disableSnapshot` dla stories które nie wymagają testowania
+- Enable `onlyChanged: true` in configuration
+- Reduce number of stories (see Optimization)
+- Use `disableSnapshot` for stories that don't require testing
 
-### Problem: Zmiany nie są wykrywane
+### Problem: Changes are not detected
 
-**Rozwiązanie:**
+**Solution:**
 
-- Upewnij się że Storybook jest aktualny: `npm run storybook`
+- Make sure Storybook is up to date: `npm run storybook`
 - Clear cache: `rm -rf node_modules/.cache`
-- Przebuduj: `npm run build-storybook`
+- Rebuild: `npm run build-storybook`
 
 ## Resources
 
@@ -271,10 +271,10 @@ npm run build-storybook
 - [Storybook Testing](https://storybook.js.org/docs/react/writing-tests/introduction)
 - [Visual Testing Best Practices](https://www.chromatic.com/docs/test)
 
-## Wsparcie
+## Support
 
-Problemy z Chromatic?
+Problems with Chromatic?
 
-- Dokumentacja: https://www.chromatic.com/docs/
+- Documentation: https://www.chromatic.com/docs/
 - Discord: https://discord.gg/storybook
 - Email: support@chromatic.com

@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "react-hot-toast";
 import type { User } from "@/types";
 import { ProfileEditForm } from "./ProfileEditForm";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/Avatar";
+import { DeleteAccountDialog } from "./DeleteAccountDialog";
+import { useDeleteAccountMutation } from "@/lib/hooks/useAccountMutations";
 
 interface ProfileViewProps {
   user: User;
@@ -12,6 +15,20 @@ interface ProfileViewProps {
 export const ProfileView = ({ user }: ProfileViewProps) => {
   const { t } = useTranslation("common");
   const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const deleteAccountMutation = useDeleteAccountMutation();
+
+  const handleDeleteAccount = async () => {
+    try {
+      await deleteAccountMutation.mutateAsync();
+      // Success toast shown before redirect (but user won't see it)
+      toast.success(t("profile.deleteAccount.success"));
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : t("profile.deleteAccount.error");
+      toast.error(errorMessage);
+      setShowDeleteDialog(false);
+    }
+  };
 
   return (
     <div className="container mx-auto max-w-2xl space-y-6 p-4">
@@ -78,6 +95,29 @@ export const ProfileView = ({ user }: ProfileViewProps) => {
           )}
         </div>
       </div>
+
+      {/* Danger Zone - Account Deletion */}
+      {!isEditing && (
+        <div className="card bg-base-100 shadow-xl border-error/30">
+          <div className="card-body">
+            <h3 className="text-lg font-semibold text-error mb-2">{t("profile.dangerZone.title")}</h3>
+            <p className="text-sm text-base-content/70 mb-4">{t("profile.dangerZone.description")}</p>
+            <div>
+              <Button variant="error" onClick={() => setShowDeleteDialog(true)}>
+                {t("profile.dangerZone.deleteButton")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Dialog */}
+      <DeleteAccountDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={handleDeleteAccount}
+        isDeleting={deleteAccountMutation.isPending}
+      />
     </div>
   );
 };

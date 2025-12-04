@@ -20,9 +20,7 @@ export const TourCard = ({ tour }: Props) => {
   ];
   // Don't slice here - let AvatarGroup handle showing "+N more"
   const avatars =
-    tour.participantAvatars && tour.participantAvatars.length > 0
-      ? tour.participantAvatars
-      : placeholderAvatars;
+    tour.participantAvatars && tour.participantAvatars.length > 0 ? tour.participantAvatars : placeholderAvatars;
 
   return (
     <a href={tour.url} className="group block">

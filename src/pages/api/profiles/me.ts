@@ -155,3 +155,70 @@ export const PATCH: APIRoute = async ({ request, locals, cookies }) => {
     );
   }
 };
+
+export const DELETE: APIRoute = async ({ request, locals, cookies }) => {
+  // CSRF protection
+  const csrfError = await checkCsrfProtection(request, cookies);
+  if (csrfError) {
+    return csrfError;
+  }
+
+  const { supabase } = locals;
+
+  // Get user from Supabase since middleware doesn't run for API routes
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: "UNAUTHORIZED",
+          message: "Authentication required",
+        },
+      }),
+      {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  try {
+    const { error } = await profileService.deleteAccount(supabase, user.id);
+
+    if (error) {
+      secureError("Error deleting account", error);
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to delete account",
+          },
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Return 204 No Content on successful deletion
+    return new Response(null, { status: 204 });
+  } catch (error) {
+    secureError("Unexpected error in DELETE /api/profiles/me", error);
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "An unexpected error occurred",
+        },
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+};

@@ -185,10 +185,19 @@ tests/
 Business logic is extracted into services (`src/lib/services/`):
 
 - `auth.service.ts` - Authentication logic
-- `profile.service.ts` - User profile management
+- `profile.service.ts` - User profile management (including account deletion)
 - `tour.service.ts` - Tour CRUD operations
 
 Services receive a `SupabaseClient` instance and user ID, never import clients directly.
+
+**Account Deletion:**
+The `profile.service.ts` includes a `deleteAccount()` method that handles complete account deletion:
+- Deletes user avatar from storage (with graceful failure handling)
+- Deletes tour_activity records
+- Deletes auth.users record (triggers `handle_user_deletion` database function)
+- Automatic tour ownership transfer via database trigger
+- Comment anonymization (via cascade to special user `00000000-0000-0000-0000-000000000000`)
+- Cascade deletes: participants, votes, invitations
 
 #### 2. API Route Pattern
 
@@ -477,9 +486,16 @@ Required environment variables (see `.env.example`):
 
 - `SUPABASE_URL` - Same as public URL
 - `SUPABASE_SERVICE_ROLE_KEY` - Service role key for admin operations
+- `SUPABASE_AUTH_URL` - Optional override for Supabase Auth URL (defaults to SUPABASE_URL/auth/v1)
 - `RESEND_API_KEY` - Resend API key for email functionality (required)
 - `RESEND_FROM_EMAIL` - Sender email address (e.g., "Tour Planner <noreply@example.com>")
-- `OPENROUTER_API_KEY` - Optional AI API key
+- `OPENROUTER_API_KEY` - Optional AI API key for future features
+
+**Testing (optional):**
+
+- `TEST_ACCESS_TOKEN` - Supabase access token for authenticated E2E tests
+- `TEST_REFRESH_TOKEN` - Supabase refresh token for authenticated E2E tests
+- `TEST_DATABASE_URL` - Database connection string for E2E tests (defaults to local Supabase)
 
 Environment validation happens at both:
 
