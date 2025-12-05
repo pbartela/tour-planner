@@ -826,8 +826,15 @@ create policy "users can update invitations for tours they own"
 comment on policy "users can update invitations for tours they own" on public.invitations is
   'Allows tour owners to update invitations for their tours. Used for resending declined or expired invitations.';
 
-create policy "users can delete invitations for tours they own" on public.invitations
-  for delete using (exists(select 1 from tours where id = invitations.tour_id and owner_id = auth.uid()));
+    IF v_invitation_status != 'pending' THEN
+        IF v_invitation_status = 'expired' THEN
+            RAISE EXCEPTION 'This invitation has expired';
+        ELSIF v_invitation_status = 'accepted' THEN
+            RAISE EXCEPTION 'This invitation has already been accepted';
+        ELSIF v_invitation_status = 'declined' THEN
+            RAISE EXCEPTION 'This invitation has been declined';
+        END IF;
+    END IF;
 
 -- ============================================================================
 -- RLS POLICIES: TAGS
@@ -917,4 +924,556 @@ on storage.objects for select
 to public
 using (bucket_id = 'avatars');
 
-commit;
+    IF EXISTS (
+        SELECT 1
+        FROM public.participants
+        WHERE tour_id = v_tour_id AND user_id = accepting_user_id
+    ) THEN
+        RAISE EXCEPTION 'User is already a participant';
+    END IF;
+
+    INSERT INTO public.participants (tour_id, user_id)
+    VALUES (v_tour_id, accepting_user_id)
+    ON CONFLICT DO NOTHING;
+
+    UPDATE public.invitations
+    SET status = 'accepted'
+    WHERE id = v_invitation_id;
+
+    RETURN v_tour_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.accept_invitation(TEXT, UUID) TO authenticated;
+
+COMMENT ON FUNCTION public.accept_invitation(TEXT, UUID) IS
+    'Accepts an invitation by token and adds the user as a participant. Verifies email match, checks expiration, and prevents duplicate participants. Returns tour_id on success.';
+
+-- Function: Decline invitation
+CREATE OR REPLACE FUNCTION public.decline_invitation(
+    invitation_token TEXT,
+    declining_user_id UUID
+)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_invitation_id UUID;
+    v_tour_id UUID;
+    v_invitee_email TEXT;
+    v_user_email TEXT;
+    v_invitation_status invitation_status;
+BEGIN
+    SELECT
+        id,
+        tour_id,
+        email,
+        status
+    INTO
+        v_invitation_id,
+        v_tour_id,
+        v_invitee_email,
+        v_invitation_status
+    FROM public.invitations
+    WHERE token = invitation_token;
+
+    IF v_invitation_id IS NULL THEN
+        RAISE EXCEPTION 'Invalid invitation token';
+    END IF;
+
+    IF v_invitation_status != 'pending' THEN
+        IF v_invitation_status = 'expired' THEN
+            RAISE EXCEPTION 'This invitation has expired';
+        ELSIF v_invitation_status = 'accepted' THEN
+            RAISE EXCEPTION 'This invitation has already been accepted';
+        ELSIF v_invitation_status = 'declined' THEN
+            RAISE EXCEPTION 'This invitation has already been declined';
+        END IF;
+    END IF;
+
+    SELECT email INTO v_user_email
+    FROM auth.users
+    WHERE id = declining_user_id;
+
+    IF v_user_email IS NULL THEN
+        RAISE EXCEPTION 'User not found';
+    END IF;
+
+    IF v_invitee_email != v_user_email THEN
+        RAISE EXCEPTION 'Invitation email does not match user email';
+    END IF;
+
+    UPDATE public.invitations
+    SET status = 'declined'
+    WHERE id = v_invitation_id;
+
+    RETURN v_tour_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.decline_invitation(TEXT, UUID) TO authenticated;
+
+COMMENT ON FUNCTION public.decline_invitation(TEXT, UUID) IS
+    'Declines an invitation by token. Verifies email match, checks expiration, and changes status to declined. Returns tour_id on success. Owner can re-invite the user later.';
+
+-- ============================================================================
+-- TAGGING SYSTEM FUNCTIONS
+-- ============================================================================
+
+-- Function: Get or create tag by name (case-insensitive)
+CREATE OR REPLACE FUNCTION public.get_or_create_tag(tag_name TEXT)
+RETURNS BIGINT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    tag_id BIGINT;
+    normalized_name TEXT;
+BEGIN
+    normalized_name := LOWER(TRIM(tag_name));
+
+    IF normalized_name = '' THEN
+        RAISE EXCEPTION 'Tag name cannot be empty';
+    END IF;
+
+    IF LENGTH(normalized_name) > 50 THEN
+        RAISE EXCEPTION 'Tag name cannot exceed 50 characters';
+    END IF;
+
+    SELECT id INTO tag_id
+    FROM public.tags
+    WHERE LOWER(name) = normalized_name;
+
+    IF tag_id IS NULL THEN
+        INSERT INTO public.tags (name)
+        VALUES (normalized_name)
+        RETURNING id INTO tag_id;
+    END IF;
+
+    RETURN tag_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_or_create_tag(TEXT) TO authenticated;
+
+COMMENT ON FUNCTION public.get_or_create_tag(TEXT) IS
+    'Gets existing tag ID by name (case-insensitive) or creates a new tag if it does not exist. Returns tag ID. Validates length (max 50 chars) and non-empty.';
+
+-- ============================================================================
+-- AUTOMATED CLEANUP FUNCTIONS
+-- ============================================================================
+
+-- Function: Archive finished tours
+CREATE OR REPLACE FUNCTION public.archive_finished_tours()
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    archived_count INTEGER := 0;
+    error_msg TEXT;
+BEGIN
+    UPDATE public.tours
+    SET status = 'archived'
+    WHERE status = 'active'
+        AND end_date < now();
+
+    GET DIAGNOSTICS archived_count = ROW_COUNT;
+
+    INSERT INTO public.cron_job_logs (job_name, tours_archived, success)
+    VALUES ('archive_finished_tours', archived_count, TRUE);
+
+    RETURN archived_count;
+
+EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS error_msg = MESSAGE_TEXT;
+    INSERT INTO public.cron_job_logs (job_name, tours_archived, success, error_message)
+    VALUES ('archive_finished_tours', 0, FALSE, error_msg);
+
+    RAISE;
+END;
+$$;
+
+COMMENT ON FUNCTION public.archive_finished_tours IS 'Automatically archives tours that have passed their end_date. Returns count of archived tours.';
+
+-- Function: Cleanup expired invitations
+CREATE OR REPLACE FUNCTION public.cleanup_expired_invitations()
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    expired_count INTEGER := 0;
+    error_msg TEXT;
+BEGIN
+    UPDATE public.invitations
+    SET status = 'expired'
+    WHERE status = 'pending'
+        AND expires_at < now();
+
+    GET DIAGNOSTICS expired_count = ROW_COUNT;
+
+    INSERT INTO public.cron_job_logs (job_name, invitations_expired, success)
+    VALUES ('cleanup_expired_invitations', expired_count, TRUE);
+
+    RETURN expired_count;
+
+EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS error_msg = MESSAGE_TEXT;
+    INSERT INTO public.cron_job_logs (job_name, invitations_expired, success, error_message)
+    VALUES ('cleanup_expired_invitations', 0, FALSE, error_msg);
+
+    RAISE;
+END;
+$$;
+
+COMMENT ON FUNCTION public.cleanup_expired_invitations IS
+    'Automatically marks pending invitations as expired when their expires_at date has passed. Returns count of expired invitations.';
+
+-- Function: Cleanup expired invitation OTPs
+CREATE OR REPLACE FUNCTION cleanup_expired_invitation_otps()
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    DELETE FROM public.invitation_otp
+    WHERE expires_at < now() - INTERVAL '24 hours';
+END;
+$$;
+
+-- Function: Cleanup expired auth OTPs
+CREATE OR REPLACE FUNCTION cleanup_expired_auth_otps()
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    DELETE FROM public.auth_otp
+    WHERE expires_at < now() - INTERVAL '24 hours';
+END;
+$$;
+
+-- ============================================================================
+-- ROW LEVEL SECURITY POLICIES
+-- ============================================================================
+
+-- Profiles policies
+CREATE POLICY "users can view profiles in their tours" ON public.profiles
+    FOR SELECT USING (
+        auth.uid() = id
+        OR
+        EXISTS (
+            SELECT 1
+            FROM public.participants p1
+            INNER JOIN public.participants p2 ON p1.tour_id = p2.tour_id
+            WHERE p1.user_id = auth.uid()
+                AND p2.user_id = profiles.id
+        )
+    );
+
+COMMENT ON POLICY "users can view profiles in their tours" ON public.profiles IS
+    'SECURITY MODEL: Profile Visibility in Tours. Allows users to view their own profile and profiles of other participants in tours they are part of. This enables displaying participant avatars and names in tour lists.';
+
+CREATE POLICY "users can update their own profile" ON public.profiles
+    FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+
+-- Tours policies
+CREATE POLICY "users can view tours they are a participant in" ON public.tours
+    FOR SELECT USING (EXISTS (SELECT 1 FROM participants WHERE tour_id = tours.id AND user_id = auth.uid()));
+
+CREATE POLICY "authenticated users can create tours" ON public.tours
+    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "tour owners can update their tours" ON public.tours
+    FOR UPDATE USING (owner_id = auth.uid()) WITH CHECK (owner_id = auth.uid());
+
+CREATE POLICY "tour owners can delete their tours" ON public.tours
+    FOR DELETE USING (owner_id = auth.uid());
+
+-- Participants policies
+CREATE POLICY "users can view participants of tours they are in" ON public.participants
+    FOR SELECT USING (public.is_participant(tour_id, auth.uid()));
+
+CREATE POLICY "tour owners can add new participants" ON public.participants
+    FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM tours WHERE id = participants.tour_id AND owner_id = auth.uid()));
+
+CREATE POLICY "users can leave tours, and owners can remove participants" ON public.participants
+    FOR DELETE USING (user_id = auth.uid() OR EXISTS (SELECT 1 FROM tours WHERE id = participants.tour_id AND owner_id = auth.uid()));
+
+-- Comments policies
+CREATE POLICY "users can read comments on tours they are a participant in" ON public.comments
+    FOR SELECT USING (EXISTS (SELECT 1 FROM participants WHERE tour_id = comments.tour_id AND user_id = auth.uid()));
+
+CREATE POLICY "users can create comments on tours they are a participant in" ON public.comments
+    FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM participants WHERE tour_id = comments.tour_id AND user_id = auth.uid()));
+
+CREATE POLICY "users can only update their own comments" ON public.comments
+    FOR UPDATE USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "users can only delete their own comments" ON public.comments
+    FOR DELETE USING (user_id = auth.uid());
+
+-- Votes policies
+CREATE POLICY "users can view votes on tours they are a participant in" ON public.votes
+    FOR SELECT USING (EXISTS (SELECT 1 FROM participants WHERE tour_id = votes.tour_id AND user_id = auth.uid()));
+
+CREATE POLICY "users can vote on tours they participate in" ON public.votes
+    FOR INSERT WITH CHECK (
+        EXISTS (SELECT 1 FROM participants WHERE tour_id = votes.tour_id AND user_id = auth.uid()) AND
+        NOT (SELECT are_votes_hidden FROM tours WHERE id = votes.tour_id)
+    );
+
+CREATE POLICY "users can remove their own vote" ON public.votes
+    FOR DELETE USING (
+        user_id = auth.uid() AND
+        NOT (SELECT are_votes_hidden FROM tours WHERE id = votes.tour_id)
+    );
+
+-- Invitations policies
+CREATE POLICY "invited users can view their invitations"
+    ON public.invitations
+    FOR SELECT
+    USING (
+        auth.uid() IS NOT NULL
+        AND email = auth.email()
+    );
+
+COMMENT ON POLICY "invited users can view their invitations" ON public.invitations IS
+    'SECURITY MODEL: Invited Users Can View Their Invitations. This policy allows authenticated users to view invitations sent to their email address. Users can see their invitations regardless of status (pending, accepted, or declined).';
+
+CREATE POLICY "tour owners can view tour invitations"
+    ON public.invitations
+    FOR SELECT
+    USING (
+        auth.uid() IS NOT NULL
+        AND EXISTS (
+            SELECT 1
+            FROM tours
+            WHERE tours.id = invitations.tour_id
+                AND tours.owner_id = auth.uid()
+        )
+    );
+
+COMMENT ON POLICY "tour owners can view tour invitations" ON public.invitations IS
+    'SECURITY MODEL: Tour Owners Can View All Tour Invitations. This policy allows tour owners to view all invitations for tours they own, regardless of invitation status or recipient.';
+
+CREATE POLICY "users can update invitations for tours they own"
+    ON public.invitations
+    FOR UPDATE
+    USING (
+        EXISTS(
+            SELECT 1
+            FROM tours
+            WHERE id = invitations.tour_id
+                AND owner_id = auth.uid()
+        )
+    )
+    WITH CHECK (
+        EXISTS(
+            SELECT 1
+            FROM tours
+            WHERE id = invitations.tour_id
+                AND owner_id = auth.uid()
+        )
+    );
+
+COMMENT ON POLICY "users can update invitations for tours they own" ON public.invitations IS
+    'Allows tour owners to update invitations for their tours. Used for resending declined or expired invitations.';
+
+CREATE POLICY "users can invite others to tours they own" ON public.invitations
+    FOR INSERT WITH CHECK (inviter_id = auth.uid() AND EXISTS(SELECT 1 FROM tours WHERE id = invitations.tour_id AND owner_id = auth.uid()));
+
+CREATE POLICY "users can delete invitations for tours they own" ON public.invitations
+    FOR DELETE USING (EXISTS(SELECT 1 FROM tours WHERE id = invitations.tour_id AND owner_id = auth.uid()));
+
+-- Tags policies
+CREATE POLICY "authenticated users can view tags" ON public.tags
+    FOR SELECT USING (auth.role() = 'authenticated');
+
+CREATE POLICY "authenticated users can create tags"
+    ON public.tags
+    FOR INSERT
+    WITH CHECK (auth.role() = 'authenticated');
+
+COMMENT ON POLICY "authenticated users can create tags" ON public.tags IS
+    'Allows any authenticated user to create new tag names. Tags are shared globally across all tours.';
+
+-- Tour_tags policies
+CREATE POLICY "users can view tags for tours they participated in" ON public.tour_tags
+    FOR SELECT USING (EXISTS (SELECT 1 FROM participants WHERE tour_id = tour_tags.tour_id AND user_id = auth.uid()));
+
+CREATE POLICY "users can remove tags from archived tours they participated in"
+    ON public.tour_tags
+    FOR DELETE
+    USING (
+        EXISTS (
+            SELECT 1
+            FROM public.participants
+            WHERE tour_id = tour_tags.tour_id AND user_id = auth.uid()
+        ) AND
+        EXISTS (
+            SELECT 1
+            FROM public.tours
+            WHERE id = tour_tags.tour_id AND status = 'archived'
+        )
+    );
+
+COMMENT ON POLICY "users can remove tags from archived tours they participated in" ON public.tour_tags IS
+    'Allows participants to remove tags from archived tours they were part of. Only works on archived tours.';
+
+CREATE POLICY "users can add tags only to archived tours they participated in"
+    ON public.tour_tags
+    FOR INSERT
+    WITH CHECK (
+        EXISTS (
+            SELECT 1
+            FROM public.participants
+            WHERE tour_id = tour_tags.tour_id AND user_id = auth.uid()
+        ) AND
+        EXISTS (
+            SELECT 1
+            FROM public.tours
+            WHERE id = tour_tags.tour_id AND status = 'archived'
+        )
+    );
+
+COMMENT ON POLICY "users can add tags only to archived tours they participated in" ON public.tour_tags IS
+    'Allows participants to add tags only to tours they participated in and that are archived.';
+
+-- Tour activity policies
+CREATE POLICY "Users can view own activity records"
+    ON public.tour_activity
+    FOR SELECT
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own activity records"
+    ON public.tour_activity
+    FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own activity records"
+    ON public.tour_activity
+    FOR UPDATE
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+
+-- OTP policies (service role only)
+CREATE POLICY "Service role only" ON public.invitation_otp
+    FOR ALL
+    TO authenticated
+    USING (FALSE);
+
+CREATE POLICY "Service role only" ON public.auth_otp
+    FOR ALL
+    TO authenticated
+    USING (FALSE);
+
+-- ============================================================================
+-- STORAGE BUCKET FOR AVATARS
+-- ============================================================================
+
+-- Create the avatars bucket
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatars', 'avatars', TRUE);
+
+-- Policy: Users can upload their own avatar (INSERT)
+CREATE POLICY "Users can upload their own avatar"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (
+    bucket_id = 'avatars'
+    AND (storage.foldername(name))[1] = auth.uid()::TEXT
+);
+
+-- Policy: Users can update their own avatar (UPDATE)
+CREATE POLICY "Users can update their own avatar"
+ON storage.objects FOR UPDATE
+TO authenticated
+USING (
+    bucket_id = 'avatars'
+    AND (storage.foldername(name))[1] = auth.uid()::TEXT
+);
+
+-- Policy: Users can delete their own avatar (DELETE)
+CREATE POLICY "Users can delete their own avatar"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (
+    bucket_id = 'avatars'
+    AND (storage.foldername(name))[1] = auth.uid()::TEXT
+);
+
+-- Policy: Anyone can view avatars (SELECT) since bucket is public
+CREATE POLICY "Anyone can view avatars"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'avatars');
+
+-- ============================================================================
+-- CRON JOBS FOR AUTOMATION
+-- ============================================================================
+
+-- Enable pg_cron extension if not already enabled
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+
+-- Schedule: Archive finished tours (daily at 03:00 UTC)
+DO $$
+BEGIN
+    PERFORM cron.unschedule('archive-finished-tours');
+EXCEPTION
+    WHEN undefined_table THEN
+        RAISE NOTICE 'pg_cron extension not available - skipping job scheduling. Function can be called manually.';
+    WHEN OTHERS THEN
+        RAISE NOTICE 'Error while trying to unschedule job: %', SQLERRM;
+END;
+$$;
+
+DO $$
+BEGIN
+    PERFORM cron.schedule(
+        'archive-finished-tours',
+        '0 3 * * *',
+        'SELECT public.archive_finished_tours();'
+    );
+    RAISE NOTICE 'Successfully scheduled archive-finished-tours job';
+EXCEPTION
+    WHEN undefined_table THEN
+        RAISE NOTICE 'pg_cron extension not available - job not scheduled. Use manual execution: SELECT archive_finished_tours();';
+    WHEN OTHERS THEN
+        RAISE NOTICE 'Error scheduling cron job: %', SQLERRM;
+END;
+$$;
+
+-- Schedule: Cleanup expired invitations (daily at 04:00 UTC)
+DO $$
+BEGIN
+    PERFORM cron.unschedule('cleanup-expired-invitations');
+EXCEPTION
+    WHEN undefined_table THEN
+        RAISE NOTICE 'pg_cron extension not available - skipping job scheduling. Function can be called manually.';
+    WHEN OTHERS THEN
+        RAISE NOTICE 'Error while trying to unschedule job: %', SQLERRM;
+END;
+$$;
+
+DO $$
+BEGIN
+    PERFORM cron.schedule(
+        'cleanup-expired-invitations',
+        '0 4 * * *',
+        'SELECT public.cleanup_expired_invitations();'
+    );
+    RAISE NOTICE 'Successfully scheduled cleanup-expired-invitations job';
+EXCEPTION
+    WHEN undefined_table THEN
+        RAISE NOTICE 'pg_cron extension not available - job not scheduled. Use manual execution: SELECT cleanup_expired_invitations();';
+    WHEN OTHERS THEN
+        RAISE NOTICE 'Error scheduling cron job: %', SQLERRM;
+END;
+$$;
+
+COMMIT;
