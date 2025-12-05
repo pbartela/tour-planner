@@ -65,11 +65,6 @@ jobs:
   playwright:
     name: Playwright E2E Tests
     runs-on: ubuntu-latest
-    if: |
-      secrets.PUBLIC_SUPABASE_URL != '' &&
-      secrets.PUBLIC_SUPABASE_ANON_KEY != '' &&
-      secrets.SUPABASE_URL != '' &&
-      secrets.SUPABASE_SERVICE_ROLE_KEY != ''
     strategy:
       fail-fast: false
       matrix:
@@ -87,10 +82,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check for Supabase secrets
+        id: check-secrets
+        run: |
+          if [ -n "${{ secrets.PUBLIC_SUPABASE_URL }}" ] && [ -n "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" ]; then
+            echo "has_secrets=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_secrets=false" >> $GITHUB_OUTPUT
+            echo "Skipping E2E tests - Supabase secrets not configured"
+          fi
+
       - name: Install Playwright Browsers
+        if: steps.check-secrets.outputs.has_secrets == 'true'
         run: npx playwright install --with-deps ${{ matrix.project }}
 
       - name: Create .env file
+        if: steps.check-secrets.outputs.has_secrets == 'true'
         run: |
           cat > .env << EOF
           PUBLIC_SUPABASE_URL=${{ secrets.PUBLIC_SUPABASE_URL }}
@@ -101,6 +108,7 @@ jobs:
           EOF
 
       - name: Run Playwright tests
+        if: steps.check-secrets.outputs.has_secrets == 'true'
         run: npx playwright test --project=${{ matrix.project }}
         env:
           CI: true
@@ -126,7 +134,6 @@ jobs:
   chromatic:
     name: Chromatic Visual Tests
     runs-on: ubuntu-latest
-    if: secrets.CHROMATIC_PROJECT_TOKEN != ''
     steps:
       - uses: actions/checkout@v4
         with:
@@ -141,7 +148,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check for Chromatic token
+        id: check-chromatic
+        run: |
+          if [ -n "${{ secrets.CHROMATIC_PROJECT_TOKEN }}" ]; then
+            echo "has_token=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_token=false" >> $GITHUB_OUTPUT
+            echo "Skipping Chromatic - token not configured"
+          fi
+
       - name: Run Chromatic
+        if: steps.check-chromatic.outputs.has_token == 'true'
         uses: chromaui/action@latest
         with:
           projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
@@ -157,11 +175,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' &&
-      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') &&
-      secrets.PUBLIC_SUPABASE_URL != '' &&
-      secrets.PUBLIC_SUPABASE_ANON_KEY != '' &&
-      secrets.SUPABASE_URL != '' &&
-      secrets.SUPABASE_SERVICE_ROLE_KEY != ''
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     steps:
       - uses: actions/checkout@v4
 
@@ -174,10 +188,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check for Supabase secrets
+        id: check-secrets
+        run: |
+          if [ -n "${{ secrets.PUBLIC_SUPABASE_URL }}" ] && [ -n "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" ]; then
+            echo "has_secrets=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_secrets=false" >> $GITHUB_OUTPUT
+            echo "Skipping smoke tests - Supabase secrets not configured"
+          fi
+
       - name: Install Playwright
+        if: steps.check-secrets.outputs.has_secrets == 'true'
         run: npx playwright install --with-deps chromium
 
       - name: Create .env file
+        if: steps.check-secrets.outputs.has_secrets == 'true'
         run: |
           cat > .env << EOF
           PUBLIC_SUPABASE_URL=${{ secrets.PUBLIC_SUPABASE_URL }}
@@ -188,6 +214,7 @@ jobs:
           EOF
 
       - name: Run smoke tests
+        if: steps.check-secrets.outputs.has_secrets == 'true'
         run: npx playwright test tests/e2e/smoke.spec.ts --project=chromium
         env:
           CI: true
