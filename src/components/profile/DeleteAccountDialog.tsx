@@ -68,6 +68,8 @@ export const DeleteAccountDialog = ({
               checked={isChecked}
               onChange={(e) => setIsChecked(e.target.checked)}
               disabled={isDeleting}
+              aria-required="true"
+              aria-label={t("profile.deleteAccount.checkboxLabel")}
             />
             <label htmlFor="confirm-checkbox" className="text-sm font-medium leading-none cursor-pointer">
               {t("profile.deleteAccount.checkboxLabel")}

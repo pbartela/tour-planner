@@ -6,10 +6,11 @@ import { updateProfileCommandSchema } from "@/lib/validators/profile.validators"
 import { handleDatabaseError } from "@/lib/utils/error-handler";
 import { checkCsrfProtection } from "@/lib/server/csrf.service";
 import { secureError } from "@/lib/server/logger.service";
+import { checkRateLimit, getClientIdentifier, RATE_LIMIT_CONFIGS } from "@/lib/server/rate-limit.service";
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ locals }) => {
+export const GET: APIRoute = async ({ request, locals }) => {
   const { supabase } = locals;
 
   // Get user from Supabase since middleware doesn't run for API routes
@@ -27,6 +28,24 @@ export const GET: APIRoute = async ({ locals }) => {
       }),
       {
         status: 401,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  // Rate limiting
+  const clientId = getClientIdentifier(request, user.id);
+  const rateLimitResult = checkRateLimit(clientId, RATE_LIMIT_CONFIGS.API);
+  if (!rateLimitResult.allowed) {
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: "RATE_LIMIT_EXCEEDED",
+          message: "Too many requests. Please try again later.",
+        },
+      }),
+      {
+        status: 429,
         headers: { "Content-Type": "application/json" },
       }
     );
@@ -113,6 +132,24 @@ export const PATCH: APIRoute = async ({ request, locals, cookies }) => {
     );
   }
 
+  // Rate limiting
+  const clientId = getClientIdentifier(request, user.id);
+  const rateLimitResult = checkRateLimit(clientId, RATE_LIMIT_CONFIGS.API);
+  if (!rateLimitResult.allowed) {
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: "RATE_LIMIT_EXCEEDED",
+          message: "Too many requests. Please try again later.",
+        },
+      }),
+      {
+        status: 429,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
   try {
     const body = await request.json();
     const validation = updateProfileCommandSchema.safeParse(body);
@@ -181,6 +218,24 @@ export const DELETE: APIRoute = async ({ request, locals, cookies }) => {
       }),
       {
         status: 401,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  // Rate limiting
+  const clientId = getClientIdentifier(request, user.id);
+  const rateLimitResult = checkRateLimit(clientId, RATE_LIMIT_CONFIGS.API);
+  if (!rateLimitResult.allowed) {
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: "RATE_LIMIT_EXCEEDED",
+          message: "Too many requests. Please try again later.",
+        },
+      }),
+      {
+        status: 429,
         headers: { "Content-Type": "application/json" },
       }
     );

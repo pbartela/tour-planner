@@ -46,12 +46,13 @@ export const useDeleteAccountMutation = () => {
         queryClient.clear();
 
         // Sign out the user
-        await supabaseBrowserClient.auth.signOut();
+        const { error } = await supabaseBrowserClient.auth.signOut();
 
-        // Wait a tick to ensure signOut completes before redirect
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        if (error) {
+          console.error("Sign out error:", error);
+        }
 
-        // Redirect to home page using replace to prevent back navigation
+        // Redirect immediately after signOut completes
         window.location.replace("/");
       },
     },
