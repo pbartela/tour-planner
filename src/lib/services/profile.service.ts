@@ -60,11 +60,16 @@ class ProfileService {
    *    - Anonymizes comments
    *    - Cascade deletes participants, votes, invitations
    *
-   * @param supabase - Supabase client with admin privileges
+   * @param supabase - Supabase client for RLS-protected data operations
+   * @param adminClient - Supabase admin client with service role for auth deletion
    * @param userId - ID of the user to delete
    * @returns Error if deletion failed, null on success
    */
-  public async deleteAccount(supabase: SupabaseClient, userId: string): Promise<{ error: Error | null }> {
+  public async deleteAccount(
+    supabase: SupabaseClient,
+    adminClient: SupabaseClient,
+    userId: string
+  ): Promise<{ error: Error | null }> {
     try {
       // Step 1: Get profile to extract avatar URL (if exists)
       const { data: profile } = await supabase.from("profiles").select("avatar_url").eq("id", userId).single();
@@ -107,7 +112,7 @@ class ProfileService {
       // - Deletes profile
       // - Anonymizes comments
       // - Cascade deletes participants, votes, invitations
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+      const { error: authError } = await adminClient.auth.admin.deleteUser(userId);
       if (authError) {
         logger.error("Failed to delete auth user", authError);
         throw new Error("Failed to delete user account.");

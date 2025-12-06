@@ -48,6 +48,9 @@ export const useDeleteAccountMutation = () => {
         // Sign out the user
         await supabaseBrowserClient.auth.signOut();
 
+        // Wait a tick to ensure signOut completes before redirect
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
         // Redirect to home page using replace to prevent back navigation
         window.location.replace("/");
       },

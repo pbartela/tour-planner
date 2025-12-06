@@ -46,8 +46,9 @@ export const DeleteAccountDialog = ({
   // Get expected confirmation text from translation (removes any formatting/spaces)
   const expectedConfirmText = t("profile.deleteAccount.confirmPlaceholder");
 
-  // Confirm button enabled only when both conditions met
-  const isConfirmEnabled = isChecked && confirmText === expectedConfirmText && !isDeleting;
+  // Confirm button enabled only when both conditions met (normalized comparison)
+  const isConfirmEnabled =
+    isChecked && confirmText.trim().toUpperCase() === expectedConfirmText.trim().toUpperCase() && !isDeleting;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>

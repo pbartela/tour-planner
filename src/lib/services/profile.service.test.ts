@@ -283,13 +283,16 @@ describe("ProfileService", () => {
         }),
       };
 
-      (mockSupabase as any).auth = {
-        admin: {
-          deleteUser: mockDeleteUser,
+      // Mock admin client
+      const mockAdminClient = {
+        auth: {
+          admin: {
+            deleteUser: mockDeleteUser,
+          },
         },
-      };
+      } as any;
 
-      const result = await profileService.deleteAccount(mockSupabase, userId);
+      const result = await profileService.deleteAccount(mockSupabase, mockAdminClient, userId);
 
       expect(mockSupabase.from).toHaveBeenCalledWith("profiles");
       expect(mockRemove).toHaveBeenCalledWith(["user-123/avatar.jpg"]);
@@ -347,13 +350,16 @@ describe("ProfileService", () => {
         eq: mockActivityEq,
       });
 
-      (mockSupabase as any).auth = {
-        admin: {
-          deleteUser: mockDeleteUser,
+      // Mock admin client
+      const mockAdminClient = {
+        auth: {
+          admin: {
+            deleteUser: mockDeleteUser,
+          },
         },
-      };
+      } as any;
 
-      const result = await profileService.deleteAccount(mockSupabase, userId);
+      const result = await profileService.deleteAccount(mockSupabase, mockAdminClient, userId);
 
       expect(mockDeleteUser).toHaveBeenCalledWith(userId);
       expect(result.error).toBeNull();
@@ -420,13 +426,16 @@ describe("ProfileService", () => {
         }),
       };
 
-      (mockSupabase as any).auth = {
-        admin: {
-          deleteUser: mockDeleteUser,
+      // Mock admin client
+      const mockAdminClient = {
+        auth: {
+          admin: {
+            deleteUser: mockDeleteUser,
+          },
         },
-      };
+      } as any;
 
-      const result = await profileService.deleteAccount(mockSupabase, userId);
+      const result = await profileService.deleteAccount(mockSupabase, mockAdminClient, userId);
 
       // Should still succeed despite storage error
       expect(mockDeleteUser).toHaveBeenCalledWith(userId);
@@ -475,7 +484,16 @@ describe("ProfileService", () => {
         eq: mockActivityEq,
       });
 
-      const result = await profileService.deleteAccount(mockSupabase, userId);
+      // Mock admin client (not used in this test as it fails before auth deletion)
+      const mockAdminClient = {
+        auth: {
+          admin: {
+            deleteUser: vi.fn(),
+          },
+        },
+      } as any;
+
+      const result = await profileService.deleteAccount(mockSupabase, mockAdminClient, userId);
 
       expect(result.error).toBeInstanceOf(Error);
       expect(result.error?.message).toContain("Failed to clean up tour activity data");
@@ -529,13 +547,16 @@ describe("ProfileService", () => {
         eq: mockActivityEq,
       });
 
-      (mockSupabase as any).auth = {
-        admin: {
-          deleteUser: mockDeleteUser,
+      // Mock admin client
+      const mockAdminClient = {
+        auth: {
+          admin: {
+            deleteUser: mockDeleteUser,
+          },
         },
-      };
+      } as any;
 
-      const result = await profileService.deleteAccount(mockSupabase, userId);
+      const result = await profileService.deleteAccount(mockSupabase, mockAdminClient, userId);
 
       expect(result.error).toBeInstanceOf(Error);
       expect(result.error?.message).toContain("Failed to delete user account");
@@ -548,7 +569,16 @@ describe("ProfileService", () => {
         throw new Error("Unexpected error");
       });
 
-      const result = await profileService.deleteAccount(mockSupabase, userId);
+      // Mock admin client (not used in this test as it fails before auth deletion)
+      const mockAdminClient = {
+        auth: {
+          admin: {
+            deleteUser: vi.fn(),
+          },
+        },
+      } as any;
+
+      const result = await profileService.deleteAccount(mockSupabase, mockAdminClient, userId);
 
       expect(result.error).toBeInstanceOf(Error);
       expect(result.error).toBeDefined();

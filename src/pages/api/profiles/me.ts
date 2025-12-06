@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 
+import { createSupabaseAdminClient } from "@/db/supabase.admin.client";
 import { profileService } from "@/lib/services/profile.service";
 import { updateProfileCommandSchema } from "@/lib/validators/profile.validators";
 import { handleDatabaseError } from "@/lib/utils/error-handler";
@@ -186,7 +187,8 @@ export const DELETE: APIRoute = async ({ request, locals, cookies }) => {
   }
 
   try {
-    const { error } = await profileService.deleteAccount(supabase, user.id);
+    const adminClient = createSupabaseAdminClient();
+    const { error } = await profileService.deleteAccount(supabase, adminClient, user.id);
 
     if (error) {
       secureError("Error deleting account", error);
