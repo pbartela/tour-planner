@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@/db/supabase.client";
 import type { ProfileDto, UpdateProfileCommand } from "@/types";
 import * as logger from "@/lib/server/logger.service";
+import { ENV } from "@/lib/server/env-validation.service";
+import { auditLog, AuditActions } from "@/lib/server/audit-log.service";
 
 class ProfileService {
   public async getProfile(
@@ -49,12 +51,88 @@ class ProfileService {
   private static readonly MAX_RECENT_TAGS = 10;
 
   /**
+   * Validates whether a user can delete their account.
+   * Checks for active tours owned by the user and pending invitations.
+   *
+   * @param supabase - Supabase client
+   * @param adminClient - Admin client for audit logging
+   * @param userId - ID of the user to validate
+   * @returns Object with canDelete flag and reasons array if deletion is blocked
+   */
+  public async validateAccountDeletion(
+    supabase: SupabaseClient,
+    adminClient: SupabaseClient,
+    userId: string
+  ): Promise<{ canDelete: boolean; reasons: string[] }> {
+    const reasons: string[] = [];
+
+    try {
+      // Check for active tours owned by the user
+      const { data: activeTours, error: toursError } = await supabase
+        .from("tours")
+        .select("id, title")
+        .eq("owner_id", userId)
+        .eq("status", "active");
+
+      if (toursError) {
+        logger.error("Error checking active tours", toursError);
+        reasons.push("Unable to verify active tours");
+        return { canDelete: false, reasons };
+      }
+
+      if (activeTours && activeTours.length > 0) {
+        reasons.push(
+          `You have ${activeTours.length} active tour${activeTours.length > 1 ? "s" : ""}. Please archive or transfer ownership before deleting your account.`
+        );
+      }
+
+      // Check for pending invitations
+      const { data: pendingInvitations, error: invitationsError } = await supabase
+        .from("invitations")
+        .select("id")
+        .eq("inviter_id", userId)
+        .eq("status", "pending");
+
+      if (invitationsError) {
+        logger.error("Error checking pending invitations", invitationsError);
+        reasons.push("Unable to verify pending invitations");
+        return { canDelete: false, reasons };
+      }
+
+      if (pendingInvitations && pendingInvitations.length > 0) {
+        reasons.push(
+          `You have ${pendingInvitations.length} pending invitation${pendingInvitations.length > 1 ? "s" : ""}. Please cancel them before deleting your account.`
+        );
+      }
+
+      const canDelete = reasons.length === 0;
+
+      // Audit log if deletion is blocked
+      if (!canDelete) {
+        await auditLog(adminClient, {
+          userId,
+          actionType: AuditActions.ACCOUNT_DELETION_BLOCKED,
+          resourceType: "profile",
+          resourceId: userId,
+          metadata: { reasons },
+        });
+      }
+
+      return { canDelete, reasons };
+    } catch (error) {
+      logger.error("Unexpected error in validateAccountDeletion", error instanceof Error ? error : undefined);
+      return { canDelete: false, reasons: ["An unexpected error occurred while validating account deletion."] };
+    }
+  }
+
+  /**
    * Permanently deletes a user account and all associated data
    *
    * This method:
-   * 1. Deletes the user's avatar from storage (if exists)
-   * 2. Deletes tour_activity records
-   * 3. Deletes the auth.users record, which triggers handle_user_deletion() that:
+   * 1. Validates that the account can be deleted (no active tours or pending invitations)
+   * 2. Deletes the user's avatar from storage (if exists)
+   * 3. Deletes tour_activity records
+   * 4. Deletes the auth.users record, which triggers handle_user_deletion() that:
    *    - Transfers tour ownership or deletes tours
    *    - Deletes the profile
    *    - Anonymizes comments
@@ -68,17 +146,36 @@ class ProfileService {
   public async deleteAccount(
     supabase: SupabaseClient,
     adminClient: SupabaseClient,
-    userId: string
+    userId: string,
+    requestMetadata?: { ipAddress?: string; userAgent?: string }
   ): Promise<{ error: Error | null }> {
     try {
+      // Step 0: Validate account deletion
+      const validation = await this.validateAccountDeletion(supabase, adminClient, userId);
+      if (!validation.canDelete) {
+        throw new Error(validation.reasons.join(" "));
+      }
+
       // Step 1: Get profile to extract avatar URL (if exists)
-      const { data: profile } = await supabase.from("profiles").select("avatar_url").eq("id", userId).single();
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", userId)
+        .single();
+
+      if (profileError) {
+        // Log but continue - profile might not exist in edge cases, we should still try to delete the account
+        logger.warn("Failed to fetch profile during account deletion", {
+          error: profileError.message,
+          userId,
+        });
+      }
 
       // Step 2: Delete avatar from storage if exists
       if (profile?.avatar_url) {
         try {
-          // Extract file path from URL
-          const url = new URL(profile.avatar_url);
+          // Extract file path from URL (handle both absolute and relative URLs)
+          const url = new URL(profile.avatar_url, ENV.PUBLIC_SUPABASE_URL);
           const pathParts = url.pathname.split("/");
           const bucketIndex = pathParts.indexOf("avatars");
           if (bucketIndex !== -1) {
@@ -117,6 +214,16 @@ class ProfileService {
         logger.error("Failed to delete auth user", authError);
         throw new Error("Failed to delete user account.");
       }
+
+      // Step 5: Audit log successful deletion
+      await auditLog(adminClient, {
+        userId,
+        actionType: AuditActions.ACCOUNT_DELETED,
+        resourceType: "profile",
+        resourceId: userId,
+        ipAddress: requestMetadata?.ipAddress,
+        userAgent: requestMetadata?.userAgent,
+      });
 
       return { error: null };
     } catch (error) {

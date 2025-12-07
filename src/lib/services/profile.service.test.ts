@@ -3,6 +3,17 @@ import { profileService } from "./profile.service";
 import type { SupabaseClient } from "@/db/supabase.client";
 import type { ProfileDto, UpdateProfileCommand } from "@/types";
 
+// Mock the audit log service
+vi.mock("@/lib/server/audit-log.service", () => ({
+  auditLog: vi.fn(),
+  AuditActions: {
+    ACCOUNT_DELETED: "account.deleted",
+    ACCOUNT_DELETION_BLOCKED: "account.deletion_blocked",
+  },
+  getClientIp: vi.fn(),
+  getUserAgent: vi.fn(),
+}));
+
 describe("ProfileService", () => {
   let mockSupabase: SupabaseClient;
 
@@ -226,6 +237,18 @@ describe("ProfileService", () => {
       const userId = "user-123";
       const avatarUrl = "https://example.com/storage/v1/object/public/avatars/user-123/avatar.jpg";
 
+      // Mock validation queries (tours and invitations)
+      const mockToursSelect = vi.fn().mockReturnThis();
+      const mockToursEq = vi.fn().mockResolvedValue({
+        data: [],
+        error: null,
+      });
+      const mockInvitationsSelect = vi.fn().mockReturnThis();
+      const mockInvitationsEq = vi.fn().mockResolvedValue({
+        data: [],
+        error: null,
+      });
+
       // Mock profile query
       const mockSelect = vi.fn().mockReturnThis();
       const mockEq = vi.fn().mockReturnThis();
@@ -254,6 +277,24 @@ describe("ProfileService", () => {
       });
 
       (mockSupabase.from as any).mockImplementation((table: string) => {
+        if (table === "tours") {
+          return {
+            select: () => ({
+              eq: () => ({
+                eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          };
+        }
+        if (table === "invitations") {
+          return {
+            select: () => ({
+              eq: () => ({
+                eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          };
+        }
         if (table === "profiles") {
           return {
             select: mockSelect,
@@ -285,6 +326,29 @@ describe("ProfileService", () => {
 
       // Mock admin client
       const mockAdminClient = {
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === "tours") {
+            return {
+              select: () => ({
+                eq: () => ({
+                  eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+                }),
+              }),
+            };
+          }
+          if (table === "invitations") {
+            return {
+              select: () => ({
+                eq: () => ({
+                  eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+                }),
+              }),
+            };
+          }
+          return {
+            insert: vi.fn().mockResolvedValue({ error: null }),
+          };
+        }),
         auth: {
           admin: {
             deleteUser: mockDeleteUser,
@@ -327,6 +391,24 @@ describe("ProfileService", () => {
       });
 
       (mockSupabase.from as any).mockImplementation((table: string) => {
+        if (table === "tours") {
+          return {
+            select: () => ({
+              eq: () => ({
+                eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          };
+        }
+        if (table === "invitations") {
+          return {
+            select: () => ({
+              eq: () => ({
+                eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          };
+        }
         if (table === "profiles") {
           return {
             select: mockSelect,
@@ -352,6 +434,29 @@ describe("ProfileService", () => {
 
       // Mock admin client
       const mockAdminClient = {
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === "tours") {
+            return {
+              select: () => ({
+                eq: () => ({
+                  eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+                }),
+              }),
+            };
+          }
+          if (table === "invitations") {
+            return {
+              select: () => ({
+                eq: () => ({
+                  eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+                }),
+              }),
+            };
+          }
+          return {
+            insert: vi.fn().mockResolvedValue({ error: null }),
+          };
+        }),
         auth: {
           admin: {
             deleteUser: mockDeleteUser,
@@ -397,6 +502,24 @@ describe("ProfileService", () => {
       });
 
       (mockSupabase.from as any).mockImplementation((table: string) => {
+        if (table === "tours") {
+          return {
+            select: () => ({
+              eq: () => ({
+                eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          };
+        }
+        if (table === "invitations") {
+          return {
+            select: () => ({
+              eq: () => ({
+                eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          };
+        }
         if (table === "profiles") {
           return {
             select: mockSelect,
@@ -428,6 +551,29 @@ describe("ProfileService", () => {
 
       // Mock admin client
       const mockAdminClient = {
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === "tours") {
+            return {
+              select: () => ({
+                eq: () => ({
+                  eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+                }),
+              }),
+            };
+          }
+          if (table === "invitations") {
+            return {
+              select: () => ({
+                eq: () => ({
+                  eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+                }),
+              }),
+            };
+          }
+          return {
+            insert: vi.fn().mockResolvedValue({ error: null }),
+          };
+        }),
         auth: {
           admin: {
             deleteUser: mockDeleteUser,
@@ -461,6 +607,24 @@ describe("ProfileService", () => {
       });
 
       (mockSupabase.from as any).mockImplementation((table: string) => {
+        if (table === "tours") {
+          return {
+            select: () => ({
+              eq: () => ({
+                eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          };
+        }
+        if (table === "invitations") {
+          return {
+            select: () => ({
+              eq: () => ({
+                eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          };
+        }
         if (table === "profiles") {
           return {
             select: mockSelect,
@@ -524,6 +688,24 @@ describe("ProfileService", () => {
       });
 
       (mockSupabase.from as any).mockImplementation((table: string) => {
+        if (table === "tours") {
+          return {
+            select: () => ({
+              eq: () => ({
+                eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          };
+        }
+        if (table === "invitations") {
+          return {
+            select: () => ({
+              eq: () => ({
+                eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          };
+        }
         if (table === "profiles") {
           return {
             select: mockSelect,
@@ -549,6 +731,29 @@ describe("ProfileService", () => {
 
       // Mock admin client
       const mockAdminClient = {
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === "tours") {
+            return {
+              select: () => ({
+                eq: () => ({
+                  eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+                }),
+              }),
+            };
+          }
+          if (table === "invitations") {
+            return {
+              select: () => ({
+                eq: () => ({
+                  eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+                }),
+              }),
+            };
+          }
+          return {
+            insert: vi.fn().mockResolvedValue({ error: null }),
+          };
+        }),
         auth: {
           admin: {
             deleteUser: mockDeleteUser,

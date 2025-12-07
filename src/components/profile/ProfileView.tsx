@@ -37,12 +37,6 @@ export const ProfileView = ({ user }: ProfileViewProps) => {
   // Fallback to initial user.profile if profile is not loaded yet (shouldn't happen with initialData)
   const currentProfile = profile || user.profile;
 
-  // Use React Query to get profile data - this will automatically update when mutations change the cache
-  const { data: profile } = useProfile(user.profile);
-
-  // Fallback to initial user.profile if profile is not loaded yet (shouldn't happen with initialData)
-  const currentProfile = profile || user.profile;
-
   return (
     <div className="container mx-auto max-w-2xl space-y-6 p-4">
       <div className="card bg-base-100 shadow-xl">
