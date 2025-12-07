@@ -3,6 +3,7 @@ import type { ProfileDto, UpdateProfileCommand } from "@/types";
 import * as logger from "@/lib/server/logger.service";
 import { ENV } from "@/lib/server/env-validation.service";
 import { auditLog, AuditActions } from "@/lib/server/audit-log.service";
+import { AccountDeletionBlockedError } from "@/lib/errors/account-deletion.error";
 
 class ProfileService {
   public async getProfile(
@@ -150,10 +151,10 @@ class ProfileService {
     requestMetadata?: { ipAddress?: string; userAgent?: string }
   ): Promise<{ error: Error | null }> {
     try {
-      // Step 0: Validate account deletion
+      // Step 0: Initial validation of account deletion
       const validation = await this.validateAccountDeletion(supabase, adminClient, userId);
       if (!validation.canDelete) {
-        throw new Error(validation.reasons.join(" "));
+        throw new AccountDeletionBlockedError(validation.reasons);
       }
 
       // Step 1: Get profile to extract avatar URL (if exists)
@@ -173,27 +174,7 @@ class ProfileService {
 
       // Step 2: Delete avatar from storage if exists
       if (profile?.avatar_url) {
-        try {
-          // Extract file path from URL (handle both absolute and relative URLs)
-          const url = new URL(profile.avatar_url, ENV.PUBLIC_SUPABASE_URL);
-          const pathParts = url.pathname.split("/");
-          const bucketIndex = pathParts.indexOf("avatars");
-          if (bucketIndex !== -1) {
-            const filePath = pathParts.slice(bucketIndex + 1).join("/");
-            const { error: storageError } = await supabase.storage.from("avatars").remove([filePath]);
-            if (storageError) {
-              // Log but continue - storage deletion failure shouldn't block account deletion
-              logger.warn("Failed to delete avatar from storage during account deletion", {
-                error: storageError.message,
-              });
-            }
-          }
-        } catch (storageError) {
-          // Log but continue with account deletion
-          logger.warn("Error processing avatar deletion during account deletion", {
-            error: storageError instanceof Error ? storageError.message : "Unknown error",
-          });
-        }
+        this.deleteAvatarFromStorage(supabase, profile.avatar_url, userId);
       }
 
       // Step 3: Delete tour_activity records (no FK constraint, must be manual)
@@ -203,7 +184,14 @@ class ProfileService {
         throw new Error("Failed to clean up tour activity data.");
       }
 
-      // Step 4: Delete auth.users record
+      // Step 4: Re-validate before final deletion (prevents race condition)
+      // User could have created a tour/invitation between initial validation and now
+      const revalidation = await this.validateAccountDeletion(supabase, adminClient, userId);
+      if (!revalidation.canDelete) {
+        throw new AccountDeletionBlockedError(revalidation.reasons);
+      }
+
+      // Step 5: Delete auth.users record
       // This triggers handle_user_deletion() which:
       // - Transfers tour ownership or deletes tours
       // - Deletes profile
@@ -215,7 +203,7 @@ class ProfileService {
         throw new Error("Failed to delete user account.");
       }
 
-      // Step 5: Audit log successful deletion
+      // Step 6: Audit log successful deletion
       await auditLog(adminClient, {
         userId,
         actionType: AuditActions.ACCOUNT_DELETED,
@@ -227,10 +215,89 @@ class ProfileService {
 
       return { error: null };
     } catch (error) {
+      // Re-throw AccountDeletionBlockedError without wrapping
+      if (error instanceof AccountDeletionBlockedError) {
+        return { error };
+      }
+
       logger.error("Unexpected error in deleteAccount", error instanceof Error ? error : undefined);
       return {
         error: error instanceof Error ? error : new Error("An unexpected error occurred during account deletion."),
       };
+    }
+  }
+
+  /**
+   * Deletes user avatar from Supabase storage
+   * Logs warnings for edge cases but does not block account deletion
+   */
+  private deleteAvatarFromStorage(supabase: SupabaseClient, avatarUrl: string, userId: string): void {
+    try {
+      // Handle empty or whitespace-only URLs
+      if (!avatarUrl.trim()) {
+        logger.warn("Empty avatar URL provided during account deletion", { userId });
+        return;
+      }
+
+      // Extract file path from URL (handle both absolute and relative URLs)
+      let url: URL;
+      try {
+        url = new URL(avatarUrl, ENV.PUBLIC_SUPABASE_URL);
+      } catch {
+        logger.warn("Malformed avatar URL during account deletion", {
+          avatarUrl,
+          userId,
+        });
+        return;
+      }
+
+      const pathParts = url.pathname.split("/");
+      const bucketIndex = pathParts.indexOf("avatars");
+
+      if (bucketIndex === -1) {
+        logger.warn("Avatar URL does not contain 'avatars' bucket path", {
+          avatarUrl,
+          pathname: url.pathname,
+          userId,
+        });
+        return;
+      }
+
+      const filePath = pathParts.slice(bucketIndex + 1).join("/");
+
+      if (!filePath) {
+        logger.warn("Could not extract file path from avatar URL", {
+          avatarUrl,
+          userId,
+        });
+        return;
+      }
+
+      // Fire and forget - don't await, don't block deletion
+      supabase.storage
+        .from("avatars")
+        .remove([filePath])
+        .then(({ error: storageError }) => {
+          if (storageError) {
+            logger.warn("Failed to delete avatar from storage during account deletion", {
+              error: storageError.message,
+              filePath,
+              userId,
+            });
+          }
+        })
+        .catch((err) => {
+          logger.warn("Error in avatar storage deletion promise", {
+            error: err instanceof Error ? err.message : "Unknown error",
+            userId,
+          });
+        });
+    } catch (err) {
+      // Log but continue with account deletion
+      logger.warn("Error processing avatar deletion during account deletion", {
+        error: err instanceof Error ? err.message : "Unknown error",
+        userId,
+      });
     }
   }
 

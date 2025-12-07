@@ -6,7 +6,7 @@ import { ProfileEditForm } from "./ProfileEditForm";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/Avatar";
 import { DeleteAccountDialog } from "./DeleteAccountDialog";
-import { useDeleteAccountMutation } from "@/lib/hooks/useAccountMutations";
+import { useDeleteAccountMutation, isAccountDeletionBlockedClientError } from "@/lib/hooks/useAccountMutations";
 import { useProfile } from "@/lib/hooks/useProfileMutations";
 
 interface ProfileViewProps {
@@ -17,6 +17,7 @@ export const ProfileView = ({ user }: ProfileViewProps) => {
   const { t } = useTranslation("common");
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [blockingReasons, setBlockingReasons] = useState<string[] | null>(null);
   const deleteAccountMutation = useDeleteAccountMutation();
 
   const handleDeleteAccount = async () => {
@@ -25,10 +26,22 @@ export const ProfileView = ({ user }: ProfileViewProps) => {
       // Success toast shown before redirect (but user won't see it)
       toast.success(t("profile.deleteAccount.success"));
     } catch (error) {
+      // Check if deletion was blocked due to validation
+      if (isAccountDeletionBlockedClientError(error)) {
+        // Show blocking reasons in the dialog instead of closing it
+        setBlockingReasons(error.reasons);
+        return;
+      }
+
+      // Generic error - show toast and close dialog
       const errorMessage = error instanceof Error ? error.message : t("profile.deleteAccount.error");
       toast.error(errorMessage);
       setShowDeleteDialog(false);
     }
+  };
+
+  const handleClearBlockingReasons = () => {
+    setBlockingReasons(null);
   };
 
   // Use React Query to get profile data - this will automatically update when mutations change the cache
@@ -128,6 +141,8 @@ export const ProfileView = ({ user }: ProfileViewProps) => {
         onOpenChange={setShowDeleteDialog}
         onConfirm={handleDeleteAccount}
         isDeleting={deleteAccountMutation.isPending}
+        blockingReasons={blockingReasons}
+        onClearBlockingReasons={handleClearBlockingReasons}
       />
     </div>
   );

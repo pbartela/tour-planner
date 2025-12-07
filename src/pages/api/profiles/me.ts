@@ -8,6 +8,7 @@ import { checkCsrfProtection } from "@/lib/server/csrf.service";
 import { secureError } from "@/lib/server/logger.service";
 import { checkRateLimit, getClientIdentifier, RATE_LIMIT_CONFIGS } from "@/lib/server/rate-limit.service";
 import { getClientIp, getUserAgent } from "@/lib/server/audit-log.service";
+import { isAccountDeletionBlockedError } from "@/lib/errors/account-deletion.error";
 
 export const prerender = false;
 
@@ -250,20 +251,34 @@ export const DELETE: APIRoute = async ({ request, locals, cookies }) => {
     });
 
     if (error) {
+      // Check if it's a validation error using type guard (not hardcoded string matching)
+      if (isAccountDeletionBlockedError(error)) {
+        return new Response(
+          JSON.stringify({
+            error: {
+              code: error.code,
+              message: error.message,
+              reasons: error.reasons,
+            },
+          }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      // Generic error - log and return sanitized message
       secureError("Error deleting account", error);
-
-      // Check if it's a validation error (contains user-facing reasons)
-      const isValidationError = error.message.includes("active tour") || error.message.includes("pending invitation");
-
       return new Response(
         JSON.stringify({
           error: {
-            code: isValidationError ? "VALIDATION_FAILED" : "INTERNAL_SERVER_ERROR",
-            message: isValidationError ? error.message : "Failed to delete account",
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to delete account",
           },
         }),
         {
-          status: isValidationError ? 400 : 500,
+          status: 500,
           headers: { "Content-Type": "application/json" },
         }
       );

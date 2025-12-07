@@ -255,6 +255,7 @@ export interface Database {
           id: string;
           language: string;
           onboarding_completed: boolean;
+          recently_used_tags: string[] | null;
           theme: string;
           updated_at: string;
         };
@@ -265,6 +266,7 @@ export interface Database {
           id: string;
           language?: string;
           onboarding_completed?: boolean;
+          recently_used_tags?: string[] | null;
           theme?: string;
           updated_at?: string;
         };
@@ -275,6 +277,7 @@ export interface Database {
           id?: string;
           language?: string;
           onboarding_completed?: boolean;
+          recently_used_tags?: string[] | null;
           theme?: string;
           updated_at?: string;
         };

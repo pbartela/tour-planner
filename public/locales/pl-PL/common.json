@@ -115,7 +115,9 @@
       "confirmButton": "Usuń Moje Konto",
       "deleting": "Usuwanie...",
       "success": "Twoje konto zostało usunięte",
-      "error": "Nie udało się usunąć konta. Spróbuj ponownie."
+      "error": "Nie udało się usunąć konta. Spróbuj ponownie.",
+      "blockedTitle": "Nie można usunąć konta",
+      "blockedDescription": "Najpierw rozwiąż te problemy:"
     }
   }
 }
