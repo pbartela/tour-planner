@@ -20,6 +20,50 @@ export interface Database {
   };
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action_type: string;
+          created_at: string;
+          id: string;
+          ip_address: unknown;
+          metadata: Json | null;
+          resource_id: string | null;
+          resource_type: string | null;
+          user_agent: string | null;
+          user_id: string | null;
+        };
+        Insert: {
+          action_type: string;
+          created_at?: string;
+          id?: string;
+          ip_address?: unknown;
+          metadata?: Json | null;
+          resource_id?: string | null;
+          resource_type?: string | null;
+          user_agent?: string | null;
+          user_id?: string | null;
+        };
+        Update: {
+          action_type?: string;
+          created_at?: string;
+          id?: string;
+          ip_address?: unknown;
+          metadata?: Json | null;
+          resource_id?: string | null;
+          resource_type?: string | null;
+          user_agent?: string | null;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       auth_otp: {
         Row: {
           created_at: string | null;
@@ -91,39 +135,6 @@ export interface Database {
             referencedColumns: ["id"];
           },
         ];
-      };
-      cron_job_logs: {
-        Row: {
-          created_at: string;
-          error_message: string | null;
-          execution_time: string;
-          id: string;
-          invitations_expired: number | null;
-          job_name: string;
-          success: boolean;
-          tours_archived: number | null;
-        };
-        Insert: {
-          created_at?: string;
-          error_message?: string | null;
-          execution_time?: string;
-          id?: string;
-          invitations_expired?: number | null;
-          job_name: string;
-          success: boolean;
-          tours_archived?: number | null;
-        };
-        Update: {
-          created_at?: string;
-          error_message?: string | null;
-          execution_time?: string;
-          id?: string;
-          invitations_expired?: number | null;
-          job_name?: string;
-          success?: boolean;
-          tours_archived?: number | null;
-        };
-        Relationships: [];
       };
       invitation_otp: {
         Row: {
@@ -244,7 +255,7 @@ export interface Database {
           id: string;
           language: string;
           onboarding_completed: boolean;
-          recently_used_tags: Json;
+          recently_used_tags: string[] | null;
           theme: string;
           updated_at: string;
         };
@@ -255,7 +266,7 @@ export interface Database {
           id: string;
           language?: string;
           onboarding_completed?: boolean;
-          recently_used_tags?: Json;
+          recently_used_tags?: string[] | null;
           theme?: string;
           updated_at?: string;
         };
@@ -266,7 +277,7 @@ export interface Database {
           id?: string;
           language?: string;
           onboarding_completed?: boolean;
-          recently_used_tags?: Json;
+          recently_used_tags?: string[] | null;
           theme?: string;
           updated_at?: string;
         };
@@ -448,10 +459,8 @@ export interface Database {
         Args: { accepting_user_id: string; invitation_token: string };
         Returns: string;
       };
-      archive_finished_tours: { Args: never; Returns: number };
       cleanup_expired_auth_otps: { Args: never; Returns: undefined };
       cleanup_expired_invitation_otps: { Args: never; Returns: undefined };
-      cleanup_expired_invitations: { Args: never; Returns: number };
       cleanup_unconfirmed_users: { Args: never; Returns: undefined };
       create_tour: {
         Args: {
@@ -482,7 +491,6 @@ export interface Database {
         Args: { declining_user_id: string; invitation_token: string };
         Returns: string;
       };
-      get_or_create_tag: { Args: { tag_name: string }; Returns: number };
       get_user_by_email: {
         Args: { search_email: string };
         Returns: {
@@ -501,7 +509,7 @@ export interface Database {
       };
     };
     Enums: {
-      invitation_status: "pending" | "accepted" | "declined" | "expired";
+      invitation_status: "pending" | "accepted" | "declined";
       tour_status: "active" | "archived";
     };
     CompositeTypes: Record<never, never>;
@@ -623,7 +631,7 @@ export const Constants = {
   },
   public: {
     Enums: {
-      invitation_status: ["pending", "accepted", "declined", "expired"],
+      invitation_status: ["pending", "accepted", "declined"],
       tour_status: ["active", "archived"],
     },
   },

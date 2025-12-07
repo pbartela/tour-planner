@@ -187,6 +187,44 @@ The containers use the following environment variables:
 - `BASE_URL=http://app:3000` - Points tests to app container
 - `CI=true` - Enables CI mode in Playwright
 
+## Skipped Tests
+
+Some tests are automatically skipped in Docker/CI environments. This is expected behavior.
+
+### OTP Verification Valid Scenarios (10 tests)
+
+These tests are skipped because:
+- **Rate limiting**: All Docker containers share the same IP, causing `too_many_requests` errors
+- **Auth service isolation**: GoTrue runs on a separate container with limited connectivity
+
+To run these tests locally:
+```bash
+# Start local Supabase
+supabase start
+
+# Run tests locally (not in Docker)
+npm run test:e2e
+```
+
+### Delete Account Tests (35 tests)
+
+These tests require authentication tokens that are not set by default:
+
+```env
+TEST_ACCESS_TOKEN=your-test-user-access-token
+TEST_REFRESH_TOKEN=your-test-user-refresh-token
+```
+
+⚠️ **Warning**: These tests use real credentials and one test actually deletes the account. Only use with disposable test accounts.
+
+### Test Summary
+
+| Test Category | Count | Why Skipped | How to Run |
+|---------------|-------|-------------|------------|
+| OTP Valid Scenarios | 10 | Docker rate limiting/auth isolation | `npm run test:e2e` (local) |
+| Delete Account | 35 | Missing `TEST_*_TOKEN` env vars | Set tokens in `.env` |
+| **Core Tests** | **160+** | **Not skipped** | `npm run test:docker` |
+
 ## Troubleshooting
 
 ### Containers won't start
