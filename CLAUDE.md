@@ -82,13 +82,13 @@ npx supabase stop
 npx supabase gen types typescript --local > src/db/database.types.ts
 
 # Create a new migration
-npx supabase migration new <migration_name>
+npx supabase migration new <migration_name> 
 
 # Apply migrations
-npx supabase migration up
+npx supabase migration up 
 
 # Reset local database
-npx supabase db reset
+npx supabase db reset -- this command should be done by user unless you need logs from it. When needed ask user to do it and wait for confirmation that it is done.
 ```
 
 Local Supabase runs on:

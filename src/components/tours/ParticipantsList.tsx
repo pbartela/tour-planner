@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { SkeletonLoader } from "@/components/shared/SkeletonLoader";
 import { formatDate } from "@/lib/utils/date-formatters";
+import { getUserDisplayName } from "@/lib/utils/user-name.util";
 import { useState } from "react";
 
 interface ParticipantsListProps {
@@ -100,7 +101,11 @@ export const ParticipantsList = ({ tourId, ownerId, currentUserId }: Participant
         <ul className="space-y-2">
           {participants.map((participant) => {
             const isOwner = participant.user_id === ownerId;
-            const displayName = participant.display_name || t("participants.unknownUser");
+            const displayName = getUserDisplayName(
+              participant.display_name,
+              participant.email,
+              t("participants.anonymousUser")
+            );
             const isCurrentUser = participant.user_id === currentUserId;
             const canRemove = isCurrentUserOwner && !isOwner; // Owner can remove non-owner participants
             const canLeave = isCurrentUser && !isOwner; // Non-owner participants can leave

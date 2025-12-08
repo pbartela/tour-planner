@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { generateInitials } from "@/lib/utils/user-name.util";
 
 export interface AvatarProps {
   src?: string | null;
@@ -23,16 +24,7 @@ const sizeClasses = {
 export const Avatar = ({ src, alt, size = "md", fallback, className = "" }: AvatarProps) => {
   const [imageError, setImageError] = useState(false);
 
-  // Generate initials from alt text (usually display_name or email)
-  const getInitials = (name: string): string => {
-    const parts = name.trim().split(/\s+/);
-    if (parts.length >= 2) {
-      return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
-    }
-    return name.slice(0, 2).toUpperCase();
-  };
-
-  const initials = fallback || getInitials(alt);
+  const initials = fallback || generateInitials(alt, null);
   const shouldShowImage = src && !imageError;
 
   return (

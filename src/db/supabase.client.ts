@@ -2,17 +2,17 @@ import { createBrowserClient, createServerClient, parseCookieHeader, type Cookie
 import type { AstroCookies } from "astro";
 import type { Database } from "../db/database.types.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { ENV, isProduction } from "@/lib/server/env-validation.service";
 import { weeksInSeconds } from "@/lib/constants/time";
 
 export type { SupabaseClient };
 
 /**
  * For use in client-side components. This is a singleton instance.
+ * Uses import.meta.env directly to avoid importing server-only code.
  */
 export const supabaseBrowserClient = createBrowserClient<Database>(
-  ENV.PUBLIC_SUPABASE_URL,
-  ENV.PUBLIC_SUPABASE_ANON_KEY
+  import.meta.env.PUBLIC_SUPABASE_URL,
+  import.meta.env.PUBLIC_SUPABASE_ANON_KEY
 );
 
 /**
@@ -22,17 +22,19 @@ export const supabaseBrowserClient = createBrowserClient<Database>(
  * @param cookies - The Astro cookies object (used to set cookies)
  */
 export const createSupabaseServerClient = (request: Request, cookies: AstroCookies): SupabaseClient<Database> => {
+  // Use import.meta.env directly to avoid importing server-only validation code
+  const isProduction = import.meta.env.PROD;
+  const authUrl = import.meta.env.SUPABASE_AUTH_URL ?? import.meta.env.PUBLIC_SUPABASE_URL;
+
   const defaultCookieOptions: CookieOptions = {
     httpOnly: true,
-    secure: isProduction(),
+    secure: isProduction,
     sameSite: "lax",
     path: "/",
     maxAge: weeksInSeconds(1),
   };
 
-  const authUrl = ENV.SUPABASE_AUTH_URL ?? ENV.PUBLIC_SUPABASE_URL;
-
-  return createServerClient<Database>(ENV.PUBLIC_SUPABASE_URL, ENV.PUBLIC_SUPABASE_ANON_KEY, {
+  return createServerClient<Database>(import.meta.env.PUBLIC_SUPABASE_URL, import.meta.env.PUBLIC_SUPABASE_ANON_KEY, {
     cookies: {
       getAll() {
         return parseCookieHeader(request.headers.get("Cookie") ?? "").map(({ name, value }) => ({
@@ -40,7 +42,7 @@ export const createSupabaseServerClient = (request: Request, cookies: AstroCooki
           value: value ?? "",
         }));
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet: Array<{ name: string; value: string; options: CookieOptions }>) {
         cookiesToSet.forEach(({ name, value, options }) => {
           cookies.set(name, value, { ...defaultCookieOptions, ...options });
         });

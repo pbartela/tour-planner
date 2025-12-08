@@ -116,9 +116,22 @@
     "error": "Coś poszło nie tak. Proszę spróbować ponownie.",
     "finish": "Zakończ",
     "next": "Dalej",
-    "skip": "Pomiń"
+    "skip": "Pomiń",
+    "step1": {
+      "description": "Twórz propozycje wycieczek, klikając przycisk \"Dodaj wycieczkę\". Dodawaj szczegóły takie jak daty, opisy i linki do noclegów lub atrakcji.",
+      "title": "Twórz propozycje wycieczek"
+    },
+    "step2": {
+      "description": "Zaproś znajomych i rodzinę przez e-mail. Otrzymają link z zaproszeniem do dołączenia do Twojej wycieczki i uczestnictwa w planowaniu.",
+      "title": "Zaproś uczestników"
+    },
+    "step3": {
+      "description": "Głosuj na swoje ulubione wycieczki, zostawiaj komentarze i dyskutuj z innymi uczestnikami. Gdy wszyscy zagłosują, właściciel wycieczki może zablokować głosowanie i sfinalizować plan.",
+      "title": "Głosuj i dyskutuj"
+    }
   },
   "participants": {
+    "anonymousUser": "Anonimowy użytkownik",
     "joinedOn": "Dołączył",
     "leaveButton": "Opuść wycieczkę",
     "leaveConfirm": "Czy na pewno chcesz opuścić tę wycieczkę? Możesz zostać zaproszony ponownie później.",
@@ -152,6 +165,7 @@
     "title": "Tagi"
   },
   "tourCard": {
+    "anonymous": "Anonimowy",
     "archived": "Zarchiwizowana"
   },
   "tourDetails": {

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { ParticipantSummaryDto } from "@/types";
 
 import { AvatarGroup } from "./AvatarGroup";
 
@@ -14,7 +15,7 @@ const meta: Meta<typeof AvatarGroup> = {
       control: "select",
       options: ["sm", "md", "lg"],
     },
-    altPrefix: {
+    anonymousLabel: {
       control: "text",
     },
   },
@@ -23,21 +24,61 @@ const meta: Meta<typeof AvatarGroup> = {
 export default meta;
 type Story = StoryObj<typeof AvatarGroup>;
 
-const sampleAvatars = [
-  "https://i.pravatar.cc/150?img=1",
-  "https://i.pravatar.cc/150?img=2",
-  "https://i.pravatar.cc/150?img=3",
-  "https://i.pravatar.cc/150?img=4",
-  "https://i.pravatar.cc/150?img=5",
-  "https://i.pravatar.cc/150?img=6",
-  "https://i.pravatar.cc/150?img=7",
-  "https://i.pravatar.cc/150?img=8",
+const sampleParticipants: ParticipantSummaryDto[] = [
+  {
+    user_id: "1",
+    display_name: "John Doe",
+    avatar_url: "https://i.pravatar.cc/150?img=1",
+    email: "john@example.com",
+  },
+  {
+    user_id: "2",
+    display_name: "Jane Smith",
+    avatar_url: "https://i.pravatar.cc/150?img=2",
+    email: "jane@example.com",
+  },
+  {
+    user_id: "3",
+    display_name: null,
+    avatar_url: null,
+    email: "bob@example.com",
+  },
+  {
+    user_id: "4",
+    display_name: "Alice Johnson",
+    avatar_url: "https://i.pravatar.cc/150?img=4",
+    email: "alice@example.com",
+  },
+  {
+    user_id: "5",
+    display_name: null,
+    avatar_url: "https://i.pravatar.cc/150?img=5",
+    email: "charlie@example.com",
+  },
+  {
+    user_id: "6",
+    display_name: "David Brown",
+    avatar_url: null,
+    email: "david@example.com",
+  },
+  {
+    user_id: "7",
+    display_name: "Emma Wilson",
+    avatar_url: "https://i.pravatar.cc/150?img=7",
+    email: "emma@example.com",
+  },
+  {
+    user_id: "8",
+    display_name: null,
+    avatar_url: null,
+    email: "frank@example.com",
+  },
 ];
 
 // With overflow indicator (+N more)
 export const WithOverflow: Story = {
   args: {
-    avatars: sampleAvatars,
+    participants: sampleParticipants,
     maxVisible: 3,
   },
 };
@@ -46,9 +87,22 @@ export const WithOverflow: Story = {
 export const Sizes: Story = {
   render: () => (
     <div className="space-y-4">
-      <AvatarGroup avatars={sampleAvatars} maxVisible={4} size="sm" />
-      <AvatarGroup avatars={sampleAvatars} maxVisible={4} size="md" />
-      <AvatarGroup avatars={sampleAvatars} maxVisible={4} size="lg" />
+      <AvatarGroup participants={sampleParticipants} maxVisible={4} size="sm" />
+      <AvatarGroup participants={sampleParticipants} maxVisible={4} size="md" />
+      <AvatarGroup participants={sampleParticipants} maxVisible={4} size="lg" />
+    </div>
+  ),
+};
+
+// Shows mix of avatars and initials
+export const MixedAvatarsAndInitials: Story = {
+  render: () => (
+    <div className="space-y-4">
+      <p className="text-sm text-base-content/60">
+        Demonstrates participants with avatars, without avatars (initials from display_name), and without display_name
+        (initials from email)
+      </p>
+      <AvatarGroup participants={sampleParticipants} maxVisible={6} />
     </div>
   ),
 };
@@ -64,7 +118,7 @@ export const InTourCard: Story = {
         <h2 className="card-title">Summer Trip to Italy</h2>
         <p className="text-sm text-base-content/60">June 15 - June 30, 2024</p>
         <div className="mt-4">
-          <AvatarGroup avatars={sampleAvatars} maxVisible={5} />
+          <AvatarGroup participants={sampleParticipants} maxVisible={5} />
         </div>
       </div>
     </div>
@@ -78,7 +132,7 @@ export const WithActivityIndicator: Story = {
     const { ActivityIndicator } = require("./ActivityIndicator");
     return (
       <div className="flex items-center gap-2">
-        <AvatarGroup avatars={sampleAvatars.slice(0, 3)} />
+        <AvatarGroup participants={sampleParticipants.slice(0, 3)} />
         <ActivityIndicator hasActivity={true} label="New activity" />
       </div>
     );

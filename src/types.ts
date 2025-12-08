@@ -77,7 +77,7 @@ export type TourSummaryDto = Pick<
 > & {
   has_new_activity: boolean;
   metadata?: TourMetadata;
-  participant_avatars?: string[];
+  participants?: ParticipantSummaryDto[];
 };
 
 /**
@@ -98,7 +98,7 @@ export interface TourCardViewModel {
   dateRange: string;
   hasNewActivity: boolean;
   imageUrl?: string;
-  participantAvatars?: string[];
+  participants?: ParticipantSummaryDto[];
   status?: "active" | "archived";
 }
 
@@ -147,10 +147,23 @@ export type UpdateTourCommand = Partial<
 /**
  * DTO for a tour participant.
  * Combines data from the `participants` and `profiles` tables.
+ * Includes email as fallback for display when display_name is null.
  * Corresponds to an item in the response of `GET /api/tours/{tourId}/participants`.
  */
 export type ParticipantDto = Pick<Tables<"participants">, "user_id" | "joined_at"> &
-  Pick<Tables<"profiles">, "display_name" | "avatar_url">;
+  Pick<Tables<"profiles">, "display_name" | "avatar_url"> & {
+    email: string; // Always included; used as fallback when display_name is null
+  };
+
+/**
+ * DTO for a summarized view of a tour participant.
+ * Used in tour lists to display participant avatars with minimal data transfer.
+ * Always includes email as fallback for initials when display_name is null.
+ */
+export type ParticipantSummaryDto = Pick<Tables<"profiles">, "display_name" | "avatar_url"> & {
+  user_id: string;
+  email: string; // Always included; used for initials when display_name is null
+};
 
 // ============================================================================
 // Invitations

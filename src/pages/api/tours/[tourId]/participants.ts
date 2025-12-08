@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { validateSession } from "@/lib/server/session-validation.service";
 import * as logger from "@/lib/server/logger.service";
+import { createSupabaseAdminClient } from "@/db/supabase.admin.client";
 import type { ParticipantDto } from "@/types";
 
 export const prerender = false;
@@ -61,12 +62,47 @@ export const GET: APIRoute = async ({ params, locals }) => {
       } | null;
     }
 
-    const participantDtos: ParticipantDto[] = (participants || []).map((p: ParticipantWithProfile) => ({
-      user_id: p.user_id,
-      joined_at: p.joined_at,
-      display_name: p.profiles?.display_name || null,
-      avatar_url: p.profiles?.avatar_url || null,
-    }));
+    // Fetch emails for all participants using admin client
+    const allUserIds = (participants || []).map((p) => p.user_id);
+    const userEmails = new Map<string, string>();
+
+    if (allUserIds.length > 0) {
+      try {
+        const adminClient = createSupabaseAdminClient();
+        await Promise.all(
+          allUserIds.map(async (userId) => {
+            try {
+              const { data: authUser } = await adminClient.auth.admin.getUserById(userId);
+              if (authUser?.user?.email) {
+                userEmails.set(userId, authUser.user.email);
+              }
+            } catch {
+              // Skip if user not found or error
+              logger.secureError(`Could not fetch email for user ${userId}`, null);
+            }
+          })
+        );
+      } catch (error) {
+        logger.secureError("Could not fetch user emails for participants", error);
+      }
+    }
+
+    const participantDtos: ParticipantDto[] = (participants || [])
+      .map((p: ParticipantWithProfile) => {
+        const email = userEmails.get(p.user_id);
+        // Only include participants for which we have an email
+        if (!email) {
+          return null;
+        }
+        return {
+          user_id: p.user_id,
+          joined_at: p.joined_at,
+          display_name: p.profiles?.display_name || null,
+          avatar_url: p.profiles?.avatar_url || null,
+          email: email,
+        };
+      })
+      .filter((p): p is ParticipantDto => p !== null);
 
     return new Response(JSON.stringify(participantDtos), { status: 200 });
   } catch (error) {

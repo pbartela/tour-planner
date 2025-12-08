@@ -110,9 +110,22 @@
     "error": "Something went wrong. Please try again.",
     "finish": "Finish",
     "next": "Next",
-    "skip": "Skip"
+    "skip": "Skip",
+    "step1": {
+      "description": "Create trip proposals by clicking the \"Add Trip\" button. Add details like dates, descriptions, and links to accommodations or activities.",
+      "title": "Create Trip Proposals"
+    },
+    "step2": {
+      "description": "Invite friends and family via email. They'll receive an invitation link to join your tour and participate in the planning process.",
+      "title": "Invite Participants"
+    },
+    "step3": {
+      "description": "Vote on your favorite trips, leave comments, and discuss with other participants. Once everyone has voted, the tour owner can lock voting and finalize the trip.",
+      "title": "Vote and Discuss"
+    }
   },
   "participants": {
+    "anonymousUser": "Anonymous User",
     "joinedOn": "Joined on",
     "leaveButton": "Leave Tour",
     "leaveConfirm": "Are you sure you want to leave this tour? You can be re-invited later.",
@@ -146,6 +159,7 @@
     "title": "Tags"
   },
   "tourCard": {
+    "anonymous": "Anonymous",
     "archived": "Archived"
   },
   "tourDetails": {
