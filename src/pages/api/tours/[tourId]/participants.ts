@@ -1,7 +1,6 @@
 import type { APIRoute } from "astro";
 import { validateSession } from "@/lib/server/session-validation.service";
 import * as logger from "@/lib/server/logger.service";
-import { createSupabaseAdminClient } from "@/db/supabase.admin.client";
 import type { ParticipantDto } from "@/types";
 
 export const prerender = false;
@@ -29,7 +28,11 @@ export const GET: APIRoute = async ({ params, locals }) => {
       });
     }
 
-    // Fetch participants with their profile information
+    // SECURITY: Fetch participants with their profile information (including email)
+    // Email is intentionally exposed to all tour co-participants for identity verification.
+    // Protected by RLS - only tour participants can access this endpoint.
+    // Email comes from profiles.email (synced from auth.users via trigger).
+    // See docs/PRIVACY.md and docs/SECURITY_ARCHITECTURE.md for rationale.
     const { data: participants, error } = await supabase
       .from("participants")
       .select(
@@ -38,7 +41,8 @@ export const GET: APIRoute = async ({ params, locals }) => {
         joined_at,
         profiles!inner (
           display_name,
-          avatar_url
+          avatar_url,
+          email
         )
       `
       )
@@ -59,50 +63,24 @@ export const GET: APIRoute = async ({ params, locals }) => {
       profiles: {
         display_name: string | null;
         avatar_url: string | null;
+        email: string;
       } | null;
     }
 
-    // Fetch emails for all participants using admin client
-    const allUserIds = (participants || []).map((p) => p.user_id);
-    const userEmails = new Map<string, string>();
-
-    if (allUserIds.length > 0) {
-      try {
-        const adminClient = createSupabaseAdminClient();
-        await Promise.all(
-          allUserIds.map(async (userId) => {
-            try {
-              const { data: authUser } = await adminClient.auth.admin.getUserById(userId);
-              if (authUser?.user?.email) {
-                userEmails.set(userId, authUser.user.email);
-              }
-            } catch {
-              // Skip if user not found or error
-              logger.secureError(`Could not fetch email for user ${userId}`, null);
-            }
-          })
-        );
-      } catch (error) {
-        logger.secureError("Could not fetch user emails for participants", error);
-      }
-    }
-
+    // Map participants to DTOs (email now comes from profiles table)
     const participantDtos: ParticipantDto[] = (participants || [])
+      .filter((p: ParticipantWithProfile) => p.profiles !== null)
       .map((p: ParticipantWithProfile) => {
-        const email = userEmails.get(p.user_id);
-        // Only include participants for which we have an email
-        if (!email) {
-          return null;
-        }
+        // TypeScript doesn't narrow the type after filter, so we assert it's not null
+        const profile = p.profiles as NonNullable<typeof p.profiles>;
         return {
           user_id: p.user_id,
           joined_at: p.joined_at,
-          display_name: p.profiles?.display_name || null,
-          avatar_url: p.profiles?.avatar_url || null,
-          email: email,
+          display_name: profile.display_name,
+          avatar_url: profile.avatar_url,
+          email: profile.email,
         };
-      })
-      .filter((p): p is ParticipantDto => p !== null);
+      });
 
     return new Response(JSON.stringify(participantDtos), { status: 200 });
   } catch (error) {

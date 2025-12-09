@@ -65,9 +65,7 @@ export const InvitationForm = ({ tourId, onSuccess }: InvitationFormProps) => {
 
     // Check server limit
     if (result.valid.length > EMAIL_VALIDATION.MAX_EMAILS_PER_INVITATION) {
-      toast.error(
-        t("invitations.tooManyEmails", { max: EMAIL_VALIDATION.MAX_EMAILS_PER_INVITATION })
-      );
+      toast.error(t("invitations.tooManyEmails", { max: EMAIL_VALIDATION.MAX_EMAILS_PER_INVITATION }));
       return;
     }
 

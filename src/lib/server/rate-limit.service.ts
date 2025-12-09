@@ -247,6 +247,28 @@ export const RATE_LIMIT_CONFIGS = {
     maxRequests: isDevelopment ? 50 : 5,
     windowMs: minutes(1),
   },
+
+  /**
+   * Invitation resend rate limits
+   * - Production/Test: 3 resend requests per hour per invitation
+   * - Development: 30 resend requests per hour per invitation
+   * Prevents spam and abuse of the resend functionality
+   */
+  INVITATION_RESEND: {
+    maxRequests: isDevelopment ? 30 : 3,
+    windowMs: minutes(60),
+  },
+
+  /**
+   * Invitation accept/decline rate limits
+   * - Production/Test: 10 requests per minute per user
+   * - Development: 100 requests per minute per user
+   * Prevents automated abuse while allowing legitimate retries
+   */
+  INVITATION_ACTION: {
+    maxRequests: isDevelopment ? 100 : 10,
+    windowMs: minutes(1),
+  },
 } as const;
 
 /**

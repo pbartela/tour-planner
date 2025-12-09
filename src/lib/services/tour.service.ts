@@ -14,7 +14,6 @@ import type {
 } from "@/types";
 import getTripMetaData from "@/lib/server/metadata-extract.service";
 import { ensureTourNotArchived } from "@/lib/utils/tour-status.util";
-import { createSupabaseAdminClient } from "@/db/supabase.admin.client";
 
 class TourService {
   // Server-side metadata cache
@@ -188,46 +187,24 @@ class TourService {
       // Get tour IDs for activity tracking
       const tourIds = (tours || []).map((p) => p.tour.id);
 
-      // Batch fetch participants for all tours
+      // SECURITY: Batch fetch participants for all tours (including email from profiles)
+      // Email is intentionally visible to co-participants for identity verification.
+      // Email comes from profiles.email (synced from auth.users via trigger).
+      // This eliminates N+1 queries (previous implementation used admin client per user).
+      // See docs/SECURITY_ARCHITECTURE.md for details on the performance fix.
       const { data: participantsData } = await supabase
         .from("participants")
-        .select("tour_id, user_id, profiles!participants_user_id_fkey(display_name, avatar_url)")
+        .select("tour_id, user_id, profiles!participants_user_id_fkey(display_name, avatar_url, email)")
         .in("tour_id", tourIds)
         .order("joined_at", { ascending: true });
-
-      // Fetch emails for all participants using admin client
-      const allUserIds = [...new Set((participantsData || []).map((p) => p.user_id))];
-      const userEmails = new Map<string, string>();
-
-      if (allUserIds.length > 0) {
-        try {
-          const adminClient = createSupabaseAdminClient();
-          await Promise.all(
-            allUserIds.map(async (userId) => {
-              try {
-                const { data: authUser } = await adminClient.auth.admin.getUserById(userId);
-                if (authUser?.user?.email) {
-                  userEmails.set(userId, authUser.user.email);
-                }
-              } catch {
-                // Skip if user not found or error
-                secureError(`Could not fetch email for user ${userId}`, null);
-              }
-            })
-          );
-        } catch (error) {
-          secureError("Could not fetch user emails for participants", error);
-        }
-      }
 
       // Create a map of tour_id -> array of ParticipantSummaryDto
       const participantsMap = new Map<string, ParticipantSummaryDto[]>();
       (participantsData || []).forEach((participant) => {
         const profile = Array.isArray(participant.profiles) ? participant.profiles[0] : participant.profiles;
-        const email = userEmails.get(participant.user_id);
 
-        // Only include participants for which we have an email
-        if (email) {
+        // Only include participants with valid profile data
+        if (profile && profile.email) {
           if (!participantsMap.has(participant.tour_id)) {
             participantsMap.set(participant.tour_id, []);
           }
@@ -235,9 +212,9 @@ class TourService {
           if (participantList) {
             participantList.push({
               user_id: participant.user_id,
-              display_name: profile?.display_name || null,
-              avatar_url: profile?.avatar_url || null,
-              email: email,
+              display_name: profile.display_name || null,
+              avatar_url: profile.avatar_url || null,
+              email: profile.email,
             });
           }
         }

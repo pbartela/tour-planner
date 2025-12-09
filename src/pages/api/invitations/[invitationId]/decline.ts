@@ -6,6 +6,7 @@ import { invitationIdSchema, invitationTokenSchema } from "@/lib/validators/invi
 import { checkCsrfProtection } from "@/lib/server/csrf.service";
 import { secureError } from "@/lib/server/logger.service";
 import { validateSession } from "@/lib/server/session-validation.service";
+import { checkRateLimit, RATE_LIMIT_CONFIGS } from "@/lib/server/rate-limit.service";
 
 export const prerender = false;
 
@@ -60,6 +61,31 @@ export const POST: APIRoute = async ({ params, request, locals, cookies }) => {
       {
         status: 400,
         headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  // Rate limiting for invitation actions
+  const actionRateLimitId = `invitation:decline:user:${user.id}`;
+  const actionRateLimit = checkRateLimit(actionRateLimitId, RATE_LIMIT_CONFIGS.INVITATION_ACTION);
+
+  if (!actionRateLimit.allowed) {
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: "TOO_MANY_REQUESTS",
+          message: "Too many requests. Please try again in a moment.",
+        },
+      }),
+      {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          "Retry-After": String(Math.ceil((actionRateLimit.resetAt - Date.now()) / 1000)),
+          "X-RateLimit-Limit": String(RATE_LIMIT_CONFIGS.INVITATION_ACTION.maxRequests),
+          "X-RateLimit-Remaining": String(actionRateLimit.remaining),
+          "X-RateLimit-Reset": String(actionRateLimit.resetAt),
+        },
       }
     );
   }

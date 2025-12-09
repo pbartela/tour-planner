@@ -628,6 +628,21 @@ export const InvitedUsersList = ({ invitations }: Props) => {
 };
 ```
 
+## Security & Privacy Documentation
+
+Comprehensive security and privacy documentation is available in the `docs/` directory:
+
+- **Security Guidelines**: `docs/SECURITY.md` - Rate limiting, CSRF protection, authentication, API security
+- **Security Architecture**: `docs/SECURITY_ARCHITECTURE.md` - Technical security documentation, RLS policies, data access patterns, threat model
+- **Privacy Policy**: `docs/PRIVACY.md` - Email visibility model, data retention, user control, design rationale
+
+**Key Security Concepts:**
+
+- **Email Visibility**: Emails are intentionally visible to tour co-participants for identity verification and transparency. See `docs/PRIVACY.md` for full explanation.
+- **Row-Level Security (RLS)**: All database tables enforce RLS policies. See `docs/SECURITY_ARCHITECTURE.md` for policy details.
+- **Rate Limiting**: All endpoints have rate limits. Development mode has relaxed limits (7-10x production). Use `TEST_MODE=true` for production-like testing.
+- **Performance**: Email is denormalized to `profiles.email` (synced from `auth.users` via trigger) to eliminate N+1 queries.
+
 ## Additional Notes
 
 - Server runs on port **3000** (not 4321 in production mode)

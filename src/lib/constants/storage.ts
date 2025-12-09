@@ -7,12 +7,12 @@
  * localStorage keys used throughout the application
  */
 export const STORAGE_KEYS = {
-	/** User's theme preference (DaisyUI theme name) */
-	THEME: "theme",
-	/** Skip invitation confirmation dialog preference */
-	INVITATION_SKIP_CONFIRMATION: "invitation-skip-confirmation",
-	/** Tour metadata cache with version (used in metadata-cache.ts) */
-	TOUR_METADATA_V1: "tour_metadata_v1",
+  /** User's theme preference (DaisyUI theme name) */
+  THEME: "theme",
+  /** Skip invitation confirmation dialog preference */
+  INVITATION_SKIP_CONFIRMATION: "invitation-skip-confirmation",
+  /** Tour metadata cache with version (used in metadata-cache.ts) */
+  TOUR_METADATA_V1: "tour_metadata_v1",
 } as const;
 
 /**

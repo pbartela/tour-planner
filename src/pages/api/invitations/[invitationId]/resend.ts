@@ -6,6 +6,7 @@ import { checkCsrfProtection } from "@/lib/server/csrf.service";
 import { secureError } from "@/lib/server/logger.service";
 import { validateSession } from "@/lib/server/session-validation.service";
 import { tourService } from "@/lib/services/tour.service";
+import { checkRateLimit, RATE_LIMIT_CONFIGS } from "@/lib/server/rate-limit.service";
 
 export const prerender = false;
 
@@ -56,6 +57,32 @@ export const POST: APIRoute = async ({ params, request, locals, cookies }) => {
       {
         status: 400,
         headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  // Rate limiting for resend (per invitation)
+  const resendRateLimitId = `invitation:resend:${invitationIdValidation.data}:user:${user.id}`;
+  const resendRateLimit = checkRateLimit(resendRateLimitId, RATE_LIMIT_CONFIGS.INVITATION_RESEND);
+
+  if (!resendRateLimit.allowed) {
+    const retryAfterHours = Math.ceil((resendRateLimit.resetAt - Date.now()) / (60 * 60 * 1000));
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: "TOO_MANY_REQUESTS",
+          message: `Too many resend attempts. Please try again in ${retryAfterHours} hour(s).`,
+        },
+      }),
+      {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          "Retry-After": String(Math.ceil((resendRateLimit.resetAt - Date.now()) / 1000)),
+          "X-RateLimit-Limit": String(RATE_LIMIT_CONFIGS.INVITATION_RESEND.maxRequests),
+          "X-RateLimit-Remaining": String(resendRateLimit.remaining),
+          "X-RateLimit-Reset": String(resendRateLimit.resetAt),
+        },
       }
     );
   }
