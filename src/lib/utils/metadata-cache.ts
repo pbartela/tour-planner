@@ -1,4 +1,5 @@
 import type { TourMetadata } from "@/types";
+import { STORAGE_KEYS } from "@/lib/constants/storage";
 
 /**
  * Metadata cache utilities for browser localStorage.
@@ -17,7 +18,7 @@ const logCacheError = (operation: string, error: unknown): void => {
   }
 };
 
-const CACHE_KEY = "tour_metadata_v1";
+const CACHE_KEY = STORAGE_KEYS.TOUR_METADATA_V1;
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 interface CachedMetadata {

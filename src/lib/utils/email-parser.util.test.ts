@@ -231,4 +231,41 @@ describe("parseEmails", () => {
       expect(result.duplicates).toEqual(["user@example.com", "Test@Demo.PL"]);
     });
   });
+
+  describe("input length validation", () => {
+    it("should accept input under the length limit", () => {
+      // Create input with many emails but under 10k chars
+      const validInput = "a@test.com ".repeat(100); // ~1,200 chars
+      const result = parseEmails(validInput);
+
+      expect(result.inputError).toBeUndefined();
+      expect(result.valid.length).toBeGreaterThan(0);
+    });
+
+    it("should reject input exceeding maximum length", () => {
+      // Create input exceeding 10,000 chars
+      const tooLongInput = "a".repeat(10001);
+      const result = parseEmails(tooLongInput);
+
+      expect(result.inputError).toBeDefined();
+      expect(result.inputError).toContain("Input too long");
+      expect(result.inputError).toContain("10000");
+      expect(result.valid).toEqual([]);
+      expect(result.invalid).toEqual([]);
+      expect(result.duplicates).toEqual([]);
+      expect(result.original).toEqual([]);
+    });
+
+    it("should handle input at exactly maximum length", () => {
+      // Create input at exactly 10,000 chars with valid emails
+      const emailUnit = "a@b.co "; // 7 chars
+      const repeatCount = Math.floor(10000 / emailUnit.length); // 1,428
+      const exactLimitInput = emailUnit.repeat(repeatCount).trim(); // ~9,996 chars
+
+      const result = parseEmails(exactLimitInput);
+
+      expect(result.inputError).toBeUndefined();
+      expect(result.valid.length).toBeGreaterThan(0);
+    });
+  });
 });

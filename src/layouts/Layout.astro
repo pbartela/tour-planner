@@ -36,6 +36,8 @@ const locale = Astro.params.locale || "en-US";
       /* eslint-disable */
       // Initialize theme from localStorage before page renders to prevent flash
       try {
+        // Note: Using string literal instead of STORAGE_KEYS.THEME
+        // because this inline script runs before module imports
         const theme = localStorage.getItem("theme");
         if (theme) {
           document.documentElement.setAttribute("data-theme", theme);

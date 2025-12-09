@@ -72,12 +72,7 @@ export const TourCard = ({ tour }: Props) => {
           {((tour.participants && tour.participants.length > 0) || tour.hasNewActivity) && (
             <div className="flex items-center gap-2 mt-2">
               {tour.participants && tour.participants.length > 0 && (
-                <AvatarGroup
-                  participants={tour.participants}
-                  maxVisible={3}
-                  anonymousLabel={t("tourCard.anonymous")}
-                  borderless
-                />
+                <AvatarGroup participants={tour.participants} maxVisible={3} anonymousLabel={t("tourCard.anonymous")} />
               )}
               {!isArchived && <ActivityIndicator hasActivity={tour.hasNewActivity} label={t("tourList.newActivity")} />}
             </div>

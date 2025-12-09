@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { EMAIL_VALIDATION } from "@/lib/constants/validation";
 
 /**
  * Represents a parsed email with validation status
@@ -21,6 +22,8 @@ export interface EmailParseResult {
   duplicates: string[];
   /** All originally parsed email addresses (before deduplication) */
   original: string[];
+  /** Input validation error (e.g., input too long) */
+  inputError?: string;
 }
 
 /**
@@ -76,6 +79,17 @@ function validateEmailWithZod(email: string): { success: boolean; error?: string
  * // }
  */
 export function parseEmails(input: string): EmailParseResult {
+  // Validate input length to prevent malicious large inputs
+  if (input.length > EMAIL_VALIDATION.MAX_INPUT_LENGTH) {
+    return {
+      valid: [],
+      invalid: [],
+      duplicates: [],
+      original: [],
+      inputError: `Input too long. Maximum ${EMAIL_VALIDATION.MAX_INPUT_LENGTH} characters allowed.`,
+    };
+  }
+
   // Split by multiple separators: space, comma, semicolon, newline, tab
   const rawEmails = input
     .split(/[\s,;\n\t]+/)

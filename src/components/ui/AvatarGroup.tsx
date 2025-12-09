@@ -21,10 +21,6 @@ export interface AvatarGroupProps extends React.HTMLAttributes<HTMLDivElement> {
    * Label to use for anonymous users (when no display_name or email)
    */
   anonymousLabel?: string;
-  /**
-   * Hide avatar borders (useful for dense layouts)
-   */
-  borderless?: boolean;
 }
 
 const sizeClasses = {
@@ -32,21 +28,8 @@ const sizeClasses = {
   sm: "h-8 w-8 text-xs",
 };
 
-const borderClasses = "border-2 border-base-100 dark:border-base-300";
-
 const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(
-  (
-    {
-      participants,
-      maxVisible = 5,
-      size = "md",
-      anonymousLabel = "Anonymous",
-      borderless = false,
-      className,
-      ...props
-    },
-    ref
-  ) => {
+  ({ participants, maxVisible = 5, size = "md", anonymousLabel = "Anonymous", className, ...props }, ref) => {
     if (!participants || participants.length === 0) {
       return null;
     }
@@ -66,9 +49,7 @@ const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(
             const displayName = getUserDisplayName(participant.display_name, participant.email, anonymousLabel);
 
             return (
-              <div key={participant.user_id} className={borderless ? undefined : borderClasses}>
-                <Avatar src={participant.avatar_url} alt={displayName} size={avatarSize} />
-              </div>
+              <Avatar key={participant.user_id} src={participant.avatar_url} alt={displayName} size={avatarSize} />
             );
           })}
         </div>
@@ -77,7 +58,6 @@ const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(
             className={cn(
               "ml-2",
               countSizeClass,
-              borderless ? undefined : borderClasses,
               "rounded-full bg-base-200 flex items-center justify-center text-xs font-semibold text-base-content"
             )}
             aria-label={`${remainingCount} more ${remainingCount === 1 ? "participant" : "participants"}`}

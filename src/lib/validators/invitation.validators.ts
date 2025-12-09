@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { EMAIL_VALIDATION } from "@/lib/constants/validation";
 
 /**
  * Schema for validating email addresses
@@ -15,7 +16,10 @@ export const inviteParticipantsCommandSchema = z.object({
       invalid_type_error: "Emails must be an array",
     })
     .min(1, "At least one email address is required")
-    .max(50, "Cannot invite more than 50 people at once")
+    .max(
+      EMAIL_VALIDATION.MAX_EMAILS_PER_INVITATION,
+      `Cannot invite more than ${EMAIL_VALIDATION.MAX_EMAILS_PER_INVITATION} people at once`
+    )
     .refine(
       (emails) => {
         // Check for duplicates

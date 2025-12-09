@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { useSendInvitationsMutation } from "@/lib/hooks/useInvitationMutations";
 import { parseEmails, type EmailParseResult } from "@/lib/utils/email-parser.util";
 import { InvitationConfirmationDialog } from "./InvitationConfirmationDialog";
+import { STORAGE_KEYS } from "@/lib/constants/storage";
+import { EMAIL_VALIDATION } from "@/lib/constants/validation";
 
 interface InvitationFormProps {
   tourId: string;
@@ -25,7 +27,7 @@ export const InvitationForm = ({ tourId, onSuccess }: InvitationFormProps) => {
 
   // Load skip confirmation preference from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem("invitation-skip-confirmation");
+    const stored = localStorage.getItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION);
     if (stored === "true") {
       setSkipConfirmation(true);
     }
@@ -34,7 +36,7 @@ export const InvitationForm = ({ tourId, onSuccess }: InvitationFormProps) => {
   // Save skip confirmation preference
   const handleSkipConfirmationChange = (checked: boolean) => {
     setSkipConfirmation(checked);
-    localStorage.setItem("invitation-skip-confirmation", String(checked));
+    localStorage.setItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION, String(checked));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,15 +51,23 @@ export const InvitationForm = ({ tourId, onSuccess }: InvitationFormProps) => {
     const result = parseEmails(emailInput);
     setParsedResult(result);
 
+    // Check for input validation errors
+    if (result.inputError) {
+      toast.error(result.inputError);
+      return;
+    }
+
     // Check if there are any valid emails
     if (result.valid.length === 0) {
       toast.error(t("invitations.noValidEmails"));
       return;
     }
 
-    // Check server limit (max 50 emails)
-    if (result.valid.length > 50) {
-      toast.error(t("invitations.tooManyEmails", { max: 50 }));
+    // Check server limit
+    if (result.valid.length > EMAIL_VALIDATION.MAX_EMAILS_PER_INVITATION) {
+      toast.error(
+        t("invitations.tooManyEmails", { max: EMAIL_VALIDATION.MAX_EMAILS_PER_INVITATION })
+      );
       return;
     }
 
