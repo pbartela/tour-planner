@@ -36,7 +36,15 @@ const borderClasses = "border-2 border-base-100 dark:border-base-300";
 
 const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(
   (
-    { participants, maxVisible = 5, size = "md", anonymousLabel = "Anonymous", borderless = false, className, ...props },
+    {
+      participants,
+      maxVisible = 5,
+      size = "md",
+      anonymousLabel = "Anonymous",
+      borderless = false,
+      className,
+      ...props
+    },
     ref
   ) => {
     if (!participants || participants.length === 0) {

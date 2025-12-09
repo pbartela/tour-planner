@@ -104,7 +104,30 @@
       "pending": "Pending"
     },
     "tourTitle": "Tour",
-    "unknownError": "Unknown error"
+    "unknownError": "Unknown error",
+    "skipConfirmation": "Show confirmation before sending (recommended)",
+    "noValidEmails": "No valid email addresses found. Please check your input.",
+    "tooManyEmails": "Cannot invite more than {{max}} people at once",
+    "invalidEmailsSkipped_one": "{{count}} invalid email skipped: {{emails}}",
+    "invalidEmailsSkipped_other": "{{count}} invalid emails skipped: {{emails}}",
+    "confirmDialog": {
+      "title": "Confirm Invitation",
+      "description": "Please review the email addresses before sending invitations.",
+      "validEmailsTitle": "Valid Emails",
+      "invalidEmailsTitle": "Invalid Emails",
+      "duplicatesTitle": "Duplicate Emails",
+      "duplicatesNote": "Duplicates have been removed and will only be sent once.",
+      "summary": "Ready to send invitations to {{count}} recipient(s). {{hasIssues}}",
+      "withIssues": "Some emails were excluded due to errors.",
+      "noValidEmails": "No valid emails to send. Please fix the issues above.",
+      "sendButton_one": "Send {{count}} Invitation",
+      "sendButton_other": "Send {{count}} Invitations",
+      "errors": {
+        "Invalid format": "Invalid format",
+        "Invalid domain": "Invalid domain",
+        "Invalid email format": "Invalid email"
+      }
+    }
   },
   "onboarding": {
     "error": "Something went wrong. Please try again.",

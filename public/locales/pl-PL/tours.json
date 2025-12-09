@@ -110,7 +110,34 @@
       "pending": "Oczekujące"
     },
     "tourTitle": "Wycieczka",
-    "unknownError": "Nieznany błąd"
+    "unknownError": "Nieznany błąd",
+    "skipConfirmation": "Pokaż potwierdzenie przed wysłaniem (zalecane)",
+    "noValidEmails": "Nie znaleziono prawidłowych adresów e-mail. Proszę sprawdzić dane.",
+    "tooManyEmails": "Nie można zaprosić więcej niż {{max}} osób jednocześnie",
+    "invalidEmailsSkipped_one": "Pominięto {{count}} nieprawidłowy e-mail: {{emails}}",
+    "invalidEmailsSkipped_few": "Pominięto {{count}} nieprawidłowe e-maile: {{emails}}",
+    "invalidEmailsSkipped_many": "Pominięto {{count}} nieprawidłowych e-maili: {{emails}}",
+    "invalidEmailsSkipped_other": "Pominięto {{count}} nieprawidłowych e-maili: {{emails}}",
+    "confirmDialog": {
+      "title": "Potwierdź zaproszenie",
+      "description": "Proszę przejrzeć adresy e-mail przed wysłaniem zaproszeń.",
+      "validEmailsTitle": "Prawidłowe e-maile",
+      "invalidEmailsTitle": "Nieprawidłowe e-maile",
+      "duplicatesTitle": "Zduplikowane e-maile",
+      "duplicatesNote": "Zduplikowane e-maile zostały usunięte i zostaną wysłane tylko raz.",
+      "summary": "Gotowe do wysłania zaproszeń do {{count}} odbiorców. {{hasIssues}}",
+      "withIssues": "Niektóre e-maile zostały wykluczone z powodu błędów.",
+      "noValidEmails": "Brak prawidłowych e-maili do wysłania. Proszę naprawić powyższe problemy.",
+      "sendButton_one": "Wyślij {{count}} zaproszenie",
+      "sendButton_few": "Wyślij {{count}} zaproszenia",
+      "sendButton_many": "Wyślij {{count}} zaproszeń",
+      "sendButton_other": "Wyślij {{count}} zaproszeń",
+      "errors": {
+        "Invalid format": "Nieprawidłowy format",
+        "Invalid domain": "Nieprawidłowa domena",
+        "Invalid email format": "Nieprawidłowy e-mail"
+      }
+    }
   },
   "onboarding": {
     "error": "Coś poszło nie tak. Proszę spróbować ponownie.",

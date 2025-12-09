@@ -42,7 +42,7 @@ export const createSupabaseServerClient = (request: Request, cookies: AstroCooki
           value: value ?? "",
         }));
       },
-      setAll(cookiesToSet: Array<{ name: string; value: string; options: CookieOptions }>) {
+      setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
         cookiesToSet.forEach(({ name, value, options }) => {
           cookies.set(name, value, { ...defaultCookieOptions, ...options });
         });
