@@ -603,6 +603,34 @@ create trigger invitation_token_generator
 
 
 -- ============================================================================
+-- CRON JOB LOGGING
+-- ============================================================================
+
+-- Table to track cron job execution results
+CREATE TABLE public.cron_job_logs (
+    id BIGSERIAL PRIMARY KEY,
+    job_name TEXT NOT NULL,
+    execution_time TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    success BOOLEAN NOT NULL DEFAULT TRUE,
+    error_message TEXT,
+    tours_archived INTEGER,
+    invitations_expired INTEGER,
+    profiles_deleted INTEGER
+);
+
+CREATE INDEX idx_cron_job_logs_job_name ON public.cron_job_logs(job_name);
+CREATE INDEX idx_cron_job_logs_execution_time ON public.cron_job_logs(execution_time DESC);
+
+COMMENT ON TABLE public.cron_job_logs IS 'Tracks execution history of automated cron jobs including cleanup and archival operations.';
+COMMENT ON COLUMN public.cron_job_logs.job_name IS 'Name of the cron job (e.g., archive_finished_tours, cleanup_expired_invitations, cleanup_orphaned_profiles).';
+COMMENT ON COLUMN public.cron_job_logs.execution_time IS 'Timestamp when the job was executed.';
+COMMENT ON COLUMN public.cron_job_logs.success IS 'Whether the job completed successfully or encountered an error.';
+COMMENT ON COLUMN public.cron_job_logs.error_message IS 'Error message if the job failed (NULL on success).';
+COMMENT ON COLUMN public.cron_job_logs.tours_archived IS 'Number of tours archived by archive_finished_tours job.';
+COMMENT ON COLUMN public.cron_job_logs.invitations_expired IS 'Number of invitations expired by cleanup_expired_invitations job.';
+COMMENT ON COLUMN public.cron_job_logs.profiles_deleted IS 'Number of orphaned profiles deleted by cleanup_orphaned_profiles job.';
+
+-- ============================================================================
 -- AUTOMATED CLEANUP FUNCTIONS
 -- ============================================================================
 
@@ -672,6 +700,71 @@ $$;
 
 COMMENT ON FUNCTION public.cleanup_expired_invitations IS
     'Automatically marks pending invitations as expired when their expires_at date has passed. Returns count of expired invitations.';
+
+-- Function: Cleanup orphaned profiles
+CREATE OR REPLACE FUNCTION public.cleanup_orphaned_profiles()
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    deleted_count INTEGER := 0;
+    orphaned_ids TEXT;
+    error_msg TEXT;
+BEGIN
+    -- Get list of orphaned profile IDs for logging
+    SELECT STRING_AGG(id::TEXT, ', ') INTO orphaned_ids
+    FROM public.profiles p
+    WHERE NOT EXISTS (
+        SELECT 1 FROM auth.users u WHERE u.id = p.id
+    );
+
+    -- Delete orphaned profiles (those without corresponding auth.users entries)
+    DELETE FROM public.profiles p
+    WHERE NOT EXISTS (
+        SELECT 1 FROM auth.users u WHERE u.id = p.id
+    );
+
+    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+
+    -- Log the cleanup operation
+    INSERT INTO public.cron_job_logs (job_name, profiles_deleted, success)
+    VALUES ('cleanup_orphaned_profiles', deleted_count, TRUE);
+
+    -- Output for manual execution visibility
+    IF deleted_count > 0 THEN
+        RAISE NOTICE 'Orphaned profiles cleanup: Deleted % profile(s)', deleted_count;
+        RAISE NOTICE 'Deleted profile IDs: %', orphaned_ids;
+    ELSE
+        RAISE NOTICE 'No orphaned profiles found';
+    END IF;
+
+    RETURN deleted_count;
+
+EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS error_msg = MESSAGE_TEXT;
+    INSERT INTO public.cron_job_logs (job_name, profiles_deleted, success, error_message)
+    VALUES ('cleanup_orphaned_profiles', 0, FALSE, error_msg);
+
+    RAISE;
+END;
+$$;
+
+COMMENT ON FUNCTION public.cleanup_orphaned_profiles IS
+    'Deletes orphaned profiles that exist without corresponding auth.users entries.
+    This handles edge cases where profile records persist after user deletion.
+    Returns count of deleted profiles and logs results to cron_job_logs.
+
+    WHEN ORPHANED PROFILES OCCUR:
+    - Manual database manipulation
+    - Failed cascade deletes during user deletion
+    - Race conditions during signup (very rare)
+
+    SECURITY MODEL:
+    - Uses SECURITY DEFINER for elevated privileges
+    - SET search_path prevents schema injection
+    - Safe to run periodically as it only deletes invalid data';
 
 -- Function: Cleanup expired invitation OTPs
 CREATE OR REPLACE FUNCTION cleanup_expired_invitation_otps()

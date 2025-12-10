@@ -17,8 +17,37 @@ WHERE p.id = u.id;
 
 -- Delete any orphaned profiles that don't have corresponding auth.users entries
 -- (This handles edge cases where profiles exist without auth users)
-DELETE FROM public.profiles
-WHERE email IS NULL;
+-- Log orphaned profiles before deletion for visibility
+DO $$
+DECLARE
+  orphaned_count INTEGER;
+  orphaned_ids TEXT;
+BEGIN
+  -- Count orphaned profiles
+  SELECT COUNT(*) INTO orphaned_count
+  FROM public.profiles
+  WHERE email IS NULL;
+
+  -- If orphaned profiles exist, log them
+  IF orphaned_count > 0 THEN
+    -- Get comma-separated list of orphaned profile IDs
+    SELECT STRING_AGG(id::TEXT, ', ') INTO orphaned_ids
+    FROM public.profiles
+    WHERE email IS NULL;
+
+    -- Output to migration logs
+    RAISE NOTICE 'Orphaned profiles cleanup: Found % orphaned profile(s) to delete', orphaned_count;
+    RAISE NOTICE 'Orphaned profile IDs: %', orphaned_ids;
+
+    -- Delete orphaned profiles
+    DELETE FROM public.profiles
+    WHERE email IS NULL;
+
+    RAISE NOTICE 'Successfully deleted % orphaned profile(s)', orphaned_count;
+  ELSE
+    RAISE NOTICE 'No orphaned profiles found - all profiles have corresponding auth.users entries';
+  END IF;
+END $$;
 
 -- Make email NOT NULL after backfill and cleanup
 ALTER TABLE public.profiles

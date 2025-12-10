@@ -105,6 +105,40 @@ This project does **not** have a production database. Therefore:
 - When making schema changes, edit the original migration file and run `npx supabase db reset`
 - This approach keeps migration history clean and simple for local-only development
 
+**Orphaned Profile Cleanup**
+
+The database includes automated cleanup for orphaned profiles (profiles without corresponding `auth.users` entries):
+
+**When Orphaned Profiles Occur:**
+- Manual database manipulation
+- Failed cascade deletes during user deletion
+- Race conditions during signup (very rare)
+
+**Cleanup Mechanisms:**
+
+1. **Migration-time Cleanup** (`20251209120000_add_email_to_profiles.sql`):
+   - Runs during the email column migration
+   - Uses `RAISE NOTICE` to log count and IDs of deleted profiles
+   - Ensures data integrity before setting `email NOT NULL` constraint
+
+2. **Periodic Cleanup Function** (`cleanup_orphaned_profiles()`):
+   - Can be run manually: `SELECT cleanup_orphaned_profiles();`
+   - Returns count of deleted profiles
+   - Logs results to `cron_job_logs` table
+   - Safe to run periodically (only deletes invalid data)
+
+**Cron Job Logging:**
+
+The `cron_job_logs` table tracks all automated cleanup operations:
+- `archive_finished_tours` - Tours automatically archived after end_date
+- `cleanup_expired_invitations` - Invitations marked expired after expires_at
+- `cleanup_orphaned_profiles` - Orphaned profiles deleted
+
+Query recent logs:
+```sql
+SELECT * FROM public.cron_job_logs ORDER BY execution_time DESC LIMIT 10;
+```
+
 ### Docker Testing
 
 The project includes Docker Compose setup for running E2E tests in isolated containers:
