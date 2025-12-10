@@ -111,7 +111,7 @@
     },
     "tourTitle": "Wycieczka",
     "unknownError": "Nieznany błąd",
-    "skipConfirmation": "Pokaż potwierdzenie przed wysłaniem (zalecane)",
+    "confirmBeforeSend": "Pokaż potwierdzenie przed wysłaniem (zalecane)",
     "noValidEmails": "Nie znaleziono prawidłowych adresów e-mail. Proszę sprawdzić dane.",
     "tooManyEmails": "Nie można zaprosić więcej niż {{max}} osób jednocześnie",
     "invalidEmailsSkipped_one": "Pominięto {{count}} nieprawidłowy e-mail: {{emails}}",

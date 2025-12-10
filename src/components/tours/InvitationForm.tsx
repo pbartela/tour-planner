@@ -8,6 +8,7 @@ import { InvitationConfirmationDialog } from "./InvitationConfirmationDialog";
 import { STORAGE_KEYS } from "@/lib/constants/storage";
 import { EMAIL_VALIDATION } from "@/lib/constants/validation";
 import { getStorageItem, setStorageItem } from "@/lib/client/storage";
+import { notifyStorageError } from "@/lib/client/storage-notifications";
 
 interface InvitationFormProps {
   tourId: string;
@@ -22,22 +23,30 @@ export const InvitationForm = ({ tourId, onSuccess }: InvitationFormProps) => {
   const { t } = useTranslation("tours");
   const [emailInput, setEmailInput] = useState("");
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [skipConfirmation, setSkipConfirmation] = useState(false);
+  const [confirmBeforeSend, setConfirmBeforeSend] = useState(true);
   const [parsedResult, setParsedResult] = useState<EmailParseResult | null>(null);
   const sendMutation = useSendInvitationsMutation(tourId);
 
-  // Load skip confirmation preference from localStorage
+  // Load confirmation preference from localStorage
   useEffect(() => {
-    const stored = getStorageItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION);
-    if (stored === true) {
-      setSkipConfirmation(true);
+    const result = getStorageItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION);
+    // Only disable confirmation if explicitly set to true (meaning skip was enabled)
+    if (result.success && result.value === true) {
+      setConfirmBeforeSend(false);
     }
   }, []);
 
-  // Save skip confirmation preference
-  const handleSkipConfirmationChange = (checked: boolean) => {
-    setSkipConfirmation(checked);
-    setStorageItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION, checked);
+  // Save confirmation preference
+  const handleConfirmBeforeSendChange = (checked: boolean) => {
+    setConfirmBeforeSend(checked);
+    // Store the inverse (skipConfirmation = !confirmBeforeSend) for backwards compatibility
+    const result = setStorageItem(
+      STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION,
+      !checked
+    );
+    if (!result.success && result.error) {
+      notifyStorageError(result.error, "invitation settings");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,7 +80,9 @@ export const InvitationForm = ({ tourId, onSuccess }: InvitationFormProps) => {
     }
 
     // Show confirmation dialog or send immediately based on checkbox
-    if (skipConfirmation) {
+    if (confirmBeforeSend) {
+      setShowConfirmation(true);
+    } else {
       // Show warning toast for invalid emails if any
       if (result.invalid.length > 0) {
         toast.error(
@@ -82,8 +93,6 @@ export const InvitationForm = ({ tourId, onSuccess }: InvitationFormProps) => {
         );
       }
       await sendInvitations(result.valid);
-    } else {
-      setShowConfirmation(true);
     }
   };
 
@@ -155,16 +164,16 @@ export const InvitationForm = ({ tourId, onSuccess }: InvitationFormProps) => {
           </label>
         </div>
 
-        {/* Skip confirmation checkbox */}
+        {/* Confirm before sending checkbox */}
         <label className="label cursor-pointer justify-start gap-3">
           <input
             type="checkbox"
             className="checkbox checkbox-sm"
-            checked={skipConfirmation}
-            onChange={(e) => handleSkipConfirmationChange(e.target.checked)}
+            checked={confirmBeforeSend}
+            onChange={(e) => handleConfirmBeforeSendChange(e.target.checked)}
             disabled={sendMutation.isPending}
           />
-          <span className="label-text">{t("invitations.skipConfirmation")}</span>
+          <span className="label-text">{t("invitations.confirmBeforeSend")}</span>
         </label>
 
         <Button type="submit" disabled={sendMutation.isPending || !emailInput.trim()}>

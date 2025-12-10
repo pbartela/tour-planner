@@ -35,6 +35,43 @@ interface StorageValueTypes {
 }
 
 /**
+ * Storage operation error types categorized by failure reason.
+ */
+export type StorageErrorType =
+  | "unavailable" // SSR, privacy mode, localStorage disabled
+  | "quota_exceeded" // Storage quota limit reached
+  | "serialization_error" // JSON.stringify/parse failed
+  | "unknown"; // Unexpected errors
+
+/**
+ * Detailed error information for storage operations.
+ */
+export interface StorageError {
+  type: StorageErrorType;
+  message: string;
+  originalError?: unknown; // For debugging in dev mode
+}
+
+/**
+ * Result object for storage write operations.
+ * Follows codebase pattern similar to EmailParseResult.
+ */
+export interface StorageWriteResult {
+  success: boolean;
+  error?: StorageError;
+}
+
+/**
+ * Result object for storage read operations.
+ * Generic type ensures type safety for returned values.
+ */
+export interface StorageReadResult<T> {
+  success: boolean;
+  value: T | null;
+  error?: StorageError;
+}
+
+/**
  * Logs storage errors to console in development for debugging.
  * Silent in production to avoid exposing implementation details.
  */
@@ -67,123 +104,240 @@ export function isStorageAvailable(): boolean {
 }
 
 /**
- * Get item from localStorage with type safety.
+ * Get item from localStorage with type safety and detailed error reporting.
  *
  * @param key - Storage key from STORAGE_KEYS constant
- * @returns Typed value or null if not found or error occurred
+ * @returns Result object with success status, value, and optional error details
  *
  * @example
- * const theme = getStorageItem(STORAGE_KEYS.THEME); // string | null
- * const skipConfirm = getStorageItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION); // boolean | null
+ * const result = getStorageItem(STORAGE_KEYS.THEME);
+ * if (result.success && result.value !== null) {
+ *   console.log('Theme:', result.value);
+ * }
  */
 export function getStorageItem<K extends StorageKey>(
   key: K
-): StorageValueTypes[K] | null {
+): StorageReadResult<StorageValueTypes[K]> {
   try {
     if (!isStorageAvailable()) {
-      return null;
+      return {
+        success: false,
+        value: null,
+        error: {
+          type: "unavailable",
+          message: "localStorage is not available",
+        },
+      };
     }
 
     const item = localStorage.getItem(key);
     if (item === null) {
-      return null;
+      return { success: true, value: null }; // Not an error, just missing
     }
 
-    // Handle boolean values (stored as "true" or "false" strings)
-    if (key === STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION) {
-      return (item === "true") as StorageValueTypes[K];
+    // Parse based on key type
+    let parsed: StorageValueTypes[K];
+    try {
+      // Handle boolean values (stored as "true" or "false" strings)
+      if (key === STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION) {
+        parsed = (item === "true") as StorageValueTypes[K];
+      }
+      // Handle JSON values (tour metadata cache)
+      else if (key === STORAGE_KEYS.TOUR_METADATA_V1) {
+        parsed = JSON.parse(item) as StorageValueTypes[K];
+      }
+      // Handle string values (theme)
+      else {
+        parsed = item as StorageValueTypes[K];
+      }
+    } catch (parseError) {
+      logStorageError("getItem (parsing)", key, parseError);
+      return {
+        success: false,
+        value: null,
+        error: {
+          type: "serialization_error",
+          message: "Failed to parse stored value",
+          originalError: import.meta.env.DEV ? parseError : undefined,
+        },
+      };
     }
 
-    // Handle JSON values (tour metadata cache)
-    if (key === STORAGE_KEYS.TOUR_METADATA_V1) {
-      return JSON.parse(item) as StorageValueTypes[K];
-    }
-
-    // Handle string values (theme)
-    return item as StorageValueTypes[K];
+    return { success: true, value: parsed };
   } catch (error) {
     logStorageError("getItem", key, error);
-    return null;
+    return {
+      success: false,
+      value: null,
+      error: {
+        type: "unknown",
+        message: "Failed to read from localStorage",
+        originalError: import.meta.env.DEV ? error : undefined,
+      },
+    };
   }
 }
 
 /**
- * Set item in localStorage with type safety.
+ * Set item in localStorage with type safety and detailed error reporting.
  *
  * @param key - Storage key from STORAGE_KEYS constant
  * @param value - Typed value to store
- * @returns true if successful, false if error occurred
+ * @returns Result object with success status and optional error details
  *
  * @example
- * setStorageItem(STORAGE_KEYS.THEME, "dark"); // OK
- * setStorageItem(STORAGE_KEYS.THEME, 123); // TypeScript error
- * setStorageItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION, true); // OK
+ * const result = setStorageItem(STORAGE_KEYS.THEME, "dark");
+ * if (!result.success) {
+ *   console.error('Storage failed:', result.error?.type);
+ * }
  */
 export function setStorageItem<K extends StorageKey>(
   key: K,
   value: StorageValueTypes[K]
-): boolean {
+): StorageWriteResult {
   try {
+    // Check storage availability first
     if (!isStorageAvailable()) {
-      return false;
+      return {
+        success: false,
+        error: {
+          type: "unavailable",
+          message: "localStorage is not available (SSR or privacy mode)",
+        },
+      };
     }
 
-    // Handle different value types
-    if (typeof value === "boolean") {
-      localStorage.setItem(key, String(value));
-    } else if (typeof value === "string") {
-      localStorage.setItem(key, value);
-    } else {
-      // Objects/arrays - JSON serialize
-      localStorage.setItem(key, JSON.stringify(value));
+    // Serialize value based on type
+    let serialized: string;
+    try {
+      if (typeof value === "boolean") {
+        serialized = String(value);
+      } else if (typeof value === "string") {
+        serialized = value;
+      } else {
+        // Objects/arrays - JSON serialize
+        serialized = JSON.stringify(value);
+      }
+    } catch (serializationError) {
+      logStorageError("setItem (serialization)", key, serializationError);
+      return {
+        success: false,
+        error: {
+          type: "serialization_error",
+          message: "Failed to serialize value for storage",
+          originalError: import.meta.env.DEV ? serializationError : undefined,
+        },
+      };
     }
 
-    return true;
+    // Attempt to set item
+    localStorage.setItem(key, serialized);
+    return { success: true };
   } catch (error) {
+    // Detect quota exceeded error (DOMException with specific name/code)
+    const isQuotaError =
+      error instanceof DOMException &&
+      (error.name === "QuotaExceededError" || error.code === 22);
+
+    if (isQuotaError) {
+      logStorageError("setItem (quota exceeded)", key, error);
+      return {
+        success: false,
+        error: {
+          type: "quota_exceeded",
+          message: "Storage quota exceeded. Try clearing old data.",
+          originalError: import.meta.env.DEV ? error : undefined,
+        },
+      };
+    }
+
+    // Generic error fallback
     logStorageError("setItem", key, error);
-    return false;
+    return {
+      success: false,
+      error: {
+        type: "unknown",
+        message: "Failed to save to localStorage",
+        originalError: import.meta.env.DEV ? error : undefined,
+      },
+    };
   }
 }
 
 /**
- * Remove item from localStorage.
+ * Remove item from localStorage with detailed error reporting.
  *
  * @param key - Storage key to remove
- * @returns true if successful, false if error occurred
+ * @returns Result object with success status and optional error details
  *
  * @example
- * removeStorageItem(STORAGE_KEYS.THEME);
+ * const result = removeStorageItem(STORAGE_KEYS.THEME);
+ * if (!result.success) {
+ *   console.error('Failed to remove:', result.error?.type);
+ * }
  */
-export function removeStorageItem(key: StorageKey): boolean {
+export function removeStorageItem(key: StorageKey): StorageWriteResult {
   try {
     if (!isStorageAvailable()) {
-      return false;
+      return {
+        success: false,
+        error: {
+          type: "unavailable",
+          message: "localStorage is not available",
+        },
+      };
     }
 
     localStorage.removeItem(key);
-    return true;
+    return { success: true };
   } catch (error) {
     logStorageError("removeItem", key, error);
-    return false;
+    return {
+      success: false,
+      error: {
+        type: "unknown",
+        message: "Failed to remove from localStorage",
+        originalError: import.meta.env.DEV ? error : undefined,
+      },
+    };
   }
 }
 
 /**
- * Clear all application storage.
+ * Clear all application storage with detailed error reporting.
  * WARNING: This removes ALL items from localStorage, not just app-specific keys.
  *
- * @returns true if successful, false if error occurred
+ * @returns Result object with success status and optional error details
+ *
+ * @example
+ * const result = clearStorage();
+ * if (!result.success) {
+ *   console.error('Failed to clear storage:', result.error?.type);
+ * }
  */
-export function clearStorage(): boolean {
+export function clearStorage(): StorageWriteResult {
   try {
     if (!isStorageAvailable()) {
-      return false;
+      return {
+        success: false,
+        error: {
+          type: "unavailable",
+          message: "localStorage is not available",
+        },
+      };
     }
 
     localStorage.clear();
-    return true;
+    return { success: true };
   } catch (error) {
     logStorageError("clear", "all", error);
-    return false;
+    return {
+      success: false,
+      error: {
+        type: "unknown",
+        message: "Failed to clear localStorage",
+        originalError: import.meta.env.DEV ? error : undefined,
+      },
+    };
   }
 }

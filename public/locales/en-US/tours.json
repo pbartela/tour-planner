@@ -105,7 +105,7 @@
     },
     "tourTitle": "Tour",
     "unknownError": "Unknown error",
-    "skipConfirmation": "Show confirmation before sending (recommended)",
+    "confirmBeforeSend": "Show confirmation before sending (recommended)",
     "noValidEmails": "No valid email addresses found. Please check your input.",
     "tooManyEmails": "Cannot invite more than {{max}} people at once",
     "invalidEmailsSkipped_one": "{{count}} invalid email skipped: {{emails}}",

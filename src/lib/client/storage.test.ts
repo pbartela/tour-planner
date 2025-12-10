@@ -25,27 +25,35 @@ describe("storage wrapper", () => {
   });
 
   describe("getStorageItem", () => {
-    it("should return null when key doesn't exist", () => {
+    it("should return success with null value when key doesn't exist", () => {
       const result = getStorageItem(STORAGE_KEYS.THEME);
-      expect(result).toBeNull();
+      expect(result.success).toBe(true);
+      expect(result.value).toBeNull();
+      expect(result.error).toBeUndefined();
     });
 
     it("should get string value (theme)", () => {
       localStorage.setItem(STORAGE_KEYS.THEME, "dark");
       const result = getStorageItem(STORAGE_KEYS.THEME);
-      expect(result).toBe("dark");
+      expect(result.success).toBe(true);
+      expect(result.value).toBe("dark");
+      expect(result.error).toBeUndefined();
     });
 
     it("should get boolean value true (invitation skip confirmation)", () => {
       localStorage.setItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION, "true");
       const result = getStorageItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION);
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
+      expect(result.value).toBe(true);
+      expect(result.error).toBeUndefined();
     });
 
     it("should get boolean value false (invitation skip confirmation)", () => {
       localStorage.setItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION, "false");
       const result = getStorageItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION);
-      expect(result).toBe(false);
+      expect(result.success).toBe(true);
+      expect(result.value).toBe(false);
+      expect(result.error).toBeUndefined();
     });
 
     it("should get JSON value (tour metadata)", () => {
@@ -56,50 +64,65 @@ describe("storage wrapper", () => {
           expiresAt: Date.now() + 1000,
         },
       };
-      localStorage.setItem(STORAGE_KEYS.TOUR_METADATA_V1, JSON.stringify(metadata));
+      localStorage.setItem(
+        STORAGE_KEYS.TOUR_METADATA_V1,
+        JSON.stringify(metadata)
+      );
       const result = getStorageItem(STORAGE_KEYS.TOUR_METADATA_V1);
-      expect(result).toEqual(metadata);
+      expect(result.success).toBe(true);
+      expect(result.value).toEqual(metadata);
+      expect(result.error).toBeUndefined();
     });
 
-    it("should return null on JSON parse error", () => {
+    it("should return error on JSON parse error", () => {
       localStorage.setItem(STORAGE_KEYS.TOUR_METADATA_V1, "invalid json");
       const result = getStorageItem(STORAGE_KEYS.TOUR_METADATA_V1);
-      expect(result).toBeNull();
+      expect(result.success).toBe(false);
+      expect(result.value).toBeNull();
+      expect(result.error).toBeDefined();
+      expect(result.error?.type).toBe("serialization_error");
     });
 
-    it("should return null when localStorage.getItem throws", () => {
-      vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
-        throw new Error("Storage error");
-      });
-
-      const result = getStorageItem(STORAGE_KEYS.THEME);
-      expect(result).toBeNull();
-    });
 
     it("should handle empty string value", () => {
       localStorage.setItem(STORAGE_KEYS.THEME, "");
       const result = getStorageItem(STORAGE_KEYS.THEME);
-      expect(result).toBe("");
+      expect(result.success).toBe(true);
+      expect(result.value).toBe("");
+      expect(result.error).toBeUndefined();
     });
   });
 
   describe("setStorageItem", () => {
     it("should set string value", () => {
-      const success = setStorageItem(STORAGE_KEYS.THEME, "light");
-      expect(success).toBe(true);
+      const result = setStorageItem(STORAGE_KEYS.THEME, "light");
+      expect(result.success).toBe(true);
+      expect(result.error).toBeUndefined();
       expect(localStorage.getItem(STORAGE_KEYS.THEME)).toBe("light");
     });
 
     it("should set boolean value true", () => {
-      const success = setStorageItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION, true);
-      expect(success).toBe(true);
-      expect(localStorage.getItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION)).toBe("true");
+      const result = setStorageItem(
+        STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION,
+        true
+      );
+      expect(result.success).toBe(true);
+      expect(result.error).toBeUndefined();
+      expect(
+        localStorage.getItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION)
+      ).toBe("true");
     });
 
     it("should set boolean value false", () => {
-      const success = setStorageItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION, false);
-      expect(success).toBe(true);
-      expect(localStorage.getItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION)).toBe("false");
+      const result = setStorageItem(
+        STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION,
+        false
+      );
+      expect(result.success).toBe(true);
+      expect(result.error).toBeUndefined();
+      expect(
+        localStorage.getItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION)
+      ).toBe("false");
     });
 
     it("should set JSON value", () => {
@@ -110,9 +133,12 @@ describe("storage wrapper", () => {
           expiresAt: 789012,
         },
       };
-      const success = setStorageItem(STORAGE_KEYS.TOUR_METADATA_V1, metadata);
-      expect(success).toBe(true);
-      expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.TOUR_METADATA_V1)!)).toEqual(metadata);
+      const result = setStorageItem(STORAGE_KEYS.TOUR_METADATA_V1, metadata);
+      expect(result.success).toBe(true);
+      expect(result.error).toBeUndefined();
+      expect(
+        JSON.parse(localStorage.getItem(STORAGE_KEYS.TOUR_METADATA_V1)!)
+      ).toEqual(metadata);
     });
 
     it("should handle storage errors gracefully", () => {
@@ -123,40 +149,53 @@ describe("storage wrapper", () => {
 
     it("should overwrite existing value", () => {
       setStorageItem(STORAGE_KEYS.THEME, "light");
-      setStorageItem(STORAGE_KEYS.THEME, "dark");
+      const result = setStorageItem(STORAGE_KEYS.THEME, "dark");
+      expect(result.success).toBe(true);
       expect(localStorage.getItem(STORAGE_KEYS.THEME)).toBe("dark");
     });
 
     it("should handle empty string value", () => {
-      const success = setStorageItem(STORAGE_KEYS.THEME, "");
-      expect(success).toBe(true);
+      const result = setStorageItem(STORAGE_KEYS.THEME, "");
+      expect(result.success).toBe(true);
+      expect(result.error).toBeUndefined();
       expect(localStorage.getItem(STORAGE_KEYS.THEME)).toBe("");
     });
 
     it("should set complex nested JSON", () => {
       const complexData = {
-        tour1: { metadata: { title: "A", tags: ["x", "y"] }, cachedAt: 1, expiresAt: 2 },
-        tour2: { metadata: { title: "B", tags: ["z"] }, cachedAt: 3, expiresAt: 4 },
+        tour1: {
+          metadata: { title: "A", tags: ["x", "y"] },
+          cachedAt: 1,
+          expiresAt: 2,
+        },
+        tour2: {
+          metadata: { title: "B", tags: ["z"] },
+          cachedAt: 3,
+          expiresAt: 4,
+        },
       };
-      const success = setStorageItem(STORAGE_KEYS.TOUR_METADATA_V1, complexData);
-      expect(success).toBe(true);
-      expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.TOUR_METADATA_V1)!)).toEqual(
-        complexData
-      );
+      const result = setStorageItem(STORAGE_KEYS.TOUR_METADATA_V1, complexData);
+      expect(result.success).toBe(true);
+      expect(result.error).toBeUndefined();
+      expect(
+        JSON.parse(localStorage.getItem(STORAGE_KEYS.TOUR_METADATA_V1)!)
+      ).toEqual(complexData);
     });
   });
 
   describe("removeStorageItem", () => {
     it("should remove existing item", () => {
       localStorage.setItem(STORAGE_KEYS.THEME, "dark");
-      const success = removeStorageItem(STORAGE_KEYS.THEME);
-      expect(success).toBe(true);
+      const result = removeStorageItem(STORAGE_KEYS.THEME);
+      expect(result.success).toBe(true);
+      expect(result.error).toBeUndefined();
       expect(localStorage.getItem(STORAGE_KEYS.THEME)).toBeNull();
     });
 
-    it("should return true even if item doesn't exist", () => {
-      const success = removeStorageItem(STORAGE_KEYS.THEME);
-      expect(success).toBe(true);
+    it("should return success even if item doesn't exist", () => {
+      const result = removeStorageItem(STORAGE_KEYS.THEME);
+      expect(result.success).toBe(true);
+      expect(result.error).toBeUndefined();
       expect(localStorage.getItem(STORAGE_KEYS.THEME)).toBeNull();
     });
 
@@ -172,17 +211,21 @@ describe("storage wrapper", () => {
       localStorage.setItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION, "true");
       localStorage.setItem("other-key", "value");
 
-      const success = clearStorage();
-      expect(success).toBe(true);
+      const result = clearStorage();
+      expect(result.success).toBe(true);
+      expect(result.error).toBeUndefined();
       expect(localStorage.length).toBe(0);
       expect(localStorage.getItem(STORAGE_KEYS.THEME)).toBeNull();
-      expect(localStorage.getItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION)).toBeNull();
+      expect(
+        localStorage.getItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION)
+      ).toBeNull();
       expect(localStorage.getItem("other-key")).toBeNull();
     });
 
-    it("should return true even if storage is already empty", () => {
-      const success = clearStorage();
-      expect(success).toBe(true);
+    it("should return success even if storage is already empty", () => {
+      const result = clearStorage();
+      expect(result.success).toBe(true);
+      expect(result.error).toBeUndefined();
       expect(localStorage.length).toBe(0);
     });
 
@@ -196,13 +239,15 @@ describe("storage wrapper", () => {
     it("should handle theme key with string value", () => {
       setStorageItem(STORAGE_KEYS.THEME, "cupcake");
       const result = getStorageItem(STORAGE_KEYS.THEME);
-      expect(result).toBe("cupcake");
+      expect(result.success).toBe(true);
+      expect(result.value).toBe("cupcake");
     });
 
     it("should handle invitation skip confirmation with boolean value", () => {
       setStorageItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION, true);
       const result = getStorageItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION);
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
+      expect(result.value).toBe(true);
     });
 
     it("should handle tour metadata with object value", () => {
@@ -215,20 +260,12 @@ describe("storage wrapper", () => {
       };
       setStorageItem(STORAGE_KEYS.TOUR_METADATA_V1, data);
       const result = getStorageItem(STORAGE_KEYS.TOUR_METADATA_V1);
-      expect(result).toEqual(data);
+      expect(result.success).toBe(true);
+      expect(result.value).toEqual(data);
     });
   });
 
   describe("error handling gracefully", () => {
-    it("should not throw when getItem fails", () => {
-      vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
-        throw new Error("Unexpected error");
-      });
-
-      expect(() => getStorageItem(STORAGE_KEYS.THEME)).not.toThrow();
-      expect(getStorageItem(STORAGE_KEYS.THEME)).toBeNull();
-    });
-
     it("should handle all operations without throwing", () => {
       // Integration-style tests that verify graceful degradation
       expect(() => {
@@ -237,6 +274,33 @@ describe("storage wrapper", () => {
         removeStorageItem(STORAGE_KEYS.THEME);
         clearStorage();
       }).not.toThrow();
+    });
+  });
+
+  describe("detailed error reporting", () => {
+    describe("serialization errors", () => {
+      it("should detect JSON serialization errors", () => {
+        // Create circular reference to cause serialization error
+        const circular: Record<string, unknown> = {};
+        circular.self = circular;
+
+        const result = setStorageItem(
+          STORAGE_KEYS.TOUR_METADATA_V1,
+          circular as never
+        );
+        expect(result.success).toBe(false);
+        expect(result.error).toBeDefined();
+        expect(result.error?.type).toBe("serialization_error");
+        expect(result.error?.message).toContain("serialize");
+      });
+
+      it("should handle JSON parse errors in getStorageItem", () => {
+        localStorage.setItem(STORAGE_KEYS.TOUR_METADATA_V1, "{ invalid json");
+        const result = getStorageItem(STORAGE_KEYS.TOUR_METADATA_V1);
+        expect(result.success).toBe(false);
+        expect(result.error?.type).toBe("serialization_error");
+        expect(result.error?.message).toContain("parse");
+      });
     });
   });
 });

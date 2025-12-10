@@ -70,19 +70,32 @@ function validateEmailWithZod(email: string): { success: boolean; error?: string
 
 /**
  * Parses and normalizes email addresses from a multi-line/multi-separator input.
- * Supports: spaces, commas, semicolons, newlines
+ * Supports: spaces, commas, semicolons, newlines, tabs
  *
- * @param input - Raw string containing one or more email addresses
+ * SECURITY & PERFORMANCE:
+ * - Input limited to 10,000 characters (prevents resource exhaustion)
+ * - Uses safe regex with O(n) linear performance (no ReDoS risk)
+ * - Character class pattern /[\s,;\n\t]+/ has no catastrophic backtracking
+ * - Protected by rate limiting at API layer (10 requests/hour/tour in production)
+ * - Additional validation: max 50 emails per request (enforced by API schema)
+ *
+ * PERFORMANCE CHARACTERISTICS:
+ * - Regex split: O(n) where n = input length
+ * - Deduplication: O(m) where m = number of emails
+ * - Validation: O(m * k) where k = average email length
+ * - Overall: O(n + m*k), linear with input size
+ *
+ * @param input - Raw string containing one or more email addresses (max 10,000 chars)
  * @returns EmailParseResult with categorized emails
  *
  * @example
- * parseEmails("a@d.pl dzw@k.pl, zf@d.pl\nr@.pl")
+ * parseEmails("alice@example.com, bob@test.pl\ncharlie@demo.org")
  * // Returns:
  * // {
- * //   valid: ["a@d.pl", "dzw@k.pl", "zf@d.pl"],
- * //   invalid: [{ email: "r@.pl", isValid: false, error: "Invalid domain" }],
+ * //   valid: ["alice@example.com", "bob@test.pl", "charlie@demo.org"],
+ * //   invalid: [],
  * //   duplicates: [],
- * //   original: ["a@d.pl", "dzw@k.pl", "zf@d.pl", "r@.pl"]
+ * //   original: ["alice@example.com", "bob@test.pl", "charlie@demo.org"]
  * // }
  */
 export function parseEmails(input: string): EmailParseResult {

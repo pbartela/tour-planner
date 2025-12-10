@@ -318,6 +318,30 @@ export interface ToggleVoteResponseDto {
 // ============================================================================
 
 /**
+ * A tag from the database with a real ID.
+ */
+export interface TagDto {
+  id: number;
+  name: string;
+}
+
+/**
+ * A tag suggestion - either from the database or from recently used tags.
+ * Uses a discriminated union to distinguish between the two sources.
+ */
+export type TagSuggestionDto =
+  | {
+      source: "database";
+      id: number;
+      name: string;
+    }
+  | {
+      source: "recent";
+      id: null;
+      name: string;
+    };
+
+/**
  * Command model for adding tags to a tour.
  * Corresponds to the request body of `POST /api/tours/{tourId}/tags`.
  */

@@ -33,7 +33,7 @@ const formatDateRange = (startDate: string, endDate: string, locale: string): st
 
 const transformToViewModel = (dto: TourSummaryDto, locale: string): TourCardViewModel => ({
   id: dto.id,
-  url: `/tours/${dto.id}`,
+  url: `/${locale}/tours/${dto.id}`,
   title: dto.title,
   destination: dto.destination,
   dateRange: formatDateRange(dto.start_date, dto.end_date, locale),

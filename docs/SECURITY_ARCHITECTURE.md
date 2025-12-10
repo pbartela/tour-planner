@@ -8,6 +8,7 @@ This document describes the security architecture of Tour Planner, including aut
 - [Authentication](#authentication)
 - [Authorization](#authorization)
 - [Database Trigger Security](#database-trigger-security)
+- [Email Validation & DoS Protection](#email-validation--dos-protection)
 - [Data Access Patterns](#data-access-patterns)
 - [Email Visibility Architecture](#email-visibility-architecture)
 - [Security Boundaries](#security-boundaries)
@@ -352,6 +353,227 @@ $$;
 **Risk Level**: LOW
 
 SECURITY DEFINER is used appropriately for system-level operations with proper security constraints. The implementation follows PostgreSQL and Supabase best practices for trigger security.
+
+## Email Validation & DoS Protection
+
+### Email Parser Security Architecture
+
+The email parser (`src/lib/utils/email-parser.util.ts`) is protected against Denial of Service (DoS) attacks through multiple security layers.
+
+#### Input Validation Limits
+
+**Character Limit:**
+- Maximum input length: 10,000 characters
+- Defined in: `src/lib/constants/validation.ts` as `EMAIL_VALIDATION.MAX_INPUT_LENGTH`
+- Enforced before any processing begins
+- Rejects with clear error message if exceeded
+
+**Email Count Limit:**
+- Maximum emails per batch: 50
+- Defined in: `EMAIL_VALIDATION.MAX_EMAILS_PER_INVITATION`
+- Enforced at API layer via Zod schema validation
+- Prevents CPU exhaustion from excessive validation operations
+
+#### ReDoS Analysis: Safe Regex Pattern
+
+**Pattern:** `/[\s,;\n\t]+/`
+
+The regex used for splitting email addresses is **NOT vulnerable to Regular Expression Denial of Service (ReDoS)**.
+
+**Why it's safe:**
+- Simple character class `[\s,;\n\t]` matches exactly one character from the set
+- `+` quantifier creates linear progression (not exponential)
+- No nested quantifiers (e.g., `(a+)+` which would be vulnerable)
+- No alternation with overlapping patterns
+- No backreferences
+- JavaScript regex engine handles this efficiently
+
+**Time Complexity:**
+- Best case: O(n) where n = input length
+- Worst case: O(n) where n = input length
+- Average case: O(n) where n = input length
+
+**Comparison to vulnerable patterns:**
+```javascript
+// ❌ VULNERABLE (exponential backtracking)
+/(a+)+b/         // Can cause catastrophic backtracking
+/(a*)*c/         // Nested quantifiers cause exponential complexity
+
+// ✅ SAFE (our pattern - linear performance)
+/[\s,;\n\t]+/    // Simple character class with linear complexity
+```
+
+#### Rate Limiting Configuration
+
+**General API Rate Limit:**
+- Production: 100 requests/minute per client
+- Development: 1000 requests/minute per client
+- Applied to all API endpoints
+
+**Invitation-Specific Rate Limit:**
+- Production: 10 invitation requests per hour per tour
+- Development: 100 invitation requests per hour per tour
+- Composite key: `invitations:tour:${tourId}:user:${userId}`
+- Returns 429 status with Retry-After header
+
+**Implementation Location:** `src/lib/server/rate-limit.service.ts`
+
+**Known Limitation:**
+- In-memory rate limiting only (not suitable for multi-instance production deployments)
+- Each instance maintains separate counters
+- Recommendation: Use Redis-based rate limiting for production scaling
+
+#### Performance Characteristics
+
+The `parseEmails()` function has linear time complexity:
+
+```
+Total: O(n + m*k) where:
+  n = input length
+  m = number of emails
+  k = average email length
+```
+
+**Performance Breakdown:**
+1. **Regex split**: O(n) - Linear scan of input string
+2. **Normalization**: O(m) - Lowercase conversion for each email
+3. **Deduplication**: O(m) - Set-based duplicate detection
+4. **Validation**: O(m * k) - Validate each email with Zod and TLD checking
+
+**Performance Monitoring:**
+- Logs warning when input exceeds 10,000 characters
+- Logs info when input exceeds 8,000 characters (80% of limit)
+- No PII logged (only length and utilization percentage)
+- Helps detect potential abuse patterns
+
+#### Multiple Protection Layers
+
+Tour Planner uses **defense-in-depth** for email validation:
+
+| Layer | Protection | Implementation |
+|-------|-----------|----------------|
+| **1. Input Length** | 10,000 char limit | Checked before processing |
+| **2. Safe Regex** | ReDoS-resistant pattern | Character class with linear complexity |
+| **3. Email Count** | Max 50 emails/batch | Zod schema validation |
+| **4. Rate Limiting** | 10 requests/hour/tour | Applied at API layer |
+| **5. Authentication** | Session validation | Required for all API calls |
+| **6. Authorization** | Tour ownership check | Only tour owners can invite |
+| **7. CSRF Protection** | Token validation | Prevents cross-site attacks |
+| **8. RLS Policies** | Database-level security | Enforces data isolation |
+
+#### Email Validation Process
+
+**Two-Stage Validation Approach:**
+
+**Stage 1: Custom Pre-Validation**
+```typescript
+// Split by "@" - must have exactly 2 parts
+const parts = email.split("@");
+if (parts.length !== 2) return invalid;
+
+// Domain must have 2+ segments (e.g., example.com)
+const domainSegments = parts[1].split(".");
+if (domainSegments.length < 2) return invalid;
+
+// No empty domain segments (catches "user@.pl" or "user@example.")
+if (domainSegments.some(segment => segment.length === 0)) return invalid;
+
+// TLD must be in IANA official list
+const tld = domainSegments[domainSegments.length - 1].toLowerCase();
+if (!tlds.includes(tld)) return invalid;
+```
+
+**Stage 2: RFC 5322 Validation (Zod)**
+```typescript
+const emailSchema = z.string().email("Invalid email format");
+const result = emailSchema.safeParse(email);
+```
+
+This two-stage approach:
+- Provides specific error messages for common mistakes
+- Validates TLD against official IANA list (prevents typos like ".comm")
+- Uses Zod for RFC 5322 compliant validation
+- Avoids ReDoS-vulnerable regex patterns
+
+#### Attack Scenarios Analyzed
+
+| Attack Vector | Vulnerability | Mitigation | Risk Level |
+|---------------|---------------|------------|------------|
+| **Large input (>10K)** | Resource exhaustion | Input length check before processing | **NONE** |
+| **Many emails (>50)** | CPU exhaustion from validation | Zod schema max(50) + early rejection | **NONE** |
+| **ReDoS attack** | Catastrophic backtracking | Safe character class pattern O(n) | **NONE** |
+| **Rate limit bypass** | Rapid repeated requests | 10 requests/hour/tour (production) | **LOW** |
+| **Distributed DoS** | Multiple instances bypass | In-memory limiter (per-instance only)* | **MEDIUM*** |
+
+*Known limitation: In-memory rate limiting is not distributed. Use Redis for production scaling.
+
+#### Data Flow & Security Checkpoints
+
+```
+User Input (textarea)
+    ↓
+[Client] Max 10K chars enforced by UI
+    ↓
+[Client] parseEmails() - optional pre-validation
+    ↓
+API Request (emails array)
+    ↓
+[Server] CSRF token validation
+    ↓
+[Server] Session validation (validateSession)
+    ↓
+[Server] Rate limit check (10/hour/tour)
+    ↓
+[Server] Zod schema validation (max 50, unique, valid format)
+    ↓
+[Server] Tour ownership verification
+    ↓
+[Service] parseEmails() with logging
+    ↓
+[Service] Business logic processing
+    ↓
+[Database] RLS policies enforce data isolation
+```
+
+#### Implementation Files
+
+| File | Purpose | Security Features |
+|------|---------|-------------------|
+| `src/lib/utils/email-parser.util.ts` | Core parsing logic | Input limits, safe regex, logging |
+| `src/lib/utils/email-parser.util.test.ts` | Test coverage (339 lines) | Edge cases, TLD validation, length limits |
+| `src/lib/constants/validation.ts` | Security constants | MAX_INPUT_LENGTH, MAX_EMAILS_PER_INVITATION |
+| `src/pages/api/tours/[tourId]/invitations.ts` | API endpoint | Rate limiting, auth, owner check |
+| `src/lib/validators/tour.validators.ts` | Request validation | Zod schemas with strict rules |
+| `src/lib/server/rate-limit.service.ts` | Rate limiting | Per-tour and per-user limits |
+| `src/lib/server/logger.service.ts` | Secure logging | No PII, sanitized output |
+
+#### Security Best Practices Implemented
+
+1. **Input Validation First**: Length check before any processing
+2. **Safe Regex**: Character class pattern with no backtracking
+3. **Rate Limiting**: Multiple layers (API + feature-specific)
+4. **Fail Secure**: Errors deny access rather than grant it
+5. **Secure Logging**: No PII in logs, only metrics
+6. **Defense in Depth**: Multiple independent security controls
+7. **Linear Complexity**: All operations scale linearly with input
+8. **Comprehensive Testing**: 339 lines of tests covering edge cases
+
+#### Risk Assessment
+
+**Overall Risk Level**: LOW
+
+The email parser is well-protected against DoS attacks through:
+- Multiple validation layers
+- Safe regex patterns (no ReDoS risk)
+- Strict input limits (10K chars, 50 emails)
+- Rate limiting (10 requests/hour/tour)
+- Comprehensive test coverage
+- Performance monitoring via logging
+
+**Recommendations for Production:**
+- Implement Redis-based distributed rate limiting for multi-instance deployments
+- Monitor logs for patterns of large inputs (>8000 chars)
+- Consider additional rate limiting at infrastructure level (WAF, load balancer)
 
 ## Data Access Patterns
 
