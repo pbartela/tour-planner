@@ -268,4 +268,72 @@ describe("parseEmails", () => {
       expect(result.valid.length).toBeGreaterThan(0);
     });
   });
+
+  describe("TLD validation", () => {
+    it("should accept emails with valid TLDs (com, org, net, pl, co.uk)", () => {
+      const result = parseEmails("user@example.com test@org.pl admin@site.co.uk info@domain.net");
+
+      expect(result.valid).toHaveLength(4);
+      expect(result.valid).toEqual([
+        "user@example.com",
+        "test@org.pl",
+        "admin@site.co.uk",
+        "info@domain.net",
+      ]);
+      expect(result.invalid).toHaveLength(0);
+    });
+
+    it("should reject emails with invalid numeric TLD", () => {
+      const result = parseEmails("user@domain.123");
+
+      expect(result.valid).toHaveLength(0);
+      expect(result.invalid).toHaveLength(1);
+      expect(result.invalid[0].email).toBe("user@domain.123");
+      expect(result.invalid[0].error).toBe("Invalid TLD");
+    });
+
+    it("should reject emails with made-up TLD", () => {
+      const result = parseEmails("user@example.fakeTLD");
+
+      expect(result.valid).toHaveLength(0);
+      expect(result.invalid).toHaveLength(1);
+      expect(result.invalid[0].email).toBe("user@example.faketld");
+      expect(result.invalid[0].error).toBe("Invalid TLD");
+    });
+
+    it("should reject emails with alphanumeric invalid TLD", () => {
+      const result = parseEmails("user@test.xyz123");
+
+      expect(result.valid).toHaveLength(0);
+      expect(result.invalid).toHaveLength(1);
+      expect(result.invalid[0].email).toBe("user@test.xyz123");
+      expect(result.invalid[0].error).toBe("Invalid TLD");
+    });
+
+    it("should handle mixed valid and invalid TLDs", () => {
+      const result = parseEmails("valid@example.com invalid@test.fake");
+
+      expect(result.valid).toEqual(["valid@example.com"]);
+      expect(result.invalid).toHaveLength(1);
+      expect(result.invalid[0].email).toBe("invalid@test.fake");
+      expect(result.invalid[0].error).toBe("Invalid TLD");
+    });
+
+    it("should accept various valid TLDs including newer ones", () => {
+      const result = parseEmails("user@example.io test@domain.ai admin@site.dev");
+
+      expect(result.valid).toHaveLength(3);
+      expect(result.valid).toEqual(["user@example.io", "test@domain.ai", "admin@site.dev"]);
+      expect(result.invalid).toHaveLength(0);
+    });
+
+    it("should reject common typo TLDs", () => {
+      const result = parseEmails("user@example.comm user@test.coom");
+
+      expect(result.valid).toHaveLength(0);
+      expect(result.invalid).toHaveLength(2);
+      expect(result.invalid[0].error).toBe("Invalid TLD");
+      expect(result.invalid[1].error).toBe("Invalid TLD");
+    });
+  });
 });

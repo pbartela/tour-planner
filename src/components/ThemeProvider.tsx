@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { STORAGE_KEYS } from "@/lib/constants/storage";
+import { getStorageItem, setStorageItem } from "@/lib/client/storage";
 
 interface ThemeProviderProps {
   children: React.ReactNode;
@@ -17,10 +18,10 @@ export function ThemeProvider({ children, userTheme }: ThemeProviderProps) {
   useEffect(() => {
     // Apply user's saved theme from database if it exists and no theme is stored locally
     if (userTheme) {
-      const storedTheme = localStorage.getItem(STORAGE_KEYS.THEME);
+      const storedTheme = getStorageItem(STORAGE_KEYS.THEME);
       if (!storedTheme) {
         // Only set from userTheme if no local preference exists
-        localStorage.setItem(STORAGE_KEYS.THEME, userTheme);
+        setStorageItem(STORAGE_KEYS.THEME, userTheme);
         document.documentElement.setAttribute("data-theme", userTheme);
       }
     }

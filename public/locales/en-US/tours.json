@@ -125,7 +125,8 @@
       "errors": {
         "Invalid format": "Invalid format",
         "Invalid domain": "Invalid domain",
-        "Invalid email format": "Invalid email"
+        "Invalid email format": "Invalid email",
+        "Invalid TLD": "Invalid TLD"
       }
     }
   },

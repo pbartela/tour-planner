@@ -39,7 +39,7 @@ export function InvitationConfirmationDialog({
   const canProceed = validEmails.length > 0;
 
   // Dynamic error translation keys (extracted by i18next-parser):
-  // t('invitations.confirmDialog.errors.Invalid format'), t('invitations.confirmDialog.errors.Invalid domain'), t('invitations.confirmDialog.errors.Invalid email format')
+  // t('invitations.confirmDialog.errors.Invalid format'), t('invitations.confirmDialog.errors.Invalid domain'), t('invitations.confirmDialog.errors.Invalid email format'), t('invitations.confirmDialog.errors.Invalid TLD')
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -58,8 +58,8 @@ export function InvitationConfirmationDialog({
                 <Badge variant="success">{validEmails.length}</Badge>
               </h4>
               <ul className="max-h-40 overflow-y-auto space-y-1 bg-base-200 rounded-lg p-3">
-                {validEmails.map((email, idx) => (
-                  <li key={idx} className="text-sm pl-4 py-1 border-l-2 border-success">
+                {validEmails.map((email) => (
+                  <li key={email} className="text-sm pl-4 py-1 border-l-2 border-success">
                     {email}
                   </li>
                 ))}
@@ -75,8 +75,8 @@ export function InvitationConfirmationDialog({
                 <Badge variant="error">{invalidEmails.length}</Badge>
               </h4>
               <ul className="max-h-40 overflow-y-auto space-y-1 bg-base-200 rounded-lg p-3">
-                {invalidEmails.map((item, idx) => (
-                  <li key={idx} className="text-sm pl-4 py-1 border-l-2 border-error">
+                {invalidEmails.map((item) => (
+                  <li key={item.email} className="text-sm pl-4 py-1 border-l-2 border-error">
                     <span className="font-mono">{item.email}</span>
                     {item.error && (
                       <span className="text-xs text-base-content/60 ml-2">
@@ -97,8 +97,8 @@ export function InvitationConfirmationDialog({
                 <Badge variant="warning">{duplicates.length}</Badge>
               </h4>
               <ul className="max-h-40 overflow-y-auto space-y-1 bg-base-200 rounded-lg p-3">
-                {duplicates.map((email, idx) => (
-                  <li key={idx} className="text-sm pl-4 py-1 border-l-2 border-warning">
+                {duplicates.map((email) => (
+                  <li key={email} className="text-sm pl-4 py-1 border-l-2 border-warning">
                     {email}
                   </li>
                 ))}

@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { themeChange } from "theme-change";
 import { STORAGE_KEYS } from "@/lib/constants/storage";
+import { getStorageItem, setStorageItem } from "@/lib/client/storage";
 
 const themes = [
   { name: "Light", value: "light" },
@@ -42,11 +43,11 @@ export function ThemeController(): React.JSX.Element {
     themeChange(false);
 
     // Set initial theme based on localStorage or system preference
-    const stored = localStorage.getItem(STORAGE_KEYS.THEME);
+    const stored = getStorageItem(STORAGE_KEYS.THEME);
     if (!stored) {
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       const defaultTheme = prefersDark ? "dark" : "light";
-      localStorage.setItem(STORAGE_KEYS.THEME, defaultTheme);
+      setStorageItem(STORAGE_KEYS.THEME, defaultTheme);
       document.documentElement.setAttribute("data-theme", defaultTheme);
     }
   }, []);

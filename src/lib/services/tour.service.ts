@@ -436,7 +436,13 @@ class TourService {
       // Prevent updating archived tours
       await ensureTourNotArchived(supabase, tourId);
 
-      const { data, error } = await supabase.from("tours").update(command).eq("id", tourId).select().single();
+      // Explicitly update updated_at to trigger new activity indicator
+      const updateData = {
+        ...command,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { data, error } = await supabase.from("tours").update(updateData).eq("id", tourId).select().single();
 
       if (error) {
         console.error("Error updating tour:", error);

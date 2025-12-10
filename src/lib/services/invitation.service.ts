@@ -330,6 +330,8 @@ class InvitationService {
           const otpExpiresAt = new Date();
           otpExpiresAt.setHours(otpExpiresAt.getHours() + 1);
 
+          const adminClient = createSupabaseAdminClient();
+
           // Store OTP in database
           const { error: otpError } = await adminClient.from("invitation_otp").insert({
             email: email,

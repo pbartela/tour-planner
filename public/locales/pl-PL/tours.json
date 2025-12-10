@@ -135,7 +135,8 @@
       "errors": {
         "Invalid format": "Nieprawidłowy format",
         "Invalid domain": "Nieprawidłowa domena",
-        "Invalid email format": "Nieprawidłowy e-mail"
+        "Invalid email format": "Nieprawidłowy e-mail",
+        "Invalid TLD": "Nieprawidłowy TLD"
       }
     }
   },

@@ -7,6 +7,7 @@ import { parseEmails, type EmailParseResult } from "@/lib/utils/email-parser.uti
 import { InvitationConfirmationDialog } from "./InvitationConfirmationDialog";
 import { STORAGE_KEYS } from "@/lib/constants/storage";
 import { EMAIL_VALIDATION } from "@/lib/constants/validation";
+import { getStorageItem, setStorageItem } from "@/lib/client/storage";
 
 interface InvitationFormProps {
   tourId: string;
@@ -27,8 +28,8 @@ export const InvitationForm = ({ tourId, onSuccess }: InvitationFormProps) => {
 
   // Load skip confirmation preference from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION);
-    if (stored === "true") {
+    const stored = getStorageItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION);
+    if (stored === true) {
       setSkipConfirmation(true);
     }
   }, []);
@@ -36,7 +37,7 @@ export const InvitationForm = ({ tourId, onSuccess }: InvitationFormProps) => {
   // Save skip confirmation preference
   const handleSkipConfirmationChange = (checked: boolean) => {
     setSkipConfirmation(checked);
-    localStorage.setItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION, String(checked));
+    setStorageItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION, checked);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

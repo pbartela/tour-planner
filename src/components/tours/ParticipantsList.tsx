@@ -29,7 +29,8 @@ interface ParticipantsListProps {
  * Allows participants to leave and owner to remove participants
  */
 export const ParticipantsList = ({ tourId, ownerId, currentUserId }: ParticipantsListProps) => {
-  const { t } = useTranslation("tours");
+  const { t, i18n } = useTranslation("tours");
+  const locale = i18n.language;
   const { data: participants, isLoading, isError, error } = useParticipants(tourId);
   const removeParticipantMutation = useRemoveParticipantMutation(tourId);
   const [dialogState, setDialogState] = useState<{
@@ -57,6 +58,7 @@ export const ParticipantsList = ({ tourId, ownerId, currentUserId }: Participant
 
   const handleRemoveConfirm = async () => {
     try {
+      const isLeavingTour = !dialogState.isOwnerRemoving;
       await removeParticipantMutation.mutateAsync(dialogState.userId);
       if (dialogState.isOwnerRemoving) {
         toast.success(t("participants.removeSuccess", { name: dialogState.displayName }));
@@ -64,6 +66,11 @@ export const ParticipantsList = ({ tourId, ownerId, currentUserId }: Participant
         toast.success(t("participants.leaveSuccess"));
       }
       setDialogState({ open: false, userId: "", displayName: "", isOwnerRemoving: false });
+
+      // Redirect to dashboard when user leaves the tour (self-removal)
+      if (isLeavingTour) {
+        window.location.href = `/${locale}`;
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : t("participants.removeError");
       toast.error(errorMessage);

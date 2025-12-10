@@ -1,4 +1,5 @@
 import { z } from "zod";
+import tlds from "tlds";
 import { EMAIL_VALIDATION } from "@/lib/constants/validation";
 
 /**
@@ -48,6 +49,12 @@ function validateEmailWithZod(email: string): { success: boolean; error?: string
   // No segment can be empty (catches "user@.pl" or "user@example.")
   if (domainSegments.some((segment) => segment.length === 0)) {
     return { success: false, error: "Invalid domain" };
+  }
+
+  // Validate TLD against official IANA TLD list
+  const tld = domainSegments[domainSegments.length - 1].toLowerCase();
+  if (!tlds.includes(tld)) {
+    return { success: false, error: "Invalid TLD" };
   }
 
   // Now use Zod for RFC 5322 compliant validation
