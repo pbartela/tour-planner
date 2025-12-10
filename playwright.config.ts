@@ -5,7 +5,8 @@ import { dirname, resolve } from "path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Load .env.test for local test runs
+// Load .env first, then .env.test to override with test-specific values
+dotenv.config({ path: resolve(__dirname, ".env") });
 dotenv.config({ path: resolve(__dirname, ".env.test") });
 
 /**

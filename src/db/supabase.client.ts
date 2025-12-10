@@ -34,7 +34,12 @@ export const createSupabaseServerClient = (request: Request, cookies: AstroCooki
     maxAge: weeksInSeconds(1),
   };
 
-  return createServerClient<Database>(import.meta.env.PUBLIC_SUPABASE_URL, import.meta.env.PUBLIC_SUPABASE_ANON_KEY, {
+  // Check for Authorization header (for API testing with Bearer tokens)
+  const authHeader = request.headers.get("Authorization");
+  const accessToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const clientOptions: any = {
     cookies: {
       getAll() {
         return parseCookieHeader(request.headers.get("Cookie") ?? "").map(({ name, value }) => ({
@@ -51,5 +56,17 @@ export const createSupabaseServerClient = (request: Request, cookies: AstroCooki
     auth: {
       url: authUrl,
     },
-  });
+  };
+
+  // If Authorization header is present, pass it to the Supabase client
+  // This allows API testing with Bearer tokens while keeping cookie-based auth for browsers
+  if (accessToken) {
+    clientOptions.global = {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    };
+  }
+
+  return createServerClient<Database>(import.meta.env.PUBLIC_SUPABASE_URL, import.meta.env.PUBLIC_SUPABASE_ANON_KEY, clientOptions);
 };

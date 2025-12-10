@@ -58,8 +58,6 @@ const pgPool = new Pool({
 
 type InvitationSetupOptions = { expired?: boolean; used?: boolean };
 
-const ANON_USER_ID = "00000000-0000-0000-0000-000000000000";
-
 interface InviterContext {
   userId: string;
   tourId: string;
@@ -69,8 +67,22 @@ interface InviterContext {
 let inviterContext: InviterContext | null = null;
 
 async function createInviterContext(): Promise<InviterContext> {
-  const ownerId = ANON_USER_ID;
-  const inviterEmail = "anonymized-user@tour-planner.test";
+  const inviterEmail = `inviter-${Date.now()}@tour-planner.test`;
+
+  // Create a real user via Supabase admin API
+  const { data: userData, error: userError } = await supabase.auth.admin.createUser({
+    email: inviterEmail,
+    email_confirm: true,
+    user_metadata: {
+      display_name: "Test Inviter",
+    },
+  });
+
+  if (userError || !userData.user) {
+    throw new Error(`Failed to create test inviter user: ${userError?.message}`);
+  }
+
+  const ownerId = userData.user.id;
   const startDate = new Date();
   const endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
 
@@ -114,6 +126,13 @@ async function cleanupInviterContext(context: InviterContext | null): Promise<vo
 
   await pgPool.query("delete from public.invitations where tour_id = $1", [context.tourId]);
   await pgPool.query("delete from public.tours where id = $1", [context.tourId]);
+
+  // Delete the test user
+  try {
+    await supabase.auth.admin.deleteUser(context.userId);
+  } catch (error) {
+    console.warn(`Failed to cleanup inviter user ${context.userId}:`, error);
+  }
 }
 
 // Helper function to create a test invitation OTP linked to a real invitation
@@ -180,7 +199,8 @@ test.beforeAll(async () => {
 test.afterAll(async () => {
   await cleanupInviterContext(inviterContext);
   inviterContext = null;
-  await pgPool.end();
+  // Note: pgPool is shared across test files and should not be closed here
+  // It will be cleaned up automatically when the process exits
 });
 
 // Helper function to get user by email (Supabase v2 API)

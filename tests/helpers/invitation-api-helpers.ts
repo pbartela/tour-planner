@@ -75,9 +75,12 @@ export interface TestInvitation {
  * Create a test user with authentication tokens
  */
 export async function createTestUser(email: string): Promise<TestUser> {
-  // Create user via Supabase Admin API
+  // Create user with a password via Supabase Admin API for reliable authentication
+  const testPassword = `TestPass123!${Date.now()}`;
+
   const { data: userData, error: userError } = await supabase.auth.admin.createUser({
     email,
+    password: testPassword,
     email_confirm: true,
     user_metadata: {
       display_name: `Test User ${email}`,
@@ -88,53 +91,21 @@ export async function createTestUser(email: string): Promise<TestUser> {
     throw new Error(`Failed to create test user: ${userError?.message}`);
   }
 
-  // Generate session for the user
-  const { data: sessionData, error: sessionError } =
-    await supabase.auth.admin.generateLink({
-      type: "magiclink",
-      email,
-    });
-
-  if (sessionError || !sessionData.properties) {
-    throw new Error(`Failed to generate session: ${sessionError?.message}`);
-  }
-
-  // Create a session by signing in the user
+  // Sign in with the password to get valid session tokens
   const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
     email,
-    password: userData.user.id, // Use user ID as password (only for testing)
+    password: testPassword,
   });
 
-  // If password sign-in fails, use admin to generate tokens
-  let accessToken: string;
-  let refreshToken: string;
-
   if (signInError || !signInData.session) {
-    // Fallback: manually create tokens using service role
-    const { data: sessionData, error: sessionError } =
-      await supabase.auth.admin.createUser({
-        email,
-        email_confirm: true,
-      });
-
-    if (sessionError || !sessionData.user) {
-      throw new Error(`Failed to create session for user: ${sessionError?.message}`);
-    }
-
-    // For testing, we'll use a workaround to get tokens
-    // In production, this would be handled by proper OAuth flow
-    accessToken = `test-token-${userData.user.id}`;
-    refreshToken = `test-refresh-${userData.user.id}`;
-  } else {
-    accessToken = signInData.session.access_token;
-    refreshToken = signInData.session.refresh_token;
+    throw new Error(`Failed to sign in test user: ${signInError?.message}`);
   }
 
   return {
     id: userData.user.id,
     email: userData.user.email!,
-    accessToken,
-    refreshToken,
+    accessToken: signInData.session.access_token,
+    refreshToken: signInData.session.refresh_token,
   };
 }
 
@@ -174,6 +145,12 @@ export async function createTestTour(
   if (!tourId) {
     throw new Error("Failed to create test tour");
   }
+
+  // Add owner as participant (required for RLS policies to allow viewing)
+  await pgPool.query(
+    "INSERT INTO public.participants (tour_id, user_id) VALUES ($1, $2)",
+    [tourId, ownerId]
+  );
 
   return {
     id: tourId,
@@ -225,21 +202,18 @@ export async function createTestInvitation(
  * Get CSRF token from the application
  */
 export async function getCsrfToken(request: APIRequestContext): Promise<string> {
-  // Make a request to get CSRF token from cookies
-  const response = await request.get("/en-US/");
-  const cookies = await response.headerValue("set-cookie");
+  // First make a request to the app to establish cookies
+  await request.get("/en-US/");
 
-  if (!cookies) {
-    throw new Error("No cookies received from server");
+  // Then get CSRF token from the dedicated API endpoint
+  const response = await request.get("/api/csrf-token");
+  const body = await response.json();
+
+  if (!body.token) {
+    throw new Error("CSRF token not found in API response");
   }
 
-  // Extract CSRF token from cookies
-  const csrfMatch = cookies.match(/csrf-token=([^;]+)/);
-  if (!csrfMatch) {
-    throw new Error("CSRF token not found in cookies");
-  }
-
-  return csrfMatch[1];
+  return body.token;
 }
 
 /**

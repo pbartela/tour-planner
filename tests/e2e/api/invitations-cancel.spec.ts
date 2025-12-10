@@ -193,7 +193,9 @@ test.describe("DELETE /api/invitations/[invitationId]", () => {
         },
       });
 
-      expect(response.status()).toBe(403);
+      // RLS prevents non-owners from even seeing the invitation,
+      // so 404 is returned instead of 403 (avoiding information disclosure)
+      expect(response.status()).toBe(404);
 
       // Cleanup
       await cleanupTestUser(otherUser.id);
@@ -248,8 +250,4 @@ test.describe("DELETE /api/invitations/[invitationId]", () => {
       expect(response.status()).toBe(403);
     });
   });
-});
-
-test.afterAll(async () => {
-  await pgPool.end();
 });

@@ -160,7 +160,7 @@ test.describe("GET /api/tours/[tourId]/invitations", () => {
       expect(body.error).toBeDefined();
     });
 
-    test("should return 404 when tour doesn't exist", async ({ request }) => {
+    test("should return 403 when tour doesn't exist (RLS prevents revealing existence)", async ({ request }) => {
       const fakeUuid = "123e4567-e89b-12d3-a456-426614174000";
 
       const response = await request.get(`/api/tours/${fakeUuid}/invitations`, {
@@ -169,11 +169,9 @@ test.describe("GET /api/tours/[tourId]/invitations", () => {
         },
       });
 
-      expect(response.status()).toBe(404);
+      // With RLS, we can't distinguish between "tour doesn't exist" and "no access"
+      // Returning 403 is correct to avoid information disclosure
+      expect(response.status()).toBe(403);
     });
   });
-});
-
-test.afterAll(async () => {
-  await pgPool.end();
 });

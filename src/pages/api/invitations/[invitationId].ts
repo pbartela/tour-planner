@@ -107,7 +107,26 @@ export const DELETE: APIRoute = async ({ params, request, locals, cookies }) => 
     // Note: Expired invitations are still "pending" status but past their expiration date
 
     // Verify user is tour owner
-    const tourResult = await tourService.getTourDetails(supabase, invitation.tour_id);
+    // Note: getTourDetails may throw if RLS blocks access (non-owner can't see the tour)
+    let tourResult;
+    try {
+      tourResult = await tourService.getTourDetails(supabase, invitation.tour_id);
+    } catch {
+      // RLS blocked access - user is not a participant/owner of this tour
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "FORBIDDEN",
+            message: "Only the tour owner can cancel invitations",
+          },
+        }),
+        {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
     if (!tourResult.data || tourResult.error || tourResult.data.owner_id !== user.id) {
       return new Response(
         JSON.stringify({

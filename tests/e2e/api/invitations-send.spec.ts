@@ -299,7 +299,3 @@ test.describe("POST /api/tours/[tourId]/invitations", () => {
     });
   });
 });
-
-test.afterAll(async () => {
-  await pgPool.end();
-});
