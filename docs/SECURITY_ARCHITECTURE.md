@@ -7,6 +7,7 @@ This document describes the security architecture of Tour Planner, including aut
 - [Security Model Overview](#security-model-overview)
 - [Authentication](#authentication)
 - [Authorization](#authorization)
+- [Database Trigger Security](#database-trigger-security)
 - [Data Access Patterns](#data-access-patterns)
 - [Email Visibility Architecture](#email-visibility-architecture)
 - [Security Boundaries](#security-boundaries)
@@ -200,6 +201,157 @@ if (tour.owner_id !== user.id) {
 // 3. RLS also enforces ownership (database layer)
 // Even if app code has bug, RLS prevents unauthorized access
 ```
+
+## Database Trigger Security
+
+### SECURITY DEFINER Functions in Triggers
+
+Several database functions use `SECURITY DEFINER` to execute with elevated privileges. This is **necessary and safe** for trigger functions that execute in system context.
+
+#### Why SECURITY DEFINER is Required
+
+Trigger functions execute in **system context** during Supabase Auth operations:
+- When a user signs up or changes email, Supabase Auth modifies `auth.users`
+- No authenticated user session exists during these operations
+- `auth.uid()` returns NULL in trigger context
+- RLS policies that check `auth.uid()` would block all trigger operations
+- Without SECURITY DEFINER, profile creation and email synchronization would fail
+
+**Example:**
+```sql
+-- RLS policy on profiles table
+CREATE POLICY "users can update their own profile"
+  ON profiles FOR UPDATE
+  USING (auth.uid() = id);
+
+-- Without SECURITY DEFINER, this trigger would fail:
+-- auth.uid() is NULL, so RLS blocks the UPDATE
+UPDATE profiles SET email = NEW.email WHERE id = NEW.id;
+```
+
+#### Security Constraints for SECURITY DEFINER Functions
+
+All SECURITY DEFINER trigger functions implement multiple security constraints:
+
+1. **SET search_path = public**: Prevents schema search-path injection attacks
+2. **Input Validation**: Defensive checks for NULL or invalid data
+3. **Scope Limitation**: WHERE clauses prevent cross-user updates
+4. **Trusted Input Source**: Input comes from Supabase Auth, not user-supplied
+5. **Execution Restriction**: TRIGGER-type functions cannot be called directly by users
+
+#### Trigger Functions Using SECURITY DEFINER
+
+**Profile Management Functions:**
+
+| Function | Purpose | Security Justification | Migration |
+|----------|---------|------------------------|-----------|
+| `handle_new_user()` | Creates profile on user signup | System operation during auth signup (no session) | 20251014100000, 20251209120000 |
+| `sync_user_email()` | Syncs email changes to profiles | System operation during auth email update (no session) | 20251209120000 |
+| `handle_user_deletion()` | Cascades cleanup on account deletion | System operation during auth user deletion (no session) | 20251014100000 |
+
+**Tour Management Functions:**
+
+| Function | Purpose | Security Justification | Migration |
+|----------|---------|------------------------|-----------|
+| `create_tour()` | Creates tour and adds owner as participant | Atomic operation requires bypassing RLS to insert participant | 20251014100000 |
+| `accept_invitation()` | Accepts invitation and adds participant | Validates email match before adding participant | 20251014100000 |
+| `decline_invitation()` | Declines invitation | Validates email match before updating status | 20251014100000 |
+
+**Helper Functions:**
+
+| Function | Purpose | Security Justification | Migration |
+|----------|---------|------------------------|-----------|
+| `is_participant()` | Checks tour participation | Used in RLS policies to avoid N+1 queries | 20251014100000 |
+| `get_user_by_email()` | Queries auth.users table | Secure RPC wrapper for auth table access | 20251014100000 |
+
+**Maintenance Functions (Cron Jobs):**
+
+| Function | Purpose | Security Justification | Migration |
+|----------|---------|------------------------|-----------|
+| `archive_finished_tours()` | Archives completed tours | Automated maintenance (no user invocation) | 20251014100000 |
+| `cleanup_expired_invitations()` | Marks expired invitations | Automated maintenance (no user invocation) | 20251014100000 |
+| `cleanup_expired_invitation_otps()` | Removes old OTP tokens | Automated maintenance (no user invocation) | 20251014100000 |
+| `cleanup_expired_auth_otps()` | Removes old auth OTP tokens | Automated maintenance (no user invocation) | 20251014100000 |
+| `cleanup_unconfirmed_users()` | Removes stale signups | Automated maintenance (no user invocation) | 20251014100000 |
+
+#### Security Model Example: sync_user_email()
+
+```sql
+CREATE OR REPLACE FUNCTION public.sync_user_email()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER           -- Required: No session context in trigger
+SET search_path = public   -- Prevents schema injection
+AS $$
+BEGIN
+  -- Defensive validation
+  IF NEW.id IS NULL THEN
+    RAISE EXCEPTION 'User ID cannot be null';
+  END IF;
+
+  IF NEW.email IS NULL OR NEW.email = '' THEN
+    RAISE EXCEPTION 'Email cannot be null or empty';
+  END IF;
+
+  -- Constrained scope: Only updates matching user
+  UPDATE public.profiles
+  SET email = NEW.email
+  WHERE id = NEW.id;       -- Prevents cross-user updates
+
+  RETURN NEW;
+END;
+$$;
+```
+
+**Security Properties:**
+- ✅ Input from trusted source (Supabase Auth, not user)
+- ✅ Cannot be called by users (TRIGGER-type function)
+- ✅ SET search_path prevents schema injection
+- ✅ WHERE clause prevents cross-user updates
+- ✅ Validation prevents malformed data propagation
+- ✅ Scope limited to single table and column
+
+#### When SECURITY DEFINER is Safe vs Risky
+
+**Safe Usage (Current Implementation):**
+- ✅ Trigger functions executing in system context
+- ✅ Input from trusted system source (Supabase Auth)
+- ✅ Constrained by WHERE clauses or business logic
+- ✅ SET search_path configured
+- ✅ Cannot be invoked directly by users
+- ✅ Defensive validation in place
+
+**Risky Usage (Avoided in This Project):**
+- ❌ Functions callable via RPC without validation
+- ❌ Dynamic SQL with user-supplied input
+- ❌ Missing SET search_path
+- ❌ No input validation
+- ❌ Overly broad scope (e.g., UPDATE without WHERE)
+- ❌ Exposing sensitive data in return values
+
+#### Attack Scenarios Analyzed
+
+**Scenario 1: User attempts to modify another user's email**
+- Attack fails: TRIGGER functions cannot be called by users
+- Only Supabase Auth can trigger these functions
+
+**Scenario 2: SQL injection via email field**
+- Attack fails: NEW.email is a parameter, not string concatenation
+- Supabase Auth validates email format before insertion
+
+**Scenario 3: Schema search-path injection**
+- Attack prevented: All functions use `SET search_path = public`
+- Would require CREATE SCHEMA privilege anyway
+
+**Scenario 4: Privilege escalation via trigger modification**
+- Attack fails: Only superuser can modify functions
+- If attacker has superuser access, they don't need this attack vector
+
+### Risk Assessment
+
+**Risk Level**: LOW
+
+SECURITY DEFINER is used appropriately for system-level operations with proper security constraints. The implementation follows PostgreSQL and Supabase best practices for trigger security.
 
 ## Data Access Patterns
 

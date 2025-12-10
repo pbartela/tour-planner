@@ -26,8 +26,21 @@ ALTER COLUMN email SET NOT NULL;
 
 -- Create trigger function to sync email changes from auth.users to profiles
 CREATE OR REPLACE FUNCTION public.sync_user_email()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
+  -- Defensive validation
+  IF NEW.id IS NULL THEN
+    RAISE EXCEPTION 'User ID cannot be null';
+  END IF;
+
+  IF NEW.email IS NULL OR NEW.email = '' THEN
+    RAISE EXCEPTION 'Email cannot be null or empty';
+  END IF;
+
   -- Update profile email when auth.users email changes
   UPDATE public.profiles
   SET email = NEW.email
@@ -35,7 +48,18 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
+
+COMMENT ON FUNCTION public.sync_user_email IS
+  'Syncs email from auth.users to profiles.email when user email changes.
+
+   SECURITY MODEL:
+   - Uses SECURITY DEFINER because trigger executes in system context (no auth.uid())
+   - Input (NEW) comes from Supabase Auth, not user-supplied data
+   - UPDATE constrained by WHERE id = NEW.id (prevents cross-user updates)
+   - SET search_path prevents schema injection attacks
+
+   This function has elevated privileges but is only callable by Supabase Auth triggers.';
 
 -- Create trigger on auth.users for email updates
 CREATE TRIGGER on_auth_user_email_updated
@@ -47,8 +71,21 @@ CREATE TRIGGER on_auth_user_email_updated
 -- Update existing profile creation trigger to include email
 -- (Replace the existing handle_new_user function)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
+  -- Defensive validation
+  IF NEW.id IS NULL THEN
+    RAISE EXCEPTION 'User ID cannot be null';
+  END IF;
+
+  IF NEW.email IS NULL OR NEW.email = '' THEN
+    RAISE EXCEPTION 'Email cannot be null or empty';
+  END IF;
+
   INSERT INTO public.profiles (id, email, display_name)
   VALUES (
     NEW.id,
@@ -57,6 +94,17 @@ BEGIN
   );
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
+
+COMMENT ON FUNCTION public.handle_new_user IS
+  'Creates a profile record when a new user signs up via Supabase Auth.
+
+   SECURITY MODEL:
+   - Uses SECURITY DEFINER because trigger executes in system context (no auth.uid())
+   - Input (NEW) comes from Supabase Auth during user creation, not user-supplied
+   - Validates NEW.id and NEW.email before insertion
+   - SET search_path prevents schema injection attacks
+
+   This function has elevated privileges but is only callable by Supabase Auth triggers.';
 
 COMMENT ON COLUMN public.profiles.email IS 'User email synced from auth.users. Used as fallback display when display_name is null. Eliminates N+1 queries by denormalizing email into profiles table.';
