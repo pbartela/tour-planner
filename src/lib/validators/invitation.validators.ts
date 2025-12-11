@@ -46,3 +46,17 @@ export const tourIdParamSchema = z.string().uuid("Invalid tour ID format");
  * Schema for validating invitation token query parameter
  */
 export const invitationTokenSchema = z.string().min(32).max(64);
+
+/**
+ * Schema for validating pagination query parameters
+ */
+export const paginationSchema = z.object({
+  page: z.coerce.number().int("Page must be an integer").min(1, "Page must be at least 1").default(1).optional(),
+  limit: z.coerce
+    .number()
+    .int("Limit must be an integer")
+    .min(1, "Limit must be at least 1")
+    .max(100, "Limit cannot exceed 100")
+    .default(20)
+    .optional(),
+});

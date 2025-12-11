@@ -17,33 +17,27 @@ WHERE p.id = u.id;
 
 -- Delete any orphaned profiles that don't have corresponding auth.users entries
 -- (This handles edge cases where profiles exist without auth users)
--- Log orphaned profiles before deletion for visibility
+-- Log orphaned profiles atomically during deletion to prevent race conditions
 DO $$
 DECLARE
   orphaned_count INTEGER;
   orphaned_ids TEXT;
 BEGIN
-  -- Count orphaned profiles
-  SELECT COUNT(*) INTO orphaned_count
-  FROM public.profiles
-  WHERE email IS NULL;
-
-  -- If orphaned profiles exist, log them
-  IF orphaned_count > 0 THEN
-    -- Get comma-separated list of orphaned profile IDs
-    SELECT STRING_AGG(id::TEXT, ', ') INTO orphaned_ids
-    FROM public.profiles
-    WHERE email IS NULL;
-
-    -- Output to migration logs
-    RAISE NOTICE 'Orphaned profiles cleanup: Found % orphaned profile(s) to delete', orphaned_count;
-    RAISE NOTICE 'Orphaned profile IDs: %', orphaned_ids;
-
-    -- Delete orphaned profiles
+  -- Atomically delete orphaned profiles and capture their IDs
+  -- This prevents race conditions between checking and deleting
+  WITH deleted AS (
     DELETE FROM public.profiles
-    WHERE email IS NULL;
+    WHERE email IS NULL
+    RETURNING id
+  )
+  SELECT COUNT(*), STRING_AGG(id::TEXT, ', ')
+  INTO orphaned_count, orphaned_ids
+  FROM deleted;
 
-    RAISE NOTICE 'Successfully deleted % orphaned profile(s)', orphaned_count;
+  -- Log results
+  IF orphaned_count > 0 THEN
+    RAISE NOTICE 'Orphaned profiles cleanup: Deleted % orphaned profile(s)', orphaned_count;
+    RAISE NOTICE 'Orphaned profile IDs: %', orphaned_ids;
   ELSE
     RAISE NOTICE 'No orphaned profiles found - all profiles have corresponding auth.users entries';
   END IF;

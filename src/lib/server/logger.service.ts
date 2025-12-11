@@ -239,6 +239,48 @@ export function error(message: string, error?: Error | LogContext): void {
 }
 
 /**
+ * Logs a general informational message with sanitization.
+ * Use this for logging application events and metrics.
+ *
+ * @param message - Log message
+ * @param context - Optional context object
+ */
+export function secureLog(message: string, context?: LogContext): void {
+  if (!shouldLog("info")) {
+    return;
+  }
+
+  if (isDevelopment()) {
+    // In development, log everything for debugging
+    console.log(`[${new Date().toISOString()}] INFO ${message}`, context || "");
+  } else {
+    // In production, sanitize the context
+    console.log(formatLogMessage("info", message, context ? sanitizeObject(context) : undefined));
+  }
+}
+
+/**
+ * Logs a warning with sanitization.
+ * Use this for potential issues that aren't errors but need attention.
+ *
+ * @param message - Log message
+ * @param context - Optional context object
+ */
+export function secureWarn(message: string, context?: LogContext): void {
+  if (!shouldLog("warn")) {
+    return;
+  }
+
+  if (isDevelopment()) {
+    // In development, log everything for debugging
+    console.warn(`[${new Date().toISOString()}] WARN ${message}`, context || "");
+  } else {
+    // In production, sanitize the context
+    console.warn(formatLogMessage("warn", message, context ? sanitizeObject(context) : undefined));
+  }
+}
+
+/**
  * Logs an error with full details in development, sanitized in production.
  * Use this for errors that might contain sensitive information.
  *
@@ -275,5 +317,7 @@ export default {
   info,
   warn,
   error,
+  secureLog,
+  secureWarn,
   secureError,
 };

@@ -5,6 +5,7 @@
 
 import { minutes } from "@/lib/constants/time";
 import { isDevelopment as isDev, isProduction } from "@/lib/server/env-validation.service";
+import { secureLog, secureWarn } from "@/lib/server/logger.service";
 
 interface RateLimitEntry {
   count: number;
@@ -87,13 +88,53 @@ export interface RateLimitResult {
 }
 
 /**
+ * Rate limit metrics tracker for monitoring and abuse detection.
+ * Tracks rate limit violations to help tune limits and identify patterns.
+ */
+interface RateLimitMetrics {
+  identifier: string;
+  timestamp: number;
+  configName?: string;
+  maxRequests: number;
+  windowMs: number;
+  count: number;
+  resetAt: number;
+}
+
+const rateLimitViolations: RateLimitMetrics[] = [];
+const MAX_METRICS_HISTORY = 1000; // Keep last 1000 violations in memory
+
+/**
+ * Gets recent rate limit violations for monitoring.
+ * Useful for detecting abuse patterns and tuning limits.
+ *
+ * @param since - Optional timestamp to filter violations after this time
+ * @returns Array of rate limit violations
+ */
+export function getRateLimitMetrics(since?: number): RateLimitMetrics[] {
+  if (since) {
+    return rateLimitViolations.filter((m) => m.timestamp >= since);
+  }
+  return [...rateLimitViolations];
+}
+
+/**
+ * Clears rate limit metrics history.
+ * Useful for testing or manual reset.
+ */
+export function clearRateLimitMetrics(): void {
+  rateLimitViolations.length = 0;
+}
+
+/**
  * Checks if a request should be rate limited.
  *
  * @param identifier - Unique identifier for the rate limit (e.g., IP address, email)
  * @param config - Rate limit configuration (max requests and time window)
+ * @param configName - Optional name of the rate limit config (for logging)
  * @returns Rate limit result with allowed status and metadata
  */
-export function checkRateLimit(identifier: string, config: RateLimitConfig): RateLimitResult {
+export function checkRateLimit(identifier: string, config: RateLimitConfig, configName?: string): RateLimitResult {
   const now = Date.now();
   const entry = rateLimitStore.get(identifier);
 
@@ -109,7 +150,35 @@ export function checkRateLimit(identifier: string, config: RateLimitConfig): Rat
   }
 
   if (entry.count >= config.maxRequests) {
-    // Rate limit exceeded
+    // Rate limit exceeded - log for monitoring
+    const metrics: RateLimitMetrics = {
+      identifier,
+      timestamp: now,
+      configName,
+      maxRequests: config.maxRequests,
+      windowMs: config.windowMs,
+      count: entry.count,
+      resetAt: entry.resetAt,
+    };
+
+    // Add to metrics history (keep only last MAX_METRICS_HISTORY)
+    rateLimitViolations.push(metrics);
+    if (rateLimitViolations.length > MAX_METRICS_HISTORY) {
+      rateLimitViolations.shift();
+    }
+
+    // Log rate limit hit for monitoring
+    const resetInSeconds = Math.ceil((entry.resetAt - now) / 1000);
+    const timeWindowMinutes = Math.ceil(config.windowMs / 60000);
+    secureWarn("Rate limit exceeded", {
+      identifier,
+      config: configName || "unknown",
+      limit: `${config.maxRequests} requests per ${timeWindowMinutes} minute(s)`,
+      currentCount: entry.count,
+      resetIn: `${resetInSeconds}s`,
+      timestamp: new Date(now).toISOString(),
+    });
+
     return {
       allowed: false,
       remaining: 0,
@@ -120,6 +189,17 @@ export function checkRateLimit(identifier: string, config: RateLimitConfig): Rat
   // Increment count
   entry.count++;
   rateLimitStore.set(identifier, entry);
+
+  // Log when approaching rate limit (80% threshold)
+  const usagePercentage = (entry.count / config.maxRequests) * 100;
+  if (usagePercentage >= 80 && usagePercentage < 100) {
+    secureLog("Rate limit threshold warning", {
+      identifier,
+      config: configName || "unknown",
+      usage: `${entry.count}/${config.maxRequests} (${Math.round(usagePercentage)}%)`,
+      remaining: config.maxRequests - entry.count,
+    });
+  }
 
   return {
     allowed: true,

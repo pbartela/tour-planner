@@ -6,10 +6,8 @@ import type { StorageError } from "./storage";
  * Can be internationalized later by passing t() function.
  */
 const ERROR_MESSAGES: Record<StorageError["type"], string> = {
-  unavailable:
-    "Unable to save preferences (browser privacy mode may be enabled)",
-  quota_exceeded:
-    "Storage quota exceeded. Please clear browser data or disable unnecessary features.",
+  unavailable: "Unable to save preferences (browser privacy mode may be enabled)",
+  quota_exceeded: "Storage quota exceeded. Please clear browser data or disable unnecessary features.",
   serialization_error: "Failed to save settings due to data format error",
   unknown: "Failed to save preferences. Please try again.",
 };
@@ -20,10 +18,7 @@ const ERROR_MESSAGES: Record<StorageError["type"], string> = {
  * @param error - Storage error details
  * @param context - Optional context for the user (e.g., "theme preference", "invitation settings")
  */
-export function notifyStorageError(
-  error: StorageError,
-  context?: string
-): void {
+export function notifyStorageError(error: StorageError, context?: string): void {
   const baseMessage = ERROR_MESSAGES[error.type];
   const fullMessage = context ? `${baseMessage} (${context})` : baseMessage;
 

@@ -9,13 +9,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/Badge";
 import { useTranslation } from "react-i18next";
+import { EmailValidationError } from "@/lib/utils/email-parser.util";
 
 export interface InvitationConfirmationDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
   validEmails: string[];
-  invalidEmails: { email: string; error?: string }[];
+  invalidEmails: { email: string; error?: EmailValidationError }[];
   duplicates: string[];
   isPending?: boolean;
 }

@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { InvitationConfirmationDialog } from "./InvitationConfirmationDialog";
+import { EmailValidationError } from "@/lib/utils/email-parser.util";
 
 const meta: Meta<typeof InvitationConfirmationDialog> = {
   title: "Tours/InvitationConfirmationDialog",
@@ -64,8 +65,8 @@ export const WithInvalid: Story = {
           }}
           validEmails={["user1@example.com", "user2@example.com"]}
           invalidEmails={[
-            { email: "r@.pl", error: "Invalid domain" },
-            { email: "not-an-email", error: "Invalid email format" },
+            { email: "r@.pl", error: EmailValidationError.INVALID_DOMAIN },
+            { email: "not-an-email", error: EmailValidationError.INVALID_FORMAT },
           ]}
           duplicates={[]}
         />
@@ -121,9 +122,9 @@ export const AllInvalid: Story = {
           }}
           validEmails={[]}
           invalidEmails={[
-            { email: "r@.pl", error: "Invalid domain" },
-            { email: "invalid", error: "Invalid email format" },
-            { email: "user@.com", error: "Invalid domain" },
+            { email: "r@.pl", error: EmailValidationError.INVALID_DOMAIN },
+            { email: "invalid", error: EmailValidationError.INVALID_FORMAT },
+            { email: "user@.com", error: EmailValidationError.INVALID_DOMAIN },
           ]}
           duplicates={[]}
         />
@@ -152,8 +153,8 @@ export const MixedIssues: Story = {
           }}
           validEmails={["user1@example.com", "user2@example.com", "user3@example.com"]}
           invalidEmails={[
-            { email: "r@.pl", error: "Invalid domain" },
-            { email: "notvalid", error: "Invalid email format" },
+            { email: "r@.pl", error: EmailValidationError.INVALID_DOMAIN },
+            { email: "notvalid", error: EmailValidationError.INVALID_FORMAT },
           ]}
           duplicates={["User1@Example.COM", "USER2@example.com"]}
         />

@@ -16,13 +16,14 @@ import { STORAGE_KEYS, type StorageKey } from "@/lib/constants/storage";
  * Cached metadata structure for tour metadata cache
  * (re-exported from metadata-cache.ts types)
  */
-export interface TourMetadataCache {
-  [tourId: string]: {
+export type TourMetadataCache = Record<
+  string,
+  {
     metadata: unknown; // TourMetadata type from @/types
     cachedAt: number;
     expiresAt: number;
-  };
-}
+  }
+>;
 
 /**
  * Storage value types for each key.
@@ -115,9 +116,7 @@ export function isStorageAvailable(): boolean {
  *   console.log('Theme:', result.value);
  * }
  */
-export function getStorageItem<K extends StorageKey>(
-  key: K
-): StorageReadResult<StorageValueTypes[K]> {
+export function getStorageItem<K extends StorageKey>(key: K): StorageReadResult<StorageValueTypes[K]> {
   try {
     if (!isStorageAvailable()) {
       return {
@@ -140,6 +139,17 @@ export function getStorageItem<K extends StorageKey>(
     try {
       // Handle boolean values (stored as "true" or "false" strings)
       if (key === STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION) {
+        // Validate boolean string to catch malformed localStorage data
+        if (item !== "true" && item !== "false") {
+          return {
+            success: false,
+            value: null,
+            error: {
+              type: "serialization_error",
+              message: "Invalid boolean value in storage",
+            },
+          };
+        }
         parsed = (item === "true") as StorageValueTypes[K];
       }
       // Handle JSON values (tour metadata cache)
@@ -191,10 +201,7 @@ export function getStorageItem<K extends StorageKey>(
  *   console.error('Storage failed:', result.error?.type);
  * }
  */
-export function setStorageItem<K extends StorageKey>(
-  key: K,
-  value: StorageValueTypes[K]
-): StorageWriteResult {
+export function setStorageItem<K extends StorageKey>(key: K, value: StorageValueTypes[K]): StorageWriteResult {
   try {
     // Check storage availability first
     if (!isStorageAvailable()) {
@@ -235,9 +242,7 @@ export function setStorageItem<K extends StorageKey>(
     return { success: true };
   } catch (error) {
     // Detect quota exceeded error (DOMException with specific name/code)
-    const isQuotaError =
-      error instanceof DOMException &&
-      (error.name === "QuotaExceededError" || error.code === 22);
+    const isQuotaError = error instanceof DOMException && (error.name === "QuotaExceededError" || error.code === 22);
 
     if (isQuotaError) {
       logStorageError("setItem (quota exceeded)", key, error);

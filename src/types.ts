@@ -206,6 +206,12 @@ export type InvitationDto = Tables<"invitations"> & {
 };
 
 /**
+ * DTO for a paginated list of invitations.
+ * Corresponds to the full response of `GET /api/tours/{tourId}/invitations`.
+ */
+export type PaginatedInvitationsDto = PaginatedResponse<InvitationDto>;
+
+/**
  * Response from sending invitations.
  * Contains lists of successfully sent, skipped, and errored invitations.
  * Corresponds to the response of `POST /api/tours/{tourId}/invitations`.

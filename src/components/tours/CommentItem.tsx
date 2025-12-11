@@ -36,7 +36,9 @@ export const CommentItem = ({ comment, currentUserId, onEdit, onDelete }: Commen
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="font-semibold">{comment.display_name || comment.user_email || t("comments.anonymous")}</span>
-          <span className="text-sm text-base-content/60">{formatDateByLocale(new Date(comment.created_at), i18n.language)}</span>
+          <span className="text-sm text-base-content/60">
+            {formatDateByLocale(new Date(comment.created_at), i18n.language)}
+          </span>
           {isEdited && <span className="text-xs text-base-content/40">{t("comments.edited")}</span>}
         </div>
         {isOwner && !isEditing && (

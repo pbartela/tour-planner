@@ -86,7 +86,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
       // Redirect to user's preferred language
       const newPath = `/${user.profile.language}${pathWithoutLocale}`;
       const fullUrl = newPath + context.url.search;
-      console.log("[Middleware] Language redirect:", { from: context.url.pathname, to: fullUrl, userLang: user.profile.language, urlLang: lang });
+      console.log("[Middleware] Language redirect:", {
+        from: context.url.pathname,
+        to: fullUrl,
+        userLang: user.profile.language,
+        urlLang: lang,
+      });
       return context.redirect(fullUrl);
     }
 

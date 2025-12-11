@@ -15,9 +15,7 @@ const supabaseAuthUrl = process.env.SUPABASE_AUTH_URL || undefined;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 if (!supabaseServiceKey) {
-  throw new Error(
-    "SUPABASE_SERVICE_ROLE_KEY is not set. Please ensure .env file is present with valid credentials."
-  );
+  throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set. Please ensure .env file is present with valid credentials.");
 }
 
 // Configure Supabase client
@@ -33,11 +31,7 @@ if (supabaseAuthUrl) {
   supabaseOptions.auth.url = supabaseAuthUrl;
 }
 
-export const supabase = createClient<Database>(
-  supabaseUrl,
-  supabaseServiceKey,
-  supabaseOptions
-);
+export const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey, supabaseOptions);
 
 // PostgreSQL connection for direct database access
 const defaultDbUrl =
@@ -112,10 +106,7 @@ export async function createTestUser(email: string): Promise<TestUser> {
 /**
  * Create a test tour owned by a user
  */
-export async function createTestTour(
-  ownerId: string,
-  title?: string
-): Promise<TestTour> {
+export async function createTestTour(ownerId: string, title?: string): Promise<TestTour> {
   const tourTitle = title || `Test Tour ${Date.now()}`;
   const startDate = new Date();
   const endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -130,14 +121,7 @@ export async function createTestTour(
        end_date
      ) VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING id`,
-    [
-      ownerId,
-      tourTitle,
-      "Test Destination",
-      "E2E test tour",
-      startDate.toISOString(),
-      endDate.toISOString(),
-    ]
+    [ownerId, tourTitle, "Test Destination", "E2E test tour", startDate.toISOString(), endDate.toISOString()]
   );
 
   const tourId = rows[0]?.id;
@@ -147,10 +131,7 @@ export async function createTestTour(
   }
 
   // Add owner as participant (required for RLS policies to allow viewing)
-  await pgPool.query(
-    "INSERT INTO public.participants (tour_id, user_id) VALUES ($1, $2)",
-    [tourId, ownerId]
-  );
+  await pgPool.query("INSERT INTO public.participants (tour_id, user_id) VALUES ($1, $2)", [tourId, ownerId]);
 
   return {
     id: tourId,
@@ -162,11 +143,7 @@ export async function createTestTour(
 /**
  * Create a test invitation
  */
-export async function createTestInvitation(
-  tourId: string,
-  inviterId: string,
-  email: string
-): Promise<TestInvitation> {
+export async function createTestInvitation(tourId: string, inviterId: string, email: string): Promise<TestInvitation> {
   const token = crypto.randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
@@ -254,19 +231,14 @@ export async function cleanupTestInvitation(invitationId: string): Promise<void>
 /**
  * Get invitation by ID
  */
-export async function getInvitationById(
-  invitationId: string
-): Promise<TestInvitation | null> {
+export async function getInvitationById(invitationId: string): Promise<TestInvitation | null> {
   const { rows } = await pgPool.query<{
     id: string;
     tour_id: string;
     email: string;
     token: string;
     status: string;
-  }>(
-    "SELECT id, tour_id, email, token, status FROM public.invitations WHERE id = $1",
-    [invitationId]
-  );
+  }>("SELECT id, tour_id, email, token, status FROM public.invitations WHERE id = $1", [invitationId]);
 
   if (!rows[0]) {
     return null;
@@ -284,19 +256,14 @@ export async function getInvitationById(
 /**
  * Get invitations for a tour
  */
-export async function getInvitationsForTour(
-  tourId: string
-): Promise<TestInvitation[]> {
+export async function getInvitationsForTour(tourId: string): Promise<TestInvitation[]> {
   const { rows } = await pgPool.query<{
     id: string;
     tour_id: string;
     email: string;
     token: string;
     status: string;
-  }>(
-    "SELECT id, tour_id, email, token, status FROM public.invitations WHERE tour_id = $1",
-    [tourId]
-  );
+  }>("SELECT id, tour_id, email, token, status FROM public.invitations WHERE tour_id = $1", [tourId]);
 
   return rows.map((row) => ({
     id: row.id,
@@ -310,14 +277,8 @@ export async function getInvitationsForTour(
 /**
  * Create a participant for a tour
  */
-export async function createTestParticipant(
-  tourId: string,
-  userId: string
-): Promise<void> {
-  await pgPool.query(
-    "INSERT INTO public.participants (tour_id, user_id) VALUES ($1, $2)",
-    [tourId, userId]
-  );
+export async function createTestParticipant(tourId: string, userId: string): Promise<void> {
+  await pgPool.query("INSERT INTO public.participants (tour_id, user_id) VALUES ($1, $2)", [tourId, userId]);
 }
 
 /**

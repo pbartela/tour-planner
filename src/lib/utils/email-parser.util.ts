@@ -3,12 +3,23 @@ import tlds from "tlds";
 import { EMAIL_VALIDATION } from "@/lib/constants/validation";
 
 /**
+ * Email validation error types.
+ * These are used for consistent error messaging across the app.
+ * IMPORTANT: Must match i18n keys in invitations.confirmDialog.errors.*
+ */
+export enum EmailValidationError {
+  INVALID_FORMAT = "Invalid email format",
+  INVALID_DOMAIN = "Invalid domain",
+  INVALID_TLD = "Invalid TLD",
+}
+
+/**
  * Represents a parsed email with validation status
  */
 export interface ParsedEmail {
   email: string;
   isValid: boolean;
-  error?: string;
+  error?: EmailValidationError;
 }
 
 /**
@@ -31,11 +42,11 @@ export interface EmailParseResult {
  * Validates email with custom domain checking before Zod validation
  * This allows us to provide specific error messages for domain issues
  */
-function validateEmailWithZod(email: string): { success: boolean; error?: string } {
+function validateEmailWithZod(email: string): { success: boolean; error?: EmailValidationError } {
   // First check basic structure
   const parts = email.split("@");
   if (parts.length !== 2) {
-    return { success: false, error: "Invalid email format" };
+    return { success: false, error: EmailValidationError.INVALID_FORMAT };
   }
 
   const domainPart = parts[1];
@@ -43,18 +54,18 @@ function validateEmailWithZod(email: string): { success: boolean; error?: string
 
   // Domain must have at least 2 segments (e.g., "example.com")
   if (!domainSegments || domainSegments.length < 2) {
-    return { success: false, error: "Invalid domain" };
+    return { success: false, error: EmailValidationError.INVALID_DOMAIN };
   }
 
   // No segment can be empty (catches "user@.pl" or "user@example.")
   if (domainSegments.some((segment) => segment.length === 0)) {
-    return { success: false, error: "Invalid domain" };
+    return { success: false, error: EmailValidationError.INVALID_DOMAIN };
   }
 
   // Validate TLD against official IANA TLD list
   const tld = domainSegments[domainSegments.length - 1].toLowerCase();
   if (!tlds.includes(tld)) {
-    return { success: false, error: "Invalid TLD" };
+    return { success: false, error: EmailValidationError.INVALID_TLD };
   }
 
   // Now use Zod for RFC 5322 compliant validation
@@ -64,7 +75,7 @@ function validateEmailWithZod(email: string): { success: boolean; error?: string
   if (result.success) {
     return { success: true };
   } else {
-    return { success: false, error: "Invalid email format" };
+    return { success: false, error: EmailValidationError.INVALID_FORMAT };
   }
 }
 
@@ -145,7 +156,7 @@ export function parseEmails(input: string): EmailParseResult {
       invalid.push({
         email,
         isValid: false,
-        error: validation.error || "Invalid email format",
+        error: validation.error || EmailValidationError.INVALID_FORMAT,
       });
     }
   });

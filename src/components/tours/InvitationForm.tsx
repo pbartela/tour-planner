@@ -40,10 +40,7 @@ export const InvitationForm = ({ tourId, onSuccess }: InvitationFormProps) => {
   const handleConfirmBeforeSendChange = (checked: boolean) => {
     setConfirmBeforeSend(checked);
     // Store the inverse (skipConfirmation = !confirmBeforeSend) for backwards compatibility
-    const result = setStorageItem(
-      STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION,
-      !checked
-    );
+    const result = setStorageItem(STORAGE_KEYS.INVITATION_SKIP_CONFIRMATION, !checked);
     if (!result.success && result.error) {
       notifyStorageError(result.error, "invitation settings");
     }

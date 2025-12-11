@@ -6,6 +6,7 @@ This document describes the security architecture of Tour Planner, including aut
 
 - [Security Model Overview](#security-model-overview)
 - [Authentication](#authentication)
+- [HTTP Security Headers](#http-security-headers)
 - [Authorization](#authorization)
 - [Database Trigger Security](#database-trigger-security)
 - [Email Validation & DoS Protection](#email-validation--dos-protection)
@@ -97,6 +98,277 @@ For users invited to tours:
   maxAge: 7 * 24 * 60 * 60 // 7 days
 }
 ```
+
+## HTTP Security Headers
+
+Tour Planner implements comprehensive HTTP security headers to protect against common web vulnerabilities. These headers are configured at the middleware/hosting layer to ensure they're applied to all responses.
+
+### Recommended Security Headers Configuration
+
+**Current Implementation Status:**
+- ⚠️ Security headers are **not yet fully implemented** in Astro middleware
+- Headers should be configured at the hosting/CDN layer (Vercel, Cloudflare, etc.)
+- Recommended configuration below should be added to deployment platform
+
+#### Content Security Policy (CSP)
+
+Restricts resource loading to prevent XSS attacks and unauthorized content injection.
+
+**Recommended Configuration:**
+```http
+Content-Security-Policy: default-src 'self';
+  script-src 'self' 'unsafe-inline' 'unsafe-eval';
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  font-src 'self' https://fonts.gstatic.com;
+  img-src 'self' data: https:;
+  connect-src 'self' https://*.supabase.co https://*.ingest.sentry.io;
+  frame-ancestors 'none';
+  base-uri 'self';
+  form-action 'self'
+```
+
+**Directives Explained:**
+- `default-src 'self'`: Only load resources from same origin by default
+- `script-src 'self' 'unsafe-inline' 'unsafe-eval'`: Allow scripts from same origin + inline scripts (Astro/React)
+- `style-src 'self' 'unsafe-inline'`: Allow styles from same origin + inline styles (Tailwind CSS)
+- `font-src 'self' https://fonts.gstatic.com`: Allow fonts from same origin + Google Fonts
+- `img-src 'self' data: https:`: Allow images from same origin, data URIs, and any HTTPS source
+- `connect-src 'self' https://*.supabase.co`: Allow API calls to Supabase
+- `frame-ancestors 'none'`: Prevent clickjacking (equivalent to X-Frame-Options: DENY)
+- `base-uri 'self'`: Prevent base tag injection
+- `form-action 'self'`: Only allow form submissions to same origin
+
+**Notes:**
+- `'unsafe-inline'` and `'unsafe-eval'` are needed for Astro SSR and React runtime
+- For stricter CSP, use nonces for inline scripts/styles (requires build-time integration)
+- Update `connect-src` to include any third-party APIs used
+
+#### HTTP Strict Transport Security (HSTS)
+
+Forces HTTPS connections and prevents protocol downgrade attacks.
+
+**Recommended Configuration:**
+```http
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+```
+
+**Directives Explained:**
+- `max-age=31536000`: Browser enforces HTTPS for 1 year (365 days)
+- `includeSubDomains`: Apply to all subdomains
+- `preload`: Eligible for browser HSTS preload list (optional but recommended)
+
+**Implementation Steps:**
+1. Ensure HTTPS is working correctly on all pages
+2. Add header with shorter `max-age` initially (e.g., `max-age=300` for 5 minutes)
+3. Test thoroughly to ensure no broken HTTP resources
+4. Increase `max-age` to full year
+5. Submit domain to https://hstspreload.org/ (optional)
+
+#### X-Frame-Options
+
+Prevents clickjacking by controlling iframe embedding.
+
+**Recommended Configuration:**
+```http
+X-Frame-Options: DENY
+```
+
+**Options:**
+- `DENY`: Never allow iframing (most secure, recommended)
+- `SAMEORIGIN`: Allow iframing only from same origin
+- **Deprecated**: `ALLOW-FROM` directive is obsolete, use CSP `frame-ancestors` instead
+
+**Note:** Redundant with CSP `frame-ancestors 'none'` but included for legacy browser support.
+
+#### X-Content-Type-Options
+
+Prevents MIME type sniffing vulnerabilities.
+
+**Recommended Configuration:**
+```http
+X-Content-Type-Options: nosniff
+```
+
+**Purpose:**
+- Prevents browsers from interpreting files as different MIME types
+- Mitigates attacks where uploaded files are executed as scripts
+- Particularly important for user-generated content (avatars, attachments)
+
+#### X-XSS-Protection
+
+Legacy XSS protection header (largely superseded by CSP).
+
+**Recommended Configuration:**
+```http
+X-XSS-Protection: 0
+```
+
+**Explanation:**
+- Modern browsers: Set to `0` to disable legacy XSS filter (can cause vulnerabilities)
+- CSP provides better XSS protection than this header
+- Kept for compatibility with older browsers, but disabled to avoid interference with CSP
+
+#### Referrer-Policy
+
+Controls how much referrer information is sent with requests.
+
+**Recommended Configuration:**
+```http
+Referrer-Policy: strict-origin-when-cross-origin
+```
+
+**Options:**
+- `strict-origin-when-cross-origin`: Send full URL for same-origin, only origin for cross-origin HTTPS, nothing for HTTP (recommended balance)
+- `no-referrer`: Never send referrer (most private, may break analytics)
+- `same-origin`: Only send referrer for same-origin requests
+- `strict-origin`: Only send origin (not full URL) for cross-origin HTTPS
+
+**Trade-offs:**
+- `strict-origin-when-cross-origin` balances privacy and functionality
+- Allows analytics and debugging while protecting user privacy
+- Prevents leaking sensitive query parameters to external sites
+
+#### Permissions-Policy
+
+Controls browser feature access (formerly Feature-Policy).
+
+**Recommended Configuration:**
+```http
+Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
+```
+
+**Directives Explained:**
+- `camera=()`: Disable camera access (not used in Tour Planner)
+- `microphone=()`: Disable microphone access (not used)
+- `geolocation=()`: Disable geolocation API (not used)
+- `interest-cohort=()`: Disable FLoC/Topics API (privacy protection)
+
+**Notes:**
+- Only disable features you don't use
+- Add features as needed (e.g., `camera=(self)` to enable camera for your origin)
+- Helps reduce browser fingerprinting and tracking
+
+### Deployment Platform Configuration
+
+#### Vercel
+
+Add to `vercel.json`:
+```json
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains; preload"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "0"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### Cloudflare
+
+Configure in Cloudflare Dashboard under:
+- **Rules → Transform Rules → Modify Response Header**
+- Or via **Workers** for dynamic header management
+
+#### Astro Middleware (Alternative)
+
+Add to `src/middleware/index.ts`:
+```typescript
+export const onRequest = defineMiddleware(async (context, next) => {
+  const response = await next();
+
+  // Add security headers
+  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-XSS-Protection', '0');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), interest-cohort=()');
+  response.headers.set('Content-Security-Policy', "default-src 'self'; ...");
+
+  return response;
+});
+```
+
+**Note:** Middleware headers may be overridden by hosting platform. Platform-level configuration is preferred.
+
+### Security Headers Testing
+
+**Tools:**
+- [SecurityHeaders.com](https://securityheaders.com/) - Comprehensive header scanner
+- [Mozilla Observatory](https://observatory.mozilla.org/) - Security and best practices audit
+- Chrome DevTools Network tab - Verify headers in browser
+- `curl -I https://yoursite.com` - Command-line header inspection
+
+**Testing Checklist:**
+- [ ] HSTS header present and max-age ≥ 31536000
+- [ ] CSP header present and restrictive
+- [ ] X-Frame-Options set to DENY or SAMEORIGIN
+- [ ] X-Content-Type-Options set to nosniff
+- [ ] Referrer-Policy configured appropriately
+- [ ] No sensitive information in headers (X-Powered-By, Server, etc.)
+
+### Security Headers Monitoring
+
+**Recommended Practices:**
+1. **Automated Testing**: Include header validation in CI/CD pipeline
+2. **Regular Audits**: Run SecurityHeaders.com scan monthly
+3. **Browser Testing**: Test in Chrome, Firefox, Safari to verify CSP compliance
+4. **Error Monitoring**: Watch for CSP violations in production (via report-uri or report-to directives)
+
+**CSP Violation Reporting:**
+Add to CSP header:
+```http
+Content-Security-Policy: ...; report-uri https://your-csp-collector.example.com/report
+```
+
+This allows monitoring of CSP violations in production without breaking functionality.
+
+### Future Enhancements
+
+**Short-Term:**
+- [ ] Implement security headers in Astro middleware or hosting platform
+- [ ] Set up CSP violation reporting
+- [ ] Add automated header testing to CI/CD
+
+**Medium-Term:**
+- [ ] Implement CSP nonces for stricter inline script/style restrictions
+- [ ] Add Subresource Integrity (SRI) for external scripts
+- [ ] Evaluate Cross-Origin policies (CORP, COEP, COOP)
+
+**Long-Term:**
+- [ ] Implement Certificate Transparency monitoring
+- [ ] Add security.txt file (RFC 9116) for vulnerability disclosure
+- [ ] Consider implementing Content-Security-Policy-Report-Only for testing
 
 ## Authorization
 

@@ -68,5 +68,9 @@ export const createSupabaseServerClient = (request: Request, cookies: AstroCooki
     };
   }
 
-  return createServerClient<Database>(import.meta.env.PUBLIC_SUPABASE_URL, import.meta.env.PUBLIC_SUPABASE_ANON_KEY, clientOptions);
+  return createServerClient<Database>(
+    import.meta.env.PUBLIC_SUPABASE_URL,
+    import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
+    clientOptions
+  );
 };

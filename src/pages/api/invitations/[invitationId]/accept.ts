@@ -171,7 +171,13 @@ export const POST: APIRoute = async ({ params, request, locals, cookies }) => {
     let token = invitation.token;
     if (!token) {
       // Try to get from request body
-      const body = await request.json().catch(() => ({}));
+      const body = await request.json().catch((error) => {
+        // Log parsing error for debugging in development
+        if (import.meta.env.DEV) {
+          secureError("Failed to parse request body for invitation accept", error);
+        }
+        return {};
+      });
       const bodyValidation = acceptInvitationBodySchema.safeParse(body);
       if (bodyValidation.success && bodyValidation.data.token) {
         token = bodyValidation.data.token;
