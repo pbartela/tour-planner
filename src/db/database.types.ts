@@ -20,50 +20,6 @@ export interface Database {
   };
   public: {
     Tables: {
-      audit_logs: {
-        Row: {
-          action_type: string;
-          created_at: string;
-          id: string;
-          ip_address: unknown;
-          metadata: Json | null;
-          resource_id: string | null;
-          resource_type: string | null;
-          user_agent: string | null;
-          user_id: string | null;
-        };
-        Insert: {
-          action_type: string;
-          created_at?: string;
-          id?: string;
-          ip_address?: unknown;
-          metadata?: Json | null;
-          resource_id?: string | null;
-          resource_type?: string | null;
-          user_agent?: string | null;
-          user_id?: string | null;
-        };
-        Update: {
-          action_type?: string;
-          created_at?: string;
-          id?: string;
-          ip_address?: unknown;
-          metadata?: Json | null;
-          resource_id?: string | null;
-          resource_type?: string | null;
-          user_agent?: string | null;
-          user_id?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "audit_logs_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       auth_otp: {
         Row: {
           created_at: string | null;
@@ -135,6 +91,39 @@ export interface Database {
             referencedColumns: ["id"];
           },
         ];
+      };
+      cron_job_logs: {
+        Row: {
+          error_message: string | null;
+          execution_time: string;
+          id: number;
+          invitations_expired: number | null;
+          job_name: string;
+          profiles_deleted: number | null;
+          success: boolean;
+          tours_archived: number | null;
+        };
+        Insert: {
+          error_message?: string | null;
+          execution_time?: string;
+          id?: number;
+          invitations_expired?: number | null;
+          job_name: string;
+          profiles_deleted?: number | null;
+          success?: boolean;
+          tours_archived?: number | null;
+        };
+        Update: {
+          error_message?: string | null;
+          execution_time?: string;
+          id?: number;
+          invitations_expired?: number | null;
+          job_name?: string;
+          profiles_deleted?: number | null;
+          success?: boolean;
+          tours_archived?: number | null;
+        };
+        Relationships: [];
       };
       invitation_otp: {
         Row: {
@@ -252,10 +241,10 @@ export interface Database {
           avatar_url: string | null;
           created_at: string;
           display_name: string | null;
+          email: string;
           id: string;
           language: string;
           onboarding_completed: boolean;
-          recently_used_tags: string[] | null;
           theme: string;
           updated_at: string;
         };
@@ -263,10 +252,10 @@ export interface Database {
           avatar_url?: string | null;
           created_at?: string;
           display_name?: string | null;
+          email: string;
           id: string;
           language?: string;
           onboarding_completed?: boolean;
-          recently_used_tags?: string[] | null;
           theme?: string;
           updated_at?: string;
         };
@@ -274,10 +263,10 @@ export interface Database {
           avatar_url?: string | null;
           created_at?: string;
           display_name?: string | null;
+          email?: string;
           id?: string;
           language?: string;
           onboarding_completed?: boolean;
-          recently_used_tags?: string[] | null;
           theme?: string;
           updated_at?: string;
         };
@@ -459,8 +448,11 @@ export interface Database {
         Args: { accepting_user_id: string; invitation_token: string };
         Returns: string;
       };
+      archive_finished_tours: { Args: never; Returns: number };
       cleanup_expired_auth_otps: { Args: never; Returns: undefined };
       cleanup_expired_invitation_otps: { Args: never; Returns: undefined };
+      cleanup_expired_invitations: { Args: never; Returns: number };
+      cleanup_orphaned_profiles: { Args: never; Returns: number };
       cleanup_unconfirmed_users: { Args: never; Returns: undefined };
       create_tour: {
         Args: {

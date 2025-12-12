@@ -33,13 +33,13 @@ const formatDateRange = (startDate: string, endDate: string, locale: string): st
 
 const transformToViewModel = (dto: TourSummaryDto, locale: string): TourCardViewModel => ({
   id: dto.id,
-  url: `/tours/${dto.id}`,
+  url: `/${locale}/tours/${dto.id}`,
   title: dto.title,
   destination: dto.destination,
   dateRange: formatDateRange(dto.start_date, dto.end_date, locale),
   hasNewActivity: dto.has_new_activity,
   imageUrl: dto.metadata?.image,
-  participantAvatars: dto.participant_avatars,
+  participants: dto.participants,
   status: dto.status,
 });
 
@@ -61,6 +61,7 @@ export const TourList = ({ onAddTripClick }: TourListProps = {}) => {
 
   const tours = data ? data.data.map((tour) => transformToViewModel(tour, i18n.language)) : [];
   const showEmptyState = !isLoading && tours.length === 0;
+  const hasTours = tours.length > 0;
 
   return (
     <div className="space-y-6">
@@ -122,7 +123,7 @@ export const TourList = ({ onAddTripClick }: TourListProps = {}) => {
       )}
 
       {/* Floating Action Button (FAB) for adding new trips - only show on active tab */}
-      {onAddTripClick && activeTab === "active" && (
+      {onAddTripClick && activeTab === "active" && hasTours && (
         <button
           onClick={onAddTripClick}
           className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-content shadow-lg transition-transform hover:scale-110 active:scale-95"

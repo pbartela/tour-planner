@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { formatDateByLocale } from "@/lib/services/date-formatter.service";
 import { toast } from "react-hot-toast";
 import type { User } from "@/types";
 import { ProfileEditForm } from "./ProfileEditForm";
@@ -14,7 +15,7 @@ interface ProfileViewProps {
 }
 
 export const ProfileView = ({ user }: ProfileViewProps) => {
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [blockingReasons, setBlockingReasons] = useState<string[] | null>(null);
@@ -113,7 +114,7 @@ export const ProfileView = ({ user }: ProfileViewProps) => {
 
               <div>
                 <p className="text-sm text-base-content/60">{t("profile.memberSince")}</p>
-                <p className="text-lg">{new Date(currentProfile.created_at).toLocaleDateString()}</p>
+                <p className="text-lg">{formatDateByLocale(new Date(currentProfile.created_at), i18n.language)}</p>
               </div>
             </div>
           )}

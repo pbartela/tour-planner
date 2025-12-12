@@ -77,7 +77,7 @@ export type TourSummaryDto = Pick<
 > & {
   has_new_activity: boolean;
   metadata?: TourMetadata;
-  participant_avatars?: string[];
+  participants?: ParticipantSummaryDto[];
 };
 
 /**
@@ -98,7 +98,7 @@ export interface TourCardViewModel {
   dateRange: string;
   hasNewActivity: boolean;
   imageUrl?: string;
-  participantAvatars?: string[];
+  participants?: ParticipantSummaryDto[];
   status?: "active" | "archived";
 }
 
@@ -147,10 +147,33 @@ export type UpdateTourCommand = Partial<
 /**
  * DTO for a tour participant.
  * Combines data from the `participants` and `profiles` tables.
+ *
+ * SECURITY: Email is ALWAYS included and visible to all tour co-participants.
+ * This is intentional for identity verification and transparency in group planning.
+ * Protected by RLS - only tour participants can access this data.
+ *
+ * Email is used as fallback display when display_name is null.
+ * See docs/PRIVACY.md and docs/SECURITY_ARCHITECTURE.md for rationale.
+ *
  * Corresponds to an item in the response of `GET /api/tours/{tourId}/participants`.
  */
 export type ParticipantDto = Pick<Tables<"participants">, "user_id" | "joined_at"> &
-  Pick<Tables<"profiles">, "display_name" | "avatar_url">;
+  Pick<Tables<"profiles">, "display_name" | "avatar_url"> & {
+    email: string; // ALWAYS visible to co-participants (by design)
+  };
+
+/**
+ * DTO for a summarized view of a tour participant.
+ * Used in tour lists to display participant avatars with minimal data transfer.
+ *
+ * SECURITY: Email is ALWAYS included and visible to all tour co-participants.
+ * Used for generating initials when display_name is null.
+ * Protected by RLS - only tour participants can access this data.
+ */
+export type ParticipantSummaryDto = Pick<Tables<"profiles">, "display_name" | "avatar_url"> & {
+  user_id: string;
+  email: string; // ALWAYS visible to co-participants (by design)
+};
 
 // ============================================================================
 // Invitations
@@ -167,6 +190,11 @@ export interface InviteParticipantsCommand {
 /**
  * DTO for an invitation.
  * Includes optional tour and inviter information for display purposes.
+ *
+ * SECURITY: Email is the invitation recipient address.
+ * Visible to tour owner (who sent invitation) and recipient (who received it).
+ * Protected by RLS - only owner or recipient (email match) can access.
+ *
  * Corresponds to an item in the response of `GET /api/tours/{tourId}/invitations`.
  */
 export type InvitationDto = Tables<"invitations"> & {
@@ -174,7 +202,14 @@ export type InvitationDto = Tables<"invitations"> & {
   expires_at: string; // expiration date (added in migration)
   tour_title?: string; // for display on acceptance page
   inviter_display_name?: string; // for display
+  // email: inherited from Tables<"invitations"> - visible to owner and recipient
 };
+
+/**
+ * DTO for a paginated list of invitations.
+ * Corresponds to the full response of `GET /api/tours/{tourId}/invitations`.
+ */
+export type PaginatedInvitationsDto = PaginatedResponse<InvitationDto>;
 
 /**
  * Response from sending invitations.
@@ -190,6 +225,14 @@ export interface SendInvitationsResponse {
 /**
  * Response from reading an invitation by token.
  * Used on the invitation acceptance page before login.
+ *
+ * SECURITY: This is a PUBLIC endpoint (no authentication required).
+ * Exposes both inviter_email and recipient email to anyone with the token.
+ * This is intentional - user needs to see who invited them and verify their own email.
+ *
+ * Token is cryptographically random (32 bytes hex = 256 bits) making brute-force impractical.
+ * Token expires after 7 days or when used.
+ *
  * Corresponds to the response of `GET /api/invitations?token={token}`.
  */
 export interface InvitationByTokenDto {
@@ -197,9 +240,9 @@ export interface InvitationByTokenDto {
   tour_id: string;
   tour_title: string;
   tour_status: "planning" | "confirmed" | "archived";
-  inviter_email: string;
+  inviter_email: string; // PUBLIC: Visible to anyone with token
   inviter_display_name?: string;
-  email: string;
+  email: string; // PUBLIC: Recipient email visible to anyone with token
   status: "pending" | "accepted" | "declined";
   expires_at: string;
   is_expired: boolean;
@@ -222,12 +265,18 @@ export interface AcceptInvitationResponse {
 /**
  * DTO for a comment on a tour.
  * Includes the commenter's display_name from the `profiles` table.
- * user_email is included as fallback when display_name is not set.
+ *
+ * SECURITY: user_email is populated ONLY when display_name is null (fallback).
+ * Email is visible to all tour participants (protected by RLS).
+ * If user sets a display_name, email is not exposed in comments.
+ *
+ * This design encourages users to set display names to reduce email exposure.
+ *
  * Corresponds to an item in the response of `GET /api/tours/{tourId}/comments`.
  */
 export type CommentDto = Tables<"comments"> & {
   display_name: string | null;
-  user_email?: string | null;
+  user_email?: string | null; // Only populated if display_name is null
 };
 
 /**
@@ -273,6 +322,30 @@ export interface ToggleVoteResponseDto {
 // ============================================================================
 // Tags
 // ============================================================================
+
+/**
+ * A tag from the database with a real ID.
+ */
+export interface TagDto {
+  id: number;
+  name: string;
+}
+
+/**
+ * A tag suggestion - either from the database or from recently used tags.
+ * Uses a discriminated union to distinguish between the two sources.
+ */
+export type TagSuggestionDto =
+  | {
+      source: "database";
+      id: number;
+      name: string;
+    }
+  | {
+      source: "recent";
+      id: null;
+      name: string;
+    };
 
 /**
  * Command model for adding tags to a tour.

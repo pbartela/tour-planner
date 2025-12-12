@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { get, post, del, handleApiResponse } from "@/lib/client/api-client";
 import { queryClient as defaultQueryClient } from "@/lib/queryClient";
-import type { TagDto, TagSuggestionDto } from "@/lib/services/tag.service";
+import type { TagDto, TagSuggestionDto } from "@/types";
 import { QUERY_STALE_TIME } from "@/lib/constants/query";
 
 /**

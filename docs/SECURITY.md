@@ -51,27 +51,92 @@ The application implements rate limiting to prevent abuse and protect against br
 
 Rate limiting is implemented using an in-memory store with automatic cleanup of expired entries. See `src/lib/server/rate-limit.service.ts` for implementation details.
 
+**Production Warning:** The in-memory store is not suitable for multi-instance deployments. For production use with multiple instances, implement a Redis-based store.
+
+### Rate Limit Modes
+
+The application supports three rate limiting modes:
+
+#### Development Mode (Default in dev)
+
+- **When Active**: `NODE_ENV=development` and `TEST_MODE` not set
+- **Behavior**: Relaxed limits (7-10x production values)
+- **Use Case**: Fast iteration without hitting rate limits
+- **Limits**: MAGIC_LINK: 20/15min, AUTH: 50/min, API: 1000/min, TOUR_INVITATIONS: 100/hour, INVITATION_RESEND: 30/hour, INVITATION_ACTION: 100/min, OTP_VERIFICATION: 50/min
+
+#### Test Mode (Production-like limits)
+
+- **When Active**: `TEST_MODE=true` environment variable
+- **Behavior**: Production-like strict limits
+- **Use Case**: CI/CD pipelines, integration tests, local testing of rate limits
+- **How to Enable**:
+  ```bash
+  # In tests
+  TEST_MODE=true npm run test
+
+  # In development (for testing rate limits)
+  TEST_MODE=true npm run dev
+  ```
+
+#### Production Mode (Automatic)
+
+- **When Active**: `NODE_ENV=production` or `import.meta.env.PROD === true`
+- **Behavior**: Strict limits to prevent abuse
+- **Use Case**: Production deployment
+
 ### Rate Limit Configurations
 
-#### Magic Link Authentication (`/api/auth/magic-link`)
+All rate limits have different values for Development vs Production/Test modes:
 
-- **Limit**: 3 requests per 15 minutes
-- **Identifier**: Combination of IP address and User-Agent
-- **Response Headers**:
-  - `X-RateLimit-Limit`: Maximum number of requests allowed
-  - `X-RateLimit-Remaining`: Number of requests remaining
-  - `X-RateLimit-Reset`: Unix timestamp when the rate limit resets
-  - `Retry-After`: Number of seconds to wait before retrying (on 429 response)
+#### Magic Link Authentication (`POST /api/auth/magic-link`)
+
+- **Production/Test**: 3 requests per 15 minutes
+- **Development**: 20 requests per 15 minutes
+- **Identifier**: IP address + User-Agent
+- **Purpose**: Prevent magic link spam
 
 #### General Authentication (`/api/auth/*`)
 
-- **Limit**: 5 requests per minute
-- **Identifier**: Combination of IP address and User-Agent
+- **Production/Test**: 5 requests per minute
+- **Development**: 50 requests per minute
+- **Identifier**: IP address + User-Agent
+- **Purpose**: Prevent brute-force attacks on auth endpoints
 
 #### General API Endpoints
 
-- **Limit**: 100 requests per minute
-- **Identifier**: Combination of IP address and User-Agent
+- **Production/Test**: 100 requests per minute
+- **Development**: 1000 requests per minute
+- **Identifier**: IP address + User-Agent (authenticated: user ID)
+- **Purpose**: Prevent API abuse and DoS attacks
+
+#### Tour Invitation Sending (`POST /api/tours/{tourId}/invitations`)
+
+- **Production/Test**: 10 requests per hour per tour
+- **Development**: 100 requests per hour per tour
+- **Identifier**: `invitations:tour:{tourId}:user:{userId}`
+- **Purpose**: Prevent invitation spam
+- **Note**: Limits endpoint calls, not email addresses per request (max 50 emails per request)
+
+#### Invitation Resend (`POST /api/invitations/{invitationId}/resend`)
+
+- **Production/Test**: 3 requests per hour per invitation
+- **Development**: 30 requests per hour per invitation
+- **Identifier**: `invitation:resend:{invitationId}:user:{userId}`
+- **Purpose**: Prevent spam resending of invitations
+
+#### Invitation Accept/Decline (`POST /api/invitations/{invitationId}/accept|decline`)
+
+- **Production/Test**: 10 requests per minute per user
+- **Development**: 100 requests per minute per user
+- **Identifier**: `invitation:accept|decline:user:{userId}`
+- **Purpose**: Prevent automated abuse while allowing legitimate retries
+
+#### OTP Verification (`POST /api/auth/verify-invitation`)
+
+- **Production/Test**: 5 attempts per minute per IP/user
+- **Development**: 50 attempts per minute
+- **Identifier**: IP address or user ID
+- **Purpose**: Prevent brute-force attacks on OTP tokens
 
 ### Rate Limit Response
 
@@ -79,16 +144,26 @@ When rate limited, the API returns a `429 Too Many Requests` status with:
 
 ```json
 {
-  "error": "Too many requests. Please try again in X minute(s)."
+  "error": {
+    "code": "TOO_MANY_REQUESTS",
+    "message": "Too many requests. Please try again in X minute(s)."
+  }
 }
 ```
 
+**Response Headers**:
+- `X-RateLimit-Limit`: Maximum number of requests allowed
+- `X-RateLimit-Remaining`: Number of requests remaining
+- `X-RateLimit-Reset`: Unix timestamp when the rate limit resets
+- `Retry-After`: Number of seconds to wait before retrying
+
 ### Client Identifier
 
-Rate limits are applied based on a combination of:
+Rate limits are applied based on:
 
 1. **IP Address**: Extracted from `X-Forwarded-For`, `X-Real-IP`, or `CF-Connecting-IP` headers
-2. **User-Agent**: First 50 characters of the User-Agent header
+2. **User-Agent**: First 50 characters of the User-Agent header (for unauthenticated requests)
+3. **User ID**: For authenticated requests (more reliable than IP)
 
 This helps with shared IPs while preventing easy circumvention.
 

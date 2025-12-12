@@ -1,7 +1,11 @@
 import type { APIRoute } from "astro";
 
 import { invitationService } from "@/lib/services/invitation.service";
-import { inviteParticipantsCommandSchema, tourIdParamSchema } from "@/lib/validators/invitation.validators";
+import {
+  inviteParticipantsCommandSchema,
+  tourIdParamSchema,
+  paginationSchema,
+} from "@/lib/validators/invitation.validators";
 import { checkCsrfProtection } from "@/lib/server/csrf.service";
 import { secureError } from "@/lib/server/logger.service";
 import { validateSession } from "@/lib/server/session-validation.service";
@@ -11,13 +15,17 @@ import { tourService } from "@/lib/services/tour.service";
 export const prerender = false;
 
 /**
- * GET /api/tours/{tourId}/invitations
- * Returns a list of invitations for a tour.
+ * GET /api/tours/{tourId}/invitations?page={page}&limit={limit}
+ * Returns a paginated list of invitations for a tour.
  * Only accessible by tour owner (enforced by RLS).
  *
- * Response: InvitationDto[] (200 OK)
+ * Query parameters:
+ * - page (optional): Page number (default: 1, min: 1)
+ * - limit (optional): Items per page (default: 20, min: 1, max: 100)
+ *
+ * Response: PaginatedInvitationsDto (200 OK)
  */
-export const GET: APIRoute = async ({ params, locals, request }) => {
+export const GET: APIRoute = async ({ params, url, locals, request }) => {
   const { supabase } = locals;
 
   // Validate session
@@ -79,6 +87,33 @@ export const GET: APIRoute = async ({ params, locals, request }) => {
     );
   }
 
+  // Parse and validate pagination parameters
+  const paginationParams = {
+    page: url.searchParams.get("page"),
+    limit: url.searchParams.get("limit"),
+  };
+
+  const paginationValidation = paginationSchema.safeParse(paginationParams);
+  if (!paginationValidation.success) {
+    const errorDetails = paginationValidation.error.errors
+      .map((err) => `${err.path.join(".")}: ${err.message}`)
+      .join("; ");
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: "BAD_REQUEST",
+          message: `Invalid pagination parameters: ${errorDetails}`,
+        },
+      }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  const { page = 1, limit = 20 } = paginationValidation.data;
+
   try {
     // Verify user is tour owner (RLS will also enforce this, but explicit check gives better errors)
     const tourResult = await tourService.getTourDetails(supabase, tourIdValidation.data);
@@ -97,7 +132,7 @@ export const GET: APIRoute = async ({ params, locals, request }) => {
       );
     }
 
-    const invitations = await invitationService.listTourInvitations(supabase, tourIdValidation.data);
+    const invitations = await invitationService.listTourInvitations(supabase, tourIdValidation.data, page, limit);
 
     return new Response(JSON.stringify(invitations), {
       status: 200,

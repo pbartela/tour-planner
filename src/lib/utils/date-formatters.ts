@@ -1,10 +1,14 @@
+import { formatDateByLocale } from "@/lib/services/date-formatter.service";
+
 /**
- * Format a date string to local date format
+ * Format a date string to locale-aware date format
  * @param dateString - ISO date string
+ * @param locale - Optional locale (defaults to browser locale)
  * @returns Formatted date string
  */
-export const formatDate = (dateString: string): string => {
-  return new Date(dateString).toLocaleDateString();
+export const formatDate = (dateString: string, locale?: string): string => {
+  const effectiveLocale = locale || (typeof navigator !== "undefined" ? navigator.language : "en-US");
+  return formatDateByLocale(new Date(dateString), effectiveLocale);
 };
 
 /**

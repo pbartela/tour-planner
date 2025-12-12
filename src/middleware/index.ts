@@ -26,6 +26,16 @@ export const onRequest = defineMiddleware(async (context, next) => {
       ? requestedLocale
       : ENV.PUBLIC_DEFAULT_LOCALE;
 
+  // Debug logging for redirect issues
+  if (context.url.pathname.includes("/tours/")) {
+    console.log("[Middleware Debug]", {
+      pathname: context.url.pathname,
+      params: context.params,
+      requestedLocale,
+      lang,
+    });
+  }
+
   // Set i18next language for server-side rendering
   await i18next.changeLanguage(lang);
   // Load common namespace for layout translations
@@ -76,6 +86,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
       // Redirect to user's preferred language
       const newPath = `/${user.profile.language}${pathWithoutLocale}`;
       const fullUrl = newPath + context.url.search;
+      console.log("[Middleware] Language redirect:", {
+        from: context.url.pathname,
+        to: fullUrl,
+        userLang: user.profile.language,
+        urlLang: lang,
+      });
       return context.redirect(fullUrl);
     }
 
@@ -95,6 +111,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   if (!context.locals.user && isProtectedRoute && !isPublicAuthRoute) {
     const loginUrl =
       pathWithoutLocale === "/" ? `/${lang}/login` : `/${lang}/login?redirect=${encodeURIComponent(pathWithoutLocale)}`;
+    console.log("[Middleware] Auth redirect:", { from: context.url.pathname, to: loginUrl, pathWithoutLocale });
     return context.redirect(loginUrl);
   }
 

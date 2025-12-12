@@ -10,6 +10,7 @@ import type {
   TourSummaryDto,
   UpdateTourCommand,
   TourMetadata,
+  ParticipantSummaryDto,
 } from "@/types";
 import getTripMetaData from "@/lib/server/metadata-extract.service";
 import { ensureTourNotArchived } from "@/lib/utils/tour-status.util";
@@ -186,26 +187,35 @@ class TourService {
       // Get tour IDs for activity tracking
       const tourIds = (tours || []).map((p) => p.tour.id);
 
-      // Batch fetch participant avatars for all tours
+      // SECURITY: Batch fetch participants for all tours (including email from profiles)
+      // Email is intentionally visible to co-participants for identity verification.
+      // Email comes from profiles.email (synced from auth.users via trigger).
+      // This eliminates N+1 queries (previous implementation used admin client per user).
+      // See docs/SECURITY_ARCHITECTURE.md for details on the performance fix.
       const { data: participantsData } = await supabase
         .from("participants")
-        .select("tour_id, profiles!participants_user_id_fkey(avatar_url)")
+        .select("tour_id, user_id, profiles!participants_user_id_fkey(display_name, avatar_url, email)")
         .in("tour_id", tourIds)
         .order("joined_at", { ascending: true });
 
-      // Create a map of tour_id -> array of avatar URLs
-      const participantAvatarsMap = new Map<string, string[]>();
+      // Create a map of tour_id -> array of ParticipantSummaryDto
+      const participantsMap = new Map<string, ParticipantSummaryDto[]>();
       (participantsData || []).forEach((participant) => {
         const profile = Array.isArray(participant.profiles) ? participant.profiles[0] : participant.profiles;
-        const avatarUrl = profile?.avatar_url;
 
-        if (avatarUrl) {
-          if (!participantAvatarsMap.has(participant.tour_id)) {
-            participantAvatarsMap.set(participant.tour_id, []);
+        // Only include participants with valid profile data
+        if (profile && profile.email) {
+          if (!participantsMap.has(participant.tour_id)) {
+            participantsMap.set(participant.tour_id, []);
           }
-          const avatarList = participantAvatarsMap.get(participant.tour_id);
-          if (avatarList) {
-            avatarList.push(avatarUrl);
+          const participantList = participantsMap.get(participant.tour_id);
+          if (participantList) {
+            participantList.push({
+              user_id: participant.user_id,
+              display_name: profile.display_name || null,
+              avatar_url: profile.avatar_url || null,
+              email: profile.email,
+            });
           }
         }
       });
@@ -291,7 +301,7 @@ class TourService {
             ...p.tour,
             has_new_activity: hasNewActivity,
             metadata: metadata || undefined,
-            participant_avatars: participantAvatarsMap.get(p.tour.id) || [],
+            participants: participantsMap.get(p.tour.id) || [],
           };
         })
       );
@@ -426,7 +436,13 @@ class TourService {
       // Prevent updating archived tours
       await ensureTourNotArchived(supabase, tourId);
 
-      const { data, error } = await supabase.from("tours").update(command).eq("id", tourId).select().single();
+      // Explicitly update updated_at to trigger new activity indicator
+      const updateData = {
+        ...command,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { data, error } = await supabase.from("tours").update(updateData).eq("id", tourId).select().single();
 
       if (error) {
         console.error("Error updating tour:", error);

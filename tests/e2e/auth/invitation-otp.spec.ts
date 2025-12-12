@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
-import crypto from "crypto";
+import crypto, { randomUUID } from "crypto";
 import * as dotenv from "dotenv";
 import { Pool } from "pg";
 import type { Database } from "../../../src/db/database.types";
@@ -58,8 +58,6 @@ const pgPool = new Pool({
 
 type InvitationSetupOptions = { expired?: boolean; used?: boolean };
 
-const ANON_USER_ID = "00000000-0000-0000-0000-000000000000";
-
 interface InviterContext {
   userId: string;
   tourId: string;
@@ -69,8 +67,23 @@ interface InviterContext {
 let inviterContext: InviterContext | null = null;
 
 async function createInviterContext(): Promise<InviterContext> {
-  const ownerId = ANON_USER_ID;
-  const inviterEmail = "anonymized-user@tour-planner.test";
+  // Use randomUUID() for guaranteed uniqueness in parallel test execution
+  const inviterEmail = `inviter-${randomUUID()}@tour-planner.test`;
+
+  // Create a real user via Supabase admin API
+  const { data: userData, error: userError } = await supabase.auth.admin.createUser({
+    email: inviterEmail,
+    email_confirm: true,
+    user_metadata: {
+      display_name: "Test Inviter",
+    },
+  });
+
+  if (userError || !userData.user) {
+    throw new Error(`Failed to create test inviter user: ${userError?.message}`);
+  }
+
+  const ownerId = userData.user.id;
   const startDate = new Date();
   const endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
 
@@ -114,6 +127,13 @@ async function cleanupInviterContext(context: InviterContext | null): Promise<vo
 
   await pgPool.query("delete from public.invitations where tour_id = $1", [context.tourId]);
   await pgPool.query("delete from public.tours where id = $1", [context.tourId]);
+
+  // Delete the test user
+  try {
+    await supabase.auth.admin.deleteUser(context.userId);
+  } catch (error) {
+    console.warn(`Failed to cleanup inviter user ${context.userId}:`, error);
+  }
 }
 
 // Helper function to create a test invitation OTP linked to a real invitation
@@ -180,7 +200,8 @@ test.beforeAll(async () => {
 test.afterAll(async () => {
   await cleanupInviterContext(inviterContext);
   inviterContext = null;
-  await pgPool.end();
+  // Note: pgPool is shared across test files and should not be closed here
+  // It will be cleaned up automatically when the process exits
 });
 
 // Helper function to get user by email (Supabase v2 API)
@@ -218,7 +239,7 @@ const skipInDocker = process.env.CI === "true" || process.env.SKIP_WEBSERVER ===
 test.describe("OTP Verification - Valid Scenarios", () => {
   test.skip(skipInDocker, "Skipped in Docker/CI due to rate limiting and auth service isolation");
 
-  const testEmail = `test-otp-${Date.now()}@example.com`;
+  const testEmail = `test-otp-${randomUUID()}@example.com`;
   let otpToken: string;
   let invitationToken: string;
 
@@ -336,7 +357,7 @@ test.describe("OTP Verification - Invalid Scenarios", () => {
 });
 
 test.describe("OTP Verification - Expiration", () => {
-  const testEmail = `test-expired-${Date.now()}@example.com`;
+  const testEmail = `test-expired-${randomUUID()}@example.com`;
   let otpToken: string;
   let invitationToken: string;
 
@@ -367,7 +388,7 @@ test.describe("OTP Verification - Expiration", () => {
 });
 
 test.describe("OTP Verification - One-Time Use", () => {
-  const testEmail = `test-used-${Date.now()}@example.com`;
+  const testEmail = `test-used-${randomUUID()}@example.com`;
   let otpToken: string;
   let invitationToken: string;
 
@@ -395,7 +416,7 @@ test.describe("OTP Verification - One-Time Use", () => {
 
   test("should mark OTP as used after first successful verification", async ({ page }) => {
     // Create a fresh, unused OTP
-    const freshEmail = `fresh-${Date.now()}@example.com`;
+    const freshEmail = `fresh-${randomUUID()}@example.com`;
     const { otpToken: freshOtp, invitationToken: freshInvitationToken } = await createTestOTP(freshEmail);
 
     // First verification should succeed

@@ -2,30 +2,10 @@ import type { SupabaseClient } from "@/db/supabase.client";
 import { secureError } from "@/lib/server/logger.service";
 import { isTourArchived, TourNotFoundError, TourStatusVerificationError } from "@/lib/utils/tour-status.util";
 import { profileService } from "./profile.service";
+import type { TagDto, TagSuggestionDto } from "@/types";
 
-/**
- * A tag from the database with a real ID.
- */
-export interface TagDto {
-  id: number;
-  name: string;
-}
-
-/**
- * A tag suggestion - either from the database or from recently used tags.
- * Uses a discriminated union to distinguish between the two sources.
- */
-export type TagSuggestionDto =
-  | {
-      source: "database";
-      id: number;
-      name: string;
-    }
-  | {
-      source: "recent";
-      id: null;
-      name: string;
-    };
+// Re-export types for backwards compatibility
+export type { TagDto, TagSuggestionDto };
 
 export interface TourTagDto {
   tour_id: string;

@@ -50,6 +50,18 @@ class ParticipantService {
         throw new Error("You are not authorized to remove this participant.");
       }
 
+      // Remove the participant's vote first (if any) to prevent orphaned likes
+      const { error: voteDeleteError } = await supabase
+        .from("votes")
+        .delete()
+        .eq("tour_id", tourId)
+        .eq("user_id", participantUserId);
+
+      if (voteDeleteError) {
+        secureError("Error removing participant vote from tour", voteDeleteError);
+        throw new Error("Failed to remove participant vote from the tour.");
+      }
+
       // Remove the participant
       const { error: deleteError } = await supabase
         .from("participants")

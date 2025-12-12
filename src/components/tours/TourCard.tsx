@@ -14,15 +14,6 @@ export const TourCard = ({ tour }: Props) => {
   const imageUrl = tour.imageUrl || "";
   const isArchived = tour.status === "archived";
 
-  const placeholderAvatars = [
-    "https://i.pravatar.cc/150?img=1",
-    "https://i.pravatar.cc/150?img=2",
-    "https://i.pravatar.cc/150?img=3",
-  ];
-  // Don't slice here - let AvatarGroup handle showing "+N more"
-  const avatars =
-    tour.participantAvatars && tour.participantAvatars.length > 0 ? tour.participantAvatars : placeholderAvatars;
-
   return (
     <a href={tour.url} className="group block">
       <Card
@@ -78,9 +69,11 @@ export const TourCard = ({ tour }: Props) => {
           </div>
 
           {/* Participant Avatars with Activity Indicator */}
-          {(avatars.length > 0 || tour.hasNewActivity) && (
+          {((tour.participants && tour.participants.length > 0) || tour.hasNewActivity) && (
             <div className="flex items-center gap-2 mt-2">
-              {avatars.length > 0 && <AvatarGroup avatars={avatars} maxVisible={3} />}
+              {tour.participants && tour.participants.length > 0 && (
+                <AvatarGroup participants={tour.participants} maxVisible={3} anonymousLabel={t("tourCard.anonymous")} />
+              )}
               {!isArchived && <ActivityIndicator hasActivity={tour.hasNewActivity} label={t("tourList.newActivity")} />}
             </div>
           )}

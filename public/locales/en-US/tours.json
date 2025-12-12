@@ -104,15 +104,52 @@
       "pending": "Pending"
     },
     "tourTitle": "Tour",
-    "unknownError": "Unknown error"
+    "unknownError": "Unknown error",
+    "confirmBeforeSend": "Show confirmation before sending (recommended)",
+    "noValidEmails": "No valid email addresses found. Please check your input.",
+    "tooManyEmails": "Cannot invite more than {{max}} people at once",
+    "invalidEmailsSkipped_one": "{{count}} invalid email skipped: {{emails}}",
+    "invalidEmailsSkipped_other": "{{count}} invalid emails skipped: {{emails}}",
+    "confirmDialog": {
+      "title": "Confirm Invitation",
+      "description": "Please review the email addresses before sending invitations.",
+      "validEmailsTitle": "Valid Emails",
+      "invalidEmailsTitle": "Invalid Emails",
+      "duplicatesTitle": "Duplicate Emails",
+      "duplicatesNote": "Duplicates have been removed and will only be sent once.",
+      "summary": "Ready to send invitations to {{count}} recipient(s). {{hasIssues}}",
+      "withIssues": "Some emails were excluded due to errors.",
+      "noValidEmails": "No valid emails to send. Please fix the issues above.",
+      "sendButton_one": "Send {{count}} Invitation",
+      "sendButton_other": "Send {{count}} Invitations",
+      "errors": {
+        "Invalid format": "Invalid format",
+        "Invalid domain": "Invalid domain",
+        "Invalid email format": "Invalid email",
+        "Invalid TLD": "Invalid TLD"
+      }
+    }
   },
   "onboarding": {
     "error": "Something went wrong. Please try again.",
     "finish": "Finish",
     "next": "Next",
-    "skip": "Skip"
+    "skip": "Skip",
+    "step1": {
+      "description": "Create trip proposals by clicking the \"Add Trip\" button. Add details like dates, descriptions, and links to accommodations or activities.",
+      "title": "Create Trip Proposals"
+    },
+    "step2": {
+      "description": "Invite friends and family via email. They'll receive an invitation link to join your tour and participate in the planning process.",
+      "title": "Invite Participants"
+    },
+    "step3": {
+      "description": "Vote on your favorite trips, leave comments, and discuss with other participants. Once everyone has voted, the tour owner can lock voting and finalize the trip.",
+      "title": "Vote and Discuss"
+    }
   },
   "participants": {
+    "anonymousUser": "Anonymous User",
     "joinedOn": "Joined on",
     "leaveButton": "Leave Tour",
     "leaveConfirm": "Are you sure you want to leave this tour? You can be re-invited later.",
@@ -146,6 +183,7 @@
     "title": "Tags"
   },
   "tourCard": {
+    "anonymous": "Anonymous",
     "archived": "Archived"
   },
   "tourDetails": {

@@ -64,6 +64,17 @@ class VoteService {
           throw new Error("Failed to remove vote. Voting may be hidden or you may not have permission.");
         }
 
+        // Update tour's updated_at to trigger new activity indicator
+        const { error: tourUpdateError } = await supabase
+          .from("tours")
+          .update({ updated_at: new Date().toISOString() })
+          .eq("id", tourId);
+
+        if (tourUpdateError) {
+          secureError("Error updating tour timestamp after vote removal", tourUpdateError);
+          // Don't throw - vote was removed successfully, timestamp update is non-critical
+        }
+
         return { message: "Vote removed" };
       } else {
         // No vote - add it
@@ -75,6 +86,17 @@ class VoteService {
         if (insertError) {
           secureError("Error adding vote", insertError);
           throw new Error("Failed to add vote. Voting may be hidden or you may not have permission.");
+        }
+
+        // Update tour's updated_at to trigger new activity indicator
+        const { error: tourUpdateError } = await supabase
+          .from("tours")
+          .update({ updated_at: new Date().toISOString() })
+          .eq("id", tourId);
+
+        if (tourUpdateError) {
+          secureError("Error updating tour timestamp after vote addition", tourUpdateError);
+          // Don't throw - vote was added successfully, timestamp update is non-critical
         }
 
         return { message: "Vote added" };

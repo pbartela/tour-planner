@@ -25,6 +25,16 @@ vi.mock("./useInvitationMutations", () => ({
   useDeclineInvitationMutation: vi.fn(),
 }));
 
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string) => key,
+    i18n: {
+      language: "en-US",
+      changeLanguage: vi.fn(),
+    },
+  }),
+}));
+
 // Import mocked modules
 import { navigate } from "astro:transitions/client";
 import toast from "react-hot-toast";
@@ -242,7 +252,7 @@ describe("useInvitationAcceptance", () => {
       expect(toast.success).toHaveBeenCalledWith("Invitation accepted successfully");
 
       // Verify navigation
-      expect(navigate).toHaveBeenCalledWith(`/tours/${mockInvitation.tour_id}`);
+      expect(navigate).toHaveBeenCalledWith(`/en-US/tours/${mockInvitation.tour_id}`);
 
       // Verify state changed to navigating
       await waitFor(() => {
@@ -374,7 +384,7 @@ describe("useInvitationAcceptance", () => {
       expect(toast.success).toHaveBeenCalledWith("Invitation declined");
 
       // Verify navigation to home
-      expect(navigate).toHaveBeenCalledWith("/");
+      expect(navigate).toHaveBeenCalledWith("/en-US/");
 
       // Verify state changed to navigating
       await waitFor(() => {
@@ -489,7 +499,7 @@ describe("useInvitationAcceptance", () => {
         await result.current.actions.handleGoHome();
       });
 
-      expect(navigate).toHaveBeenCalledWith("/");
+      expect(navigate).toHaveBeenCalledWith("/en-US/");
 
       await waitFor(() => {
         expect(result.current.state.status).toBe("navigating");
@@ -509,7 +519,7 @@ describe("useInvitationAcceptance", () => {
         await result.current.actions.handleGoHome();
       });
 
-      expect(navigate).toHaveBeenCalledWith("/");
+      expect(navigate).toHaveBeenCalledWith("/en-US/");
     });
   });
 

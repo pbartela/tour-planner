@@ -1,0 +1,11 @@
+.env.test
+.env.production
+.env.example
+.env.docker
+.env.docker.example
+.env.docker.local.example
+.env.docker.production.example
+.env.docker.test.example
+.env.docker.test.local.example
+.env.docker.test.production.example
+.env.docker.test.test.example

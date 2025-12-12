@@ -1,6 +1,7 @@
 import { useReducer, useEffect } from "react";
 import { navigate } from "astro:transitions/client";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 import { get, handleApiResponse } from "@/lib/client/api-client";
 import type { InvitationByTokenDto } from "@/types";
 import { useAcceptInvitationMutation, useDeclineInvitationMutation } from "./useInvitationMutations";
@@ -38,6 +39,7 @@ const invitationReducer = (state: InvitationState, action: InvitationAction): In
  * Uses reducer pattern for state management and separates business logic from UI
  */
 export const useInvitationAcceptance = (token: string, userEmail: string) => {
+  const { i18n } = useTranslation();
   const [state, dispatch] = useReducer(invitationReducer, { status: "loading" });
   const acceptMutation = useAcceptInvitationMutation();
   const declineMutation = useDeclineInvitationMutation();
@@ -101,7 +103,7 @@ export const useInvitationAcceptance = (token: string, userEmail: string) => {
 
       toast.success("Invitation accepted successfully");
       dispatch({ type: "START_NAVIGATION" });
-      await navigate(`/tours/${result.tour_id}`);
+      await navigate(`/${i18n.language}/tours/${result.tour_id}`);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to accept invitation";
       toast.error(errorMessage);
@@ -119,7 +121,7 @@ export const useInvitationAcceptance = (token: string, userEmail: string) => {
 
       toast.success("Invitation declined");
       dispatch({ type: "START_NAVIGATION" });
-      await navigate("/");
+      await navigate(`/${i18n.language}/`);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to decline invitation";
       toast.error(errorMessage);
@@ -128,7 +130,7 @@ export const useInvitationAcceptance = (token: string, userEmail: string) => {
 
   const handleGoHome = async () => {
     dispatch({ type: "START_NAVIGATION" });
-    await navigate("/");
+    await navigate(`/${i18n.language}/`);
   };
 
   // Derive additional state

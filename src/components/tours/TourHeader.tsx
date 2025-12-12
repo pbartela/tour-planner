@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { formatDateByLocale } from "@/lib/services/date-formatter.service";
 import type { TourDetailsDto } from "@/types";
 import { Button } from "@/components/ui/button";
 
@@ -14,7 +15,7 @@ interface TourHeaderProps {
  * Shows edit/delete buttons for tour owners (except for archived tours)
  */
 export const TourHeader = ({ tour, isOwner, onEdit, onDelete }: TourHeaderProps) => {
-  const { t } = useTranslation("tours");
+  const { t, i18n } = useTranslation("tours");
   const isArchived = tour.status === "archived";
 
   return (
@@ -88,11 +89,11 @@ export const TourHeader = ({ tour, isOwner, onEdit, onDelete }: TourHeaderProps)
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <p className="text-sm text-base-content/60">{t("tourDetails.startDate")}</p>
-            <p className="text-lg font-semibold">{new Date(tour.start_date).toLocaleDateString()}</p>
+            <p className="text-lg font-semibold">{formatDateByLocale(new Date(tour.start_date), i18n.language)}</p>
           </div>
           <div>
             <p className="text-sm text-base-content/60">{t("tourDetails.endDate")}</p>
-            <p className="text-lg font-semibold">{new Date(tour.end_date).toLocaleDateString()}</p>
+            <p className="text-lg font-semibold">{formatDateByLocale(new Date(tour.end_date), i18n.language)}</p>
           </div>
           {tour.participant_limit && (
             <div>

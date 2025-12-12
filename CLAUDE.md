@@ -82,13 +82,13 @@ npx supabase stop
 npx supabase gen types typescript --local > src/db/database.types.ts
 
 # Create a new migration
-npx supabase migration new <migration_name>
+npx supabase migration new <migration_name> 
 
 # Apply migrations
-npx supabase migration up
+npx supabase migration up 
 
 # Reset local database
-npx supabase db reset
+npx supabase db reset -- this command should be done by user unless you need logs from it. When needed ask user to do it and wait for confirmation that it is done.
 ```
 
 Local Supabase runs on:
@@ -104,6 +104,40 @@ This project does **not** have a production database. Therefore:
 - No need to create separate "fix" migrations for schema changes
 - When making schema changes, edit the original migration file and run `npx supabase db reset`
 - This approach keeps migration history clean and simple for local-only development
+
+**Orphaned Profile Cleanup**
+
+The database includes automated cleanup for orphaned profiles (profiles without corresponding `auth.users` entries):
+
+**When Orphaned Profiles Occur:**
+- Manual database manipulation
+- Failed cascade deletes during user deletion
+- Race conditions during signup (very rare)
+
+**Cleanup Mechanisms:**
+
+1. **Migration-time Cleanup** (`20251209120000_add_email_to_profiles.sql`):
+   - Runs during the email column migration
+   - Uses `RAISE NOTICE` to log count and IDs of deleted profiles
+   - Ensures data integrity before setting `email NOT NULL` constraint
+
+2. **Periodic Cleanup Function** (`cleanup_orphaned_profiles()`):
+   - Can be run manually: `SELECT cleanup_orphaned_profiles();`
+   - Returns count of deleted profiles
+   - Logs results to `cron_job_logs` table
+   - Safe to run periodically (only deletes invalid data)
+
+**Cron Job Logging:**
+
+The `cron_job_logs` table tracks all automated cleanup operations:
+- `archive_finished_tours` - Tours automatically archived after end_date
+- `cleanup_expired_invitations` - Invitations marked expired after expires_at
+- `cleanup_orphaned_profiles` - Orphaned profiles deleted
+
+Query recent logs:
+```sql
+SELECT * FROM public.cron_job_logs ORDER BY execution_time DESC LIMIT 10;
+```
 
 ### Docker Testing
 
@@ -627,6 +661,21 @@ export const InvitedUsersList = ({ invitations }: Props) => {
   );
 };
 ```
+
+## Security & Privacy Documentation
+
+Comprehensive security and privacy documentation is available in the `docs/` directory:
+
+- **Security Guidelines**: `docs/SECURITY.md` - Rate limiting, CSRF protection, authentication, API security
+- **Security Architecture**: `docs/SECURITY_ARCHITECTURE.md` - Technical security documentation, RLS policies, data access patterns, threat model
+- **Privacy Policy**: `docs/PRIVACY.md` - Email visibility model, data retention, user control, design rationale
+
+**Key Security Concepts:**
+
+- **Email Visibility**: Emails are intentionally visible to tour co-participants for identity verification and transparency. See `docs/PRIVACY.md` for full explanation.
+- **Row-Level Security (RLS)**: All database tables enforce RLS policies. See `docs/SECURITY_ARCHITECTURE.md` for policy details.
+- **Rate Limiting**: All endpoints have rate limits. Development mode has relaxed limits (7-10x production). Use `TEST_MODE=true` for production-like testing.
+- **Performance**: Email is denormalized to `profiles.email` (synced from `auth.users` via trigger) to eliminate N+1 queries.
 
 ## Additional Notes
 

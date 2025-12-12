@@ -1,7 +1,13 @@
 import type { SupabaseClient } from "@/db/supabase.client";
 import { secureError } from "@/lib/server/logger.service";
 import { createSupabaseAdminClient } from "@/db/supabase.admin.client";
-import type { InvitationDto, SendInvitationsResponse, InvitationByTokenDto, AcceptInvitationResponse } from "@/types";
+import type {
+  InvitationDto,
+  SendInvitationsResponse,
+  InvitationByTokenDto,
+  AcceptInvitationResponse,
+  PaginatedInvitationsDto,
+} from "@/types";
 import { ensureTourNotArchived } from "@/lib/utils/tour-status.util";
 import { randomBytes } from "crypto";
 import { isPastDate } from "@/lib/utils/date-formatters";
@@ -9,11 +15,37 @@ import { ENV } from "../server/env-validation.service";
 
 class InvitationService {
   /**
-   * Lists all invitations for a tour.
+   * Lists all invitations for a tour with pagination support.
    * Only accessible by tour owner (enforced by RLS).
+   *
+   * @param supabase - Supabase client
+   * @param tourId - Tour ID
+   * @param page - Page number (1-indexed, default: 1)
+   * @param limit - Items per page (default: 20, max: 100)
+   * @returns Paginated invitations with metadata
    */
-  public async listTourInvitations(supabase: SupabaseClient, tourId: string): Promise<InvitationDto[]> {
+  public async listTourInvitations(
+    supabase: SupabaseClient,
+    tourId: string,
+    page = 1,
+    limit = 20
+  ): Promise<PaginatedInvitationsDto> {
     try {
+      // Calculate offset for pagination (convert 1-indexed page to 0-indexed offset)
+      const offset = (page - 1) * limit;
+
+      // Get total count for pagination metadata
+      const { count, error: countError } = await supabase
+        .from("invitations")
+        .select("id", { count: "exact", head: true })
+        .eq("tour_id", tourId);
+
+      if (countError) {
+        secureError("Error counting invitations", countError);
+        throw new Error("Failed to count invitations.");
+      }
+
+      // Fetch paginated invitations
       const { data: invitations, error } = await supabase
         .from("invitations")
         .select(
@@ -35,7 +67,8 @@ class InvitationService {
         `
         )
         .eq("tour_id", tourId)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
 
       if (error) {
         secureError("Error fetching invitations from database", error);
@@ -43,7 +76,7 @@ class InvitationService {
       }
 
       // Transform to InvitationDto
-      return (invitations || []).map((inv): InvitationDto => {
+      const transformedInvitations = (invitations || []).map((inv): InvitationDto => {
         const tours = Array.isArray(inv.tours) ? inv.tours : inv.tours ? [inv.tours] : null;
         const profiles = Array.isArray(inv.profiles) ? inv.profiles : inv.profiles ? [inv.profiles] : null;
         const { tours: _tours, profiles: _profiles, ...invitationData } = inv;
@@ -57,6 +90,15 @@ class InvitationService {
               : undefined,
         } as InvitationDto;
       });
+
+      return {
+        data: transformedInvitations,
+        pagination: {
+          page,
+          limit,
+          total: count || 0,
+        },
+      };
     } catch (error) {
       secureError("Unexpected error in listTourInvitations", error);
       throw error instanceof Error ? error : new Error("An unexpected error occurred.");
@@ -161,21 +203,13 @@ class InvitationService {
       // Check if expired
       const isExpired = isPastDate(invitation.expires_at);
 
-      // Get inviter email
-      let inviterEmail = "";
-      try {
-        const adminClient = createSupabaseAdminClient();
-        const { data: authUser } = await adminClient.auth.admin.getUserById(invitation.inviter_id);
-        inviterEmail = authUser?.user?.email || "";
-      } catch {
-        // Fallback if admin API is not available
-        secureError("Could not fetch inviter email", { invitationId: invitation.id });
-      }
-
-      // Get inviter display name
+      // SECURITY: Get inviter email and display name from profiles
+      // Inviter email is shown to invitation recipient ("Invited by: email@example.com").
+      // Email comes from profiles.email (synced from auth.users via trigger).
+      // Previous implementation used admin client, now uses profiles table.
       const { data: profile } = await supabase
         .from("profiles")
-        .select("display_name")
+        .select("display_name, email")
         .eq("id", invitation.inviter_id)
         .maybeSingle();
 
@@ -188,7 +222,7 @@ class InvitationService {
         tour_id: invitation.tour_id,
         tour_title: tours && tours.length > 0 ? tours[0].title : "",
         tour_status: tours && tours.length > 0 ? tours[0].status : "planning",
-        inviter_email: inviterEmail,
+        inviter_email: profile?.email || "",
         inviter_display_name: profile?.display_name || undefined,
         email: invitation.email,
         status: invitation.status,
@@ -257,7 +291,7 @@ class InvitationService {
       // Get existing participants for this tour
       const { data: participants, error: participantsError } = await supabase
         .from("participants")
-        .select("user_id, profiles!participants_user_id_fkey(id)")
+        .select("user_id, profiles!participants_user_id_fkey(id, email)")
         .eq("tour_id", tourId);
 
       if (participantsError) {
@@ -265,26 +299,17 @@ class InvitationService {
         throw new Error("Failed to check existing participants.");
       }
 
-      // Get user emails for participants
+      // SECURITY: Get user emails for participants (from profiles table)
+      // This prevents duplicate invitations to users already in the tour.
+      // Email comes from profiles.email (synced from auth.users via trigger).
+      // Previous implementation used admin client (N+1 queries), now uses single JOIN.
       const participantEmails = new Set<string>();
-      const adminClient = createSupabaseAdminClient();
-
-      if (participants && participants.length > 0) {
-        await Promise.all(
-          participants.map(async (p) => {
-            try {
-              const { data: authUser } = await adminClient.auth.admin.getUserById(p.user_id);
-              if (authUser?.user?.email) {
-                participantEmails.add(authUser.user.email.toLowerCase());
-              }
-            } catch {
-              // Skip if user not found
-              secureError("Error fetching participant user", { userId: p.user_id });
-              errors.push({ email: p.user_id, error: "Failed to fetch participant user" });
-            }
-          })
-        );
-      }
+      (participants || []).forEach((p) => {
+        const profile = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles;
+        if (profile && profile.email) {
+          participantEmails.add(profile.email.toLowerCase());
+        }
+      });
 
       // Get existing pending and declined invitations for this tour
       const { data: existingInvitations, error: invitationsError } = await supabase
@@ -346,6 +371,8 @@ class InvitationService {
           // OTP expires in 1 hour
           const otpExpiresAt = new Date();
           otpExpiresAt.setHours(otpExpiresAt.getHours() + 1);
+
+          const adminClient = createSupabaseAdminClient();
 
           // Store OTP in database
           const { error: otpError } = await adminClient.from("invitation_otp").insert({

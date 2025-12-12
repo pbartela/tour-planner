@@ -30,6 +30,8 @@ export const useRemoveParticipantMutation = (tourId: string) => {
         queryClient.invalidateQueries({ queryKey: ["tours"] });
         // Invalidate tour details to update participant list
         queryClient.invalidateQueries({ queryKey: ["tourDetails", tourId] });
+        // Invalidate votes query since participant removal also deletes their vote
+        queryClient.invalidateQueries({ queryKey: ["votes", tourId] });
       },
     },
     queryClient
