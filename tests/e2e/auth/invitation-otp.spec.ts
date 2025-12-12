@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
-import crypto from "crypto";
+import crypto, { randomUUID } from "crypto";
 import * as dotenv from "dotenv";
 import { Pool } from "pg";
 import type { Database } from "../../../src/db/database.types";
@@ -67,7 +67,8 @@ interface InviterContext {
 let inviterContext: InviterContext | null = null;
 
 async function createInviterContext(): Promise<InviterContext> {
-  const inviterEmail = `inviter-${Date.now()}@tour-planner.test`;
+  // Use randomUUID() for guaranteed uniqueness in parallel test execution
+  const inviterEmail = `inviter-${randomUUID()}@tour-planner.test`;
 
   // Create a real user via Supabase admin API
   const { data: userData, error: userError } = await supabase.auth.admin.createUser({
@@ -238,7 +239,7 @@ const skipInDocker = process.env.CI === "true" || process.env.SKIP_WEBSERVER ===
 test.describe("OTP Verification - Valid Scenarios", () => {
   test.skip(skipInDocker, "Skipped in Docker/CI due to rate limiting and auth service isolation");
 
-  const testEmail = `test-otp-${Date.now()}@example.com`;
+  const testEmail = `test-otp-${randomUUID()}@example.com`;
   let otpToken: string;
   let invitationToken: string;
 
@@ -356,7 +357,7 @@ test.describe("OTP Verification - Invalid Scenarios", () => {
 });
 
 test.describe("OTP Verification - Expiration", () => {
-  const testEmail = `test-expired-${Date.now()}@example.com`;
+  const testEmail = `test-expired-${randomUUID()}@example.com`;
   let otpToken: string;
   let invitationToken: string;
 
@@ -387,7 +388,7 @@ test.describe("OTP Verification - Expiration", () => {
 });
 
 test.describe("OTP Verification - One-Time Use", () => {
-  const testEmail = `test-used-${Date.now()}@example.com`;
+  const testEmail = `test-used-${randomUUID()}@example.com`;
   let otpToken: string;
   let invitationToken: string;
 
@@ -415,7 +416,7 @@ test.describe("OTP Verification - One-Time Use", () => {
 
   test("should mark OTP as used after first successful verification", async ({ page }) => {
     // Create a fresh, unused OTP
-    const freshEmail = `fresh-${Date.now()}@example.com`;
+    const freshEmail = `fresh-${randomUUID()}@example.com`;
     const { otpToken: freshOtp, invitationToken: freshInvitationToken } = await createTestOTP(freshEmail);
 
     // First verification should succeed

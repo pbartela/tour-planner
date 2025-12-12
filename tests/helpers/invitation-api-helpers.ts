@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import crypto from "crypto";
+import crypto, { randomUUID } from "crypto";
 import { Pool } from "pg";
 import type { Database } from "../../src/db/database.types";
 import type { APIRequestContext } from "@playwright/test";
@@ -107,7 +107,8 @@ export async function createTestUser(email: string): Promise<TestUser> {
  * Create a test tour owned by a user
  */
 export async function createTestTour(ownerId: string, title?: string): Promise<TestTour> {
-  const tourTitle = title || `Test Tour ${Date.now()}`;
+  // Use randomUUID() for guaranteed uniqueness in parallel test execution
+  const tourTitle = title || `Test Tour ${randomUUID()}`;
   const startDate = new Date();
   const endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
 

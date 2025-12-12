@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import * as dotenv from "dotenv";
+import { randomUUID } from "crypto";
 import {
   createTestUser,
   createTestTour,
@@ -26,7 +27,8 @@ test.describe("DELETE /api/invitations/[invitationId]", () => {
 
   test.beforeEach(async ({ request }) => {
     // Create tour owner and tour
-    tourOwner = await createTestUser(`owner-${Date.now()}@test.com`);
+    // Use randomUUID() for guaranteed uniqueness in parallel test execution
+    tourOwner = await createTestUser(`owner-${randomUUID()}@test.com`);
     testTour = await createTestTour(tourOwner.id);
 
     // Get CSRF token
@@ -184,7 +186,7 @@ test.describe("DELETE /api/invitations/[invitationId]", () => {
       );
 
       // Create another user who is not the owner
-      const otherUser = await createTestUser(`other-${Date.now()}@test.com`);
+      const otherUser = await createTestUser(`other-${randomUUID()}@test.com`);
 
       const response = await request.delete(`/api/invitations/${invitation.id}`, {
         headers: {

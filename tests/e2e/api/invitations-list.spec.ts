@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import * as dotenv from "dotenv";
+import { randomUUID } from "crypto";
 import {
   createTestUser,
   createTestTour,
@@ -24,7 +25,8 @@ test.describe("GET /api/tours/[tourId]/invitations", () => {
 
   test.beforeEach(async () => {
     // Create tour owner and tour
-    tourOwner = await createTestUser(`owner-${Date.now()}@test.com`);
+    // Use randomUUID() for guaranteed uniqueness in parallel test execution
+    tourOwner = await createTestUser(`owner-${randomUUID()}@test.com`);
     testTour = await createTestTour(tourOwner.id);
   });
 
@@ -44,8 +46,13 @@ test.describe("GET /api/tours/[tourId]/invitations", () => {
 
       expect(response.status()).toBe(200);
       const body = await response.json();
-      expect(Array.isArray(body)).toBe(true);
-      expect(body).toHaveLength(0);
+      expect(body).toHaveProperty("data");
+      expect(body).toHaveProperty("pagination");
+      expect(Array.isArray(body.data)).toBe(true);
+      expect(body.data).toHaveLength(0);
+      expect(body.pagination.page).toBe(1);
+      expect(body.pagination.limit).toBe(20);
+      expect(body.pagination.total).toBe(0);
     });
 
     test("should return list of invitations for tour", async ({ request }) => {
@@ -62,14 +69,17 @@ test.describe("GET /api/tours/[tourId]/invitations", () => {
 
       expect(response.status()).toBe(200);
       const body = await response.json();
-      expect(Array.isArray(body)).toBe(true);
-      expect(body).toHaveLength(3);
+      expect(body).toHaveProperty("data");
+      expect(body).toHaveProperty("pagination");
+      expect(Array.isArray(body.data)).toBe(true);
+      expect(body.data).toHaveLength(3);
+      expect(body.pagination.total).toBe(3);
 
       // Verify structure
-      expect(body[0]).toHaveProperty("id");
-      expect(body[0]).toHaveProperty("email");
-      expect(body[0]).toHaveProperty("status");
-      expect(body[0]).toHaveProperty("created_at");
+      expect(body.data[0]).toHaveProperty("id");
+      expect(body.data[0]).toHaveProperty("email");
+      expect(body.data[0]).toHaveProperty("status");
+      expect(body.data[0]).toHaveProperty("created_at");
     });
 
     test("should include invitation status (pending, accepted, declined)", async ({
@@ -90,8 +100,8 @@ test.describe("GET /api/tours/[tourId]/invitations", () => {
 
       expect(response.status()).toBe(200);
       const body = await response.json();
-      expect(body).toHaveLength(1);
-      expect(body[0]?.status).toBe("pending");
+      expect(body.data).toHaveLength(1);
+      expect(body.data[0]?.status).toBe("pending");
     });
 
     test("should include invitee email and timestamp", async ({ request }) => {
@@ -106,10 +116,10 @@ test.describe("GET /api/tours/[tourId]/invitations", () => {
 
       expect(response.status()).toBe(200);
       const body = await response.json();
-      expect(body).toHaveLength(1);
-      expect(body[0]?.email).toBe(testEmail);
-      expect(body[0]?.created_at).toBeDefined();
-      expect(new Date(body[0]?.created_at).getTime()).toBeGreaterThan(0);
+      expect(body.data).toHaveLength(1);
+      expect(body.data[0]?.email).toBe(testEmail);
+      expect(body.data[0]?.created_at).toBeDefined();
+      expect(new Date(body.data[0]?.created_at).getTime()).toBeGreaterThan(0);
     });
   });
 
@@ -122,7 +132,7 @@ test.describe("GET /api/tours/[tourId]/invitations", () => {
 
     test("should reject when user is not tour owner", async ({ request }) => {
       // Create another user who is not the owner
-      const otherUser = await createTestUser(`other-${Date.now()}@test.com`);
+      const otherUser = await createTestUser(`other-${randomUUID()}@test.com`);
 
       const response = await request.get(`/api/tours/${testTour.id}/invitations`, {
         headers: {

@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import * as dotenv from "dotenv";
+import { randomUUID } from "crypto";
 import {
   createTestUser,
   createTestTour,
@@ -26,7 +27,8 @@ test.describe("POST /api/tours/[tourId]/invitations", () => {
 
   test.beforeEach(async ({ request }) => {
     // Create tour owner
-    tourOwner = await createTestUser(`owner-${Date.now()}@test.com`);
+    // Use randomUUID() for guaranteed uniqueness in parallel test execution
+    tourOwner = await createTestUser(`owner-${randomUUID()}@test.com`);
     testTour = await createTestTour(tourOwner.id);
 
     // Get CSRF token
@@ -132,7 +134,7 @@ test.describe("POST /api/tours/[tourId]/invitations", () => {
 
     test("should skip existing participants", async ({ request }) => {
       // Create a participant
-      const participant = await createTestUser(`participant-${Date.now()}@test.com`);
+      const participant = await createTestUser(`participant-${randomUUID()}@test.com`);
       await createTestParticipant(testTour.id, participant.id);
 
       const response = await request.post(
@@ -276,7 +278,7 @@ test.describe("POST /api/tours/[tourId]/invitations", () => {
 
     test("should reject when user is not tour owner", async ({ request }) => {
       // Create another user who is not the owner
-      const otherUser = await createTestUser(`other-${Date.now()}@test.com`);
+      const otherUser = await createTestUser(`other-${randomUUID()}@test.com`);
 
       const response = await request.post(
         `/api/tours/${testTour.id}/invitations`,
