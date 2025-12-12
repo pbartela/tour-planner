@@ -5,8 +5,9 @@ This guide explains how to configure GitHub Actions to run E2E tests against an 
 ## Prerequisites
 
 1. A Supabase project (create one at [supabase.com](https://supabase.com))
-2. A Resend account with API key (get one at [resend.com](https://resend.com))
-3. GitHub repository with Actions enabled
+2. GitHub repository with Actions enabled
+
+**Note:** Resend API key is **optional** for E2E tests. The GitHub Actions workflow uses Mailpit (a local email testing service) for email functionality during tests.
 
 ## Step 1: Get Supabase Credentials
 
@@ -76,8 +77,6 @@ Add the following secrets:
 | `PUBLIC_SUPABASE_ANON_KEY` | Publishable key OR anon JWT key | `sb_publishable_...` or `eyJhbGci...` |
 | `SUPABASE_URL` | Same as PUBLIC_SUPABASE_URL | `https://xxxxx.supabase.co` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Secret key OR service_role JWT key | `sb_secret_...` or `eyJhbGci...` |
-| `RESEND_API_KEY` | Resend API key for emails | `re_xxxxx` |
-| `RESEND_FROM_EMAIL` | Sender email address | `Tour Planner <noreply@yourdomain.com>` |
 
 **Key Selection Guide:**
 - ✅ **Use new keys** (`sb_publishable_...` and `sb_secret_...`) for easier rotation and better security
@@ -89,6 +88,8 @@ Add the following secrets:
 | Secret Name | Description |
 |-------------|-------------|
 | `CHROMATIC_PROJECT_TOKEN` | For visual regression tests |
+| `RESEND_API_KEY` | **Optional** - Resend API key for production email testing (E2E tests use Mailpit instead) |
+| `RESEND_FROM_EMAIL` | **Optional** - Sender email address for production (not needed for E2E tests) |
 
 ### How to Add Secrets
 
@@ -98,25 +99,41 @@ Add the following secrets:
 4. Click **Add secret**
 5. Repeat for all required secrets
 
-## Step 4: Verify Email Configuration
+## Step 4: Email Testing with Mailpit
 
-### Using Resend for Production
+### Mailpit Service in GitHub Actions
 
-For production/CI environments, configure Resend:
+The GitHub Actions workflow automatically sets up Mailpit (an email testing service) for E2E tests:
 
-1. Go to [resend.com](https://resend.com) and create an account
-2. Get your API key from **API Keys** section
-3. Add the API key as `RESEND_API_KEY` secret in GitHub
-4. Configure a verified sender email as `RESEND_FROM_EMAIL`
+✅ **No Resend API key required** - Emails are captured locally
+✅ **Fast and reliable** - No external API dependencies
+✅ **Complete email testing** - Full HTML rendering and link verification
+✅ **No cost** - Free email testing service
 
-**Important:** Resend requires domain verification for production use. For testing, you can use their test mode.
+### How It Works
+
+During CI runs:
+1. Mailpit service container starts alongside the test runner
+2. Application routes all emails to Mailpit SMTP (port 1025)
+3. E2E tests can verify email content via Mailpit API (port 8025)
+4. No emails are sent to real email addresses
 
 ### Email Template Testing
 
 The application uses React Email templates. During CI runs:
-- Invitation emails will be sent via Resend
-- Email content is rendered using templates in `src/lib/templates/`
-- No local Mailpit is available in CI (only in local development)
+- Invitation emails are rendered using templates in `src/lib/templates/`
+- Emails are captured in Mailpit instead of being sent externally
+- Tests can verify email content, links, and formatting
+
+### Using Resend (Optional)
+
+If you want to test actual email delivery in CI (not typical for E2E tests):
+
+1. Add `RESEND_API_KEY` as a GitHub secret
+2. Add `RESEND_FROM_EMAIL` as a GitHub secret
+3. Update workflow to remove `TEST_MODE=true` environment variable
+
+**Note:** This is not recommended for E2E tests as it sends real emails and requires API quotas.
 
 ## Step 5: Test the Configuration
 
@@ -144,9 +161,10 @@ When secrets are configured, these jobs run:
 The workflow automatically checks for required secrets:
 - `PUBLIC_SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `RESEND_API_KEY`
 
-If any secret is missing, E2E tests are skipped gracefully with a clear message.
+**Note:** `RESEND_API_KEY` is no longer required. E2E tests use Mailpit for email testing.
+
+If required secrets are missing, E2E tests are skipped gracefully with a clear message.
 
 ## Step 6: Verify Test Results
 
@@ -189,12 +207,15 @@ If any secret is missing, E2E tests are skipped gracefully with a clear message.
 
 #### Email-Related Failures
 
-**Cause:** Missing or invalid Resend configuration
+**Cause:** Mailpit service not ready or SMTP connection issues
 
 **Solution:**
-1. Verify `RESEND_API_KEY` is correct
-2. Check `RESEND_FROM_EMAIL` format: `Name <email@domain.com>`
-3. Ensure Resend account is active
+1. Check GitHub Actions logs for Mailpit service startup
+2. Verify "Wait for Mailpit to be ready" step succeeds
+3. Look for SMTP connection errors in test output
+4. Mailpit service should be healthy before tests run
+
+**Note:** Resend is not used in E2E tests. All emails route to Mailpit.
 
 #### Database Schema Errors
 
@@ -273,40 +294,48 @@ If using JWT-based `anon` and `service_role` keys:
 ### How CI Tests Work
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                  GitHub Actions Runner               │
-│                                                       │
-│  ┌─────────────┐                                    │
-│  │   npm ci    │  Install dependencies              │
-│  └──────┬──────┘                                    │
-│         │                                            │
-│  ┌──────▼──────┐                                    │
-│  │ Create .env │  Populate from GitHub Secrets      │
-│  └──────┬──────┘                                    │
-│         │                                            │
-│  ┌──────▼──────┐                                    │
-│  │  npm run    │  Start Astro dev server            │
-│  │     dev     │  (localhost:3000)                  │
-│  └──────┬──────┘                                    │
-│         │                                            │
-│  ┌──────▼──────────┐                                │
-│  │   Playwright    │  Run E2E tests                 │
-│  │     Tests       │  • Auth flows                  │
-│  │                 │  • Tour management             │
-│  │                 │  • i18n validation             │
-│  └──────┬──────────┘                                │
-│         │                                            │
-│         └────────────► Upload test reports          │
-│                                                       │
-└─────────────────────────────────────────────────────┘
-           │                           │
-           │                           │
-           ▼                           ▼
-   ┌───────────────┐          ┌──────────────┐
-   │   External    │          │   Resend     │
-   │   Supabase    │          │   Email      │
-   │   Database    │          │   Service    │
-   └───────────────┘          └──────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                  GitHub Actions Runner                       │
+│                                                               │
+│  ┌─────────────┐         ┌──────────────┐                  │
+│  │   npm ci    │         │   Mailpit    │                  │
+│  └──────┬──────┘         │   Service    │                  │
+│         │                │  Container   │                  │
+│  ┌──────▼──────┐         │              │                  │
+│  │ Create .env │         │ SMTP: 1025   │                  │
+│  │ TEST_MODE=  │         │ HTTP: 8025   │                  │
+│  │    true     │         └───────┬──────┘                  │
+│  └──────┬──────┘                 │                          │
+│         │                        │                          │
+│  ┌──────▼──────┐                 │                          │
+│  │Wait Mailpit │◄────────────────┘                          │
+│  │   Ready     │  Health check                              │
+│  └──────┬──────┘                                            │
+│         │                                                    │
+│  ┌──────▼──────┐                 ┌──────────────┐          │
+│  │  npm run    │  Emails  ──────►│   Mailpit    │          │
+│  │   build +   │  route to        │   captures   │          │
+│  │   preview   │  localhost:1025  │   all mail   │          │
+│  └──────┬──────┘                 └──────────────┘          │
+│         │                                                    │
+│  ┌──────▼──────────┐                                        │
+│  │   Playwright    │  Tests verify email via Mailpit API   │
+│  │     Tests       │  • Auth magic links                    │
+│  │                 │  • Tour invitations                    │
+│  │                 │  • Email content validation            │
+│  └──────┬──────────┘                                        │
+│         │                                                    │
+│         └────────────► Upload test reports                  │
+│                                                               │
+└─────────────────────────────────────────────────────────────┘
+           │
+           │ Database queries
+           ▼
+   ┌───────────────┐
+   │   External    │
+   │   Supabase    │
+   │   Database    │
+   └───────────────┘
 ```
 
 ### Workflow Jobs
@@ -320,14 +349,16 @@ If using JWT-based `anon` and `service_role` keys:
 ### Environment Variables in CI
 
 The workflow creates a `.env` file with:
-- Supabase connection details
-- Resend email configuration
+- Supabase connection details (external instance)
+- Mailpit SMTP configuration (localhost:1025)
+- `TEST_MODE=true` to enable email routing to Mailpit
 - Default locale settings
 
-**Note:** Unlike local development, CI does **not** use:
-- Local Supabase instance
-- Mailpit SMTP server
-- Docker containers for tests
+**Note:** Unlike local development, CI uses:
+- ✅ External Supabase instance (not local)
+- ✅ Mailpit service container (similar to local Inbucket)
+- ✅ Production build + preview (not dev server)
+- ❌ No Docker for Playwright (native installation)
 
 ## Best Practices
 
