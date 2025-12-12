@@ -10,6 +10,10 @@ on:
 jobs:
   security:
     runs-on: ubuntu-latest
+    # Skip security review if PR has 'skip-review' label or is a draft
+    if: |
+      !contains(github.event.pull_request.labels.*.name, 'skip-review') &&
+      github.event.pull_request.draft == false
     steps:
       - uses: actions/checkout@v4
         with:
