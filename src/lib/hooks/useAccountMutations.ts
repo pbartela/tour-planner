@@ -82,6 +82,7 @@ export const useDeleteAccountMutation = () => {
         const { error } = await supabaseBrowserClient.auth.signOut();
 
         if (error) {
+          // eslint-disable-next-line no-console
           console.error("Sign out error:", error);
         }
 

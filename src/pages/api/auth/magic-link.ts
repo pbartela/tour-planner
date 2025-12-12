@@ -52,14 +52,13 @@ export const POST: APIRoute = async ({ request }) => {
     otpExpiresAt.setHours(otpExpiresAt.getHours() + 1);
 
     // Store OTP in database
-    const { error: otpError } = await supabaseAdmin
-      .from("auth_otp")
-      .insert({
-        email: email,
-        otp_token: otpToken,
-        redirect_to: redirectTo || null,
-        expires_at: otpExpiresAt.toISOString(),
-      } as any);
+    const { error: otpError } = await supabaseAdmin.from("auth_otp").insert({
+      email: email,
+      otp_token: otpToken,
+      redirect_to: redirectTo || null,
+      expires_at: otpExpiresAt.toISOString(),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
 
     if (otpError) {
       secureError("Failed to store auth OTP", otpError);

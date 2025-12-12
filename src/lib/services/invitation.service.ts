@@ -375,14 +375,13 @@ class InvitationService {
           const adminClient = createSupabaseAdminClient();
 
           // Store OTP in database
-          const { error: otpError } = await adminClient
-            .from("invitation_otp")
-            .insert({
-              email: email,
-              otp_token: otpToken,
-              invitation_token: invitation.token,
-              expires_at: otpExpiresAt.toISOString(),
-            } as any);
+          const { error: otpError } = await adminClient.from("invitation_otp").insert({
+            email: email,
+            otp_token: otpToken,
+            invitation_token: invitation.token,
+            expires_at: otpExpiresAt.toISOString(),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any);
 
           if (otpError) {
             secureError("Error creating OTP token", otpError);
@@ -666,14 +665,13 @@ class InvitationService {
       const adminClient = createSupabaseAdminClient();
 
       // Store OTP in database
-      const { error: otpError } = await adminClient
-        .from("invitation_otp")
-        .insert({
-          email: invitation.email,
-          otp_token: otpToken,
-          invitation_token: updatedInvitation.token,
-          expires_at: otpExpiresAt.toISOString(),
-        } as any);
+      const { error: otpError } = await adminClient.from("invitation_otp").insert({
+        email: invitation.email,
+        otp_token: otpToken,
+        invitation_token: updatedInvitation.token,
+        expires_at: otpExpiresAt.toISOString(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any);
 
       if (otpError) {
         secureError("Error creating OTP token for resend", otpError);

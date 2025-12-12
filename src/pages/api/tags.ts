@@ -94,6 +94,7 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
     } else {
       // Get user's recently used tags - these are just strings, no real IDs
       const { data: profile } = await profileService.getProfile(supabase, user.id);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const recentTagNames = ((profile as any)?.recently_used_tags as string[]) || [];
 
       suggestions = recentTagNames.map((name) => ({

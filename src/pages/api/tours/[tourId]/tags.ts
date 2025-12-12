@@ -47,8 +47,8 @@ export const GET: APIRoute = async ({ params, locals, request }) => {
         {
           status: 429,
           headers: {
-          "Retry-After": Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000).toString(),
-          "X-RateLimit-Limit": (rateLimitResult.remaining + 1).toString(),
+            "Retry-After": Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000).toString(),
+            "X-RateLimit-Limit": (rateLimitResult.remaining + 1).toString(),
             "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
             "X-RateLimit-Reset": rateLimitResult.resetAt.toString(),
           },
@@ -131,8 +131,8 @@ export const POST: APIRoute = async ({ params, locals, request }) => {
         {
           status: 429,
           headers: {
-          "Retry-After": Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000).toString(),
-          "X-RateLimit-Limit": (rateLimitResult.remaining + 1).toString(),
+            "Retry-After": Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000).toString(),
+            "X-RateLimit-Limit": (rateLimitResult.remaining + 1).toString(),
             "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
             "X-RateLimit-Reset": rateLimitResult.resetAt.toString(),
           },

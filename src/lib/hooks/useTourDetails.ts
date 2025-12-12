@@ -7,9 +7,11 @@ import { queryClient } from "@/lib/queryClient";
  * Fetches details for a single tour
  */
 const fetchTourDetails = async (tourId: string): Promise<TourDetailsDto> => {
+  // eslint-disable-next-line no-console
   console.log("[useTourDetails] Fetching tour:", tourId);
   const response = await get(`/api/tours/${tourId}`);
   const data = await handleApiResponse<TourDetailsDto>(response);
+  // eslint-disable-next-line no-console
   console.log("[useTourDetails] Received:", data);
   return data;
 };

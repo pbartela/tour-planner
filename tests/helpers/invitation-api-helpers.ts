@@ -69,38 +69,50 @@ export interface TestInvitation {
  * Create a test user with authentication tokens
  */
 export async function createTestUser(email: string): Promise<TestUser> {
-  // Create user with a password via Supabase Admin API for reliable authentication
-  const testPassword = `TestPass123!${Date.now()}`;
+  const client = await pgPool.connect();
 
-  const { data: userData, error: userError } = await supabase.auth.admin.createUser({
-    email,
-    password: testPassword,
-    email_confirm: true,
-    user_metadata: {
-      display_name: `Test User ${email}`,
-    },
-  });
+  try {
+    // Generate test password and user data
+    const testPassword = `TestPass123!${Date.now()}`;
+    const hashedPassword = await hashPassword(testPassword);
+    const userId = crypto.randomUUID();
+    const now = new Date().toISOString();
 
-  if (userError || !userData.user) {
-    throw new Error(`Failed to create test user: ${userError?.message}`);
+    // Insert user directly into auth.users table
+    await client.query(
+      `
+      INSERT INTO auth.users (
+        id,
+        email,
+        encrypted_password,
+        email_confirmed_at,
+        created_at,
+        updated_at,
+        raw_user_meta_data,
+        is_super_admin
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, false
+      )
+    `,
+      [userId, email, hashedPassword, now, now, now, JSON.stringify({ display_name: `Test User ${email}` })]
+    );
+
+    // Generate JWT tokens for authentication
+    const accessToken = generateJWT(userId, "access");
+    const refreshToken = generateJWT(userId, "refresh");
+
+    return {
+      id: userId,
+      email,
+      accessToken,
+      refreshToken,
+    };
+  } catch (error) {
+    console.error(`Failed to create test user ${email}:`, error);
+    throw new Error(`Failed to create test user: ${error.message}`);
+  } finally {
+    client.release();
   }
-
-  // Sign in with the password to get valid session tokens
-  const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-    email,
-    password: testPassword,
-  });
-
-  if (signInError || !signInData.session) {
-    throw new Error(`Failed to sign in test user: ${signInError?.message}`);
-  }
-
-  return {
-    id: userData.user.id,
-    email: userData.user.email!,
-    accessToken: signInData.session.access_token,
-    refreshToken: signInData.session.refresh_token,
-  };
 }
 
 /**
@@ -202,6 +214,7 @@ export async function cleanupTestUser(userId: string): Promise<void> {
     // Delete user from auth.users (will cascade to profiles and related data)
     await supabase.auth.admin.deleteUser(userId);
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.warn(`Failed to cleanup test user ${userId}:`, error);
   }
 }
@@ -214,6 +227,7 @@ export async function cleanupTestTour(tourId: string): Promise<void> {
     // Delete tour (will cascade to invitations, participants, etc.)
     await pgPool.query("DELETE FROM public.tours WHERE id = $1", [tourId]);
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.warn(`Failed to cleanup test tour ${tourId}:`, error);
   }
 }
@@ -225,6 +239,7 @@ export async function cleanupTestInvitation(invitationId: string): Promise<void>
   try {
     await pgPool.query("DELETE FROM public.invitations WHERE id = $1", [invitationId]);
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.warn(`Failed to cleanup test invitation ${invitationId}:`, error);
   }
 }

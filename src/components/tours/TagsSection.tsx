@@ -23,6 +23,7 @@ export const TagsSection = ({ tourId }: TagsSectionProps) => {
     try {
       await addTagMutation.mutateAsync(tagName);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error("Failed to add tag:", error);
     }
   };
@@ -32,6 +33,7 @@ export const TagsSection = ({ tourId }: TagsSectionProps) => {
     try {
       await removeTagMutation.mutateAsync(tagId);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error("Failed to remove tag:", error);
     } finally {
       setRemovingTagId(null);
