@@ -61,23 +61,10 @@ jobs:
           name: codecov-umbrella
         continue-on-error: true
 
-  # Playwright E2E Tests (optional - requires Supabase)
+  # Playwright E2E Tests (using Docker Compose - no secrets required)
   playwright:
     name: Playwright E2E Tests
     runs-on: ubuntu-latest
-
-    # Add Mailpit service for email testing
-    services:
-      mailpit:
-        image: axllent/mailpit:latest
-        ports:
-          - 1025:1025  # SMTP port
-          - 8025:8025  # Web UI port
-        options: >-
-          --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:8025/api/v1/info || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     strategy:
       fail-fast: false
@@ -87,77 +74,59 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: "npm"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Check for Supabase secrets
-        id: check-secrets
+      - name: Start services with Docker Compose (without playwright)
         run: |
-          if [ -n "${{ secrets.PUBLIC_SUPABASE_URL }}" ] && \
-             [ -n "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" ]; then
-            echo "has_secrets=true" >> $GITHUB_OUTPUT
-          else
-            echo "has_secrets=false" >> $GITHUB_OUTPUT
-            echo "Skipping E2E tests - Required secrets not configured"
-            echo "Required: PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY"
-            echo "Note: RESEND_API_KEY is optional - tests use Mailpit service for email testing"
-          fi
+          docker compose up -d --build supabase-db supabase-rest supabase-auth supabase-inbucket app
+          echo "Waiting for services to be healthy..."
+          timeout 120 bash -c 'until docker compose ps app | grep -q "healthy"; do sleep 2; done'
+          echo "✅ All services are ready!"
 
-      - name: Install Playwright Browsers
-        if: steps.check-secrets.outputs.has_secrets == 'true'
-        run: npx playwright install --with-deps ${{ matrix.project }}
-
-      - name: Create .env file
-        if: steps.check-secrets.outputs.has_secrets == 'true'
+      - name: Wait for app to be ready
         run: |
-          cat > .env << EOF
-          PUBLIC_SUPABASE_URL=${{ secrets.PUBLIC_SUPABASE_URL }}
-          PUBLIC_SUPABASE_ANON_KEY=${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
-          PUBLIC_DEFAULT_LOCALE=en-US
-          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          # Email configuration - uses Mailpit service for testing
-          RESEND_FROM_EMAIL=E2E Tests <e2e@test.com>
-          SMTP_HOST=localhost
-          SMTP_PORT=1025
-          TEST_MODE=true
-          EOF
-
-      - name: Wait for Mailpit to be ready
-        if: steps.check-secrets.outputs.has_secrets == 'true'
-        run: |
-          echo "Waiting for Mailpit service..."
-          timeout 30 bash -c 'until curl -s http://localhost:8025/api/v1/info > /dev/null; do sleep 1; done'
-          echo "✅ Mailpit is ready!"
+          echo "Waiting for app server..."
+          timeout 60 bash -c 'until docker compose exec -T app wget --no-verbose --tries=1 --spider http://localhost:3000 2>/dev/null; do sleep 2; done'
+          echo "✅ App server is ready!"
 
       - name: Run Playwright tests
-        if: steps.check-secrets.outputs.has_secrets == 'true'
-        run: npx playwright test --project=${{ matrix.project }}
-        env:
-          CI: true
+        run: |
+          docker compose run --rm -e CI=true playwright npx playwright test --project=${{ matrix.project }}
         continue-on-error: true
+
+      - name: Copy test results
+        if: always()
+        run: |
+          # Results are in host volumes, just rename for artifact upload
+          if [ -d "playwright-report" ]; then
+            mv playwright-report playwright-report-${{ matrix.project }} || true
+          fi
+          if [ -d "test-results" ]; then
+            mv test-results test-results-${{ matrix.project }} || true
+          fi
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report-${{ matrix.project }}
-          path: playwright-report/
+          path: playwright-report-${{ matrix.project }}/
           retention-days: 30
+          if-no-files-found: ignore
 
       - name: Upload test videos
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-videos-${{ matrix.project }}
-          path: test-results/
+          path: test-results-${{ matrix.project }}/
           retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v
 
   # Chromatic Visual Regression Tests (optional)
   chromatic:
@@ -234,11 +203,14 @@ jobs:
       - name: Check for Supabase secrets
         id: check-secrets
         run: |
-          if [ -n "${{ secrets.PUBLIC_SUPABASE_URL }}" ] && [ -n "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" ]; then
+          if [ -n "${{ secrets.PUBLIC_SUPABASE_URL }}" ] && \
+             [ -n "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" ] && \
+             [ -n "${{ secrets.SUPABASE_DB_PASSWORD }}" ]; then
             echo "has_secrets=true" >> $GITHUB_OUTPUT
           else
             echo "has_secrets=false" >> $GITHUB_OUTPUT
             echo "Skipping smoke tests - Supabase secrets not configured"
+            echo "Required: PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_DB_PASSWORD"
           fi
 
       - name: Install Playwright
@@ -254,6 +226,7 @@ jobs:
           PUBLIC_DEFAULT_LOCALE=en-US
           SUPABASE_URL=${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_DB_PASSWORD=${{ secrets.SUPABASE_DB_PASSWORD }}
           # Email configuration - uses Mailpit service for testing
           RESEND_FROM_EMAIL=Smoke Tests <smoke@test.com>
           SMTP_HOST=localhost
