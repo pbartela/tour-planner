@@ -124,10 +124,10 @@ function DaisyCalendar({
         ...classNames,
       }}
       components={{
-        Root: DaisyCalendarRoot as React.ComponentType<React.HTMLAttributes<HTMLDivElement>>,
-        Chevron: DaisyCalendarChevron as React.ComponentType<React.SVGProps<SVGSVGElement>>,
+        Root: DaisyCalendarRoot as any,
+        Chevron: DaisyCalendarChevron as any,
         DayButton: DaisyCalendarDayButton,
-        WeekNumber: DaisyCalendarWeekNumber as React.ComponentType<React.TdHTMLAttributes<HTMLTableCellElement>>,
+        WeekNumber: DaisyCalendarWeekNumber as any,
         ...components,
       }}
       {...props}

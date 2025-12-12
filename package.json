@@ -92,6 +92,7 @@
     "@tailwindcss/typography": "^0.5.19",
     "@testing-library/jest-dom": "^6.9.1",
     "@types/nodemailer": "^7.0.3",
+    "@types/pg": "^8.16.0",
     "@typescript-eslint/eslint-plugin": "8.28.0",
     "@typescript-eslint/parser": "8.28.0",
     "@vitest/coverage-v8": "^4.0.8",

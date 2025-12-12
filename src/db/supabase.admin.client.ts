@@ -10,9 +10,9 @@ export function createSupabaseAdminClient() {
 
   return createClient<Database>(ENV.PUBLIC_SUPABASE_URL, ENV.SUPABASE_SERVICE_ROLE_KEY, {
     auth: {
-      url: authUrl,
       autoRefreshToken: false,
       persistSession: false,
+      ...(authUrl !== ENV.PUBLIC_SUPABASE_URL && { flowType: "pkce" }),
     },
   });
 }

@@ -255,7 +255,8 @@ export function secureLog(message: string, context?: LogContext): void {
     console.log(`[${new Date().toISOString()}] INFO ${message}`, context || "");
   } else {
     // In production, sanitize the context
-    console.log(formatLogMessage("info", message, context ? sanitizeObject(context) : undefined));
+    const sanitizedContext = context ? (sanitizeObject(context) as LogContext) : undefined;
+    console.log(formatLogMessage("info", message, sanitizedContext));
   }
 }
 
@@ -276,7 +277,8 @@ export function secureWarn(message: string, context?: LogContext): void {
     console.warn(`[${new Date().toISOString()}] WARN ${message}`, context || "");
   } else {
     // In production, sanitize the context
-    console.warn(formatLogMessage("warn", message, context ? sanitizeObject(context) : undefined));
+    const sanitizedContext = context ? (sanitizeObject(context) as LogContext) : undefined;
+    console.warn(formatLogMessage("warn", message, sanitizedContext));
   }
 }
 

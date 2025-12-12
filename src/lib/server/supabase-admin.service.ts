@@ -22,7 +22,7 @@ export async function getUserByEmail(adminClient: AdminClient, email: string): P
   });
 
   if (error) {
-    return { user: null, error: error as AuthError };
+    return { user: null, error: error as unknown as AuthError };
   }
 
   // RPC returns array, get first result (or null)
@@ -39,8 +39,8 @@ export async function getUserByEmail(adminClient: AdminClient, email: string): P
     email_confirmed_at: userRecord.email_confirmed_at,
     created_at: userRecord.created_at,
     updated_at: userRecord.updated_at,
-    user_metadata: userRecord.raw_user_meta_data,
-    app_metadata: userRecord.raw_app_meta_data,
+    user_metadata: (userRecord.raw_user_meta_data ?? {}) as Record<string, unknown>,
+    app_metadata: (userRecord.raw_app_meta_data ?? {}) as Record<string, unknown>,
     aud: "authenticated",
     role: "authenticated",
   };

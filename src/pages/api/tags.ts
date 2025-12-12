@@ -50,8 +50,8 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
         {
           status: 429,
           headers: {
-            "Retry-After": rateLimitResult.retryAfter?.toString() || "60",
-            "X-RateLimit-Limit": rateLimitResult.limit.toString(),
+            "Retry-After": Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000).toString(),
+            "X-RateLimit-Limit": (rateLimitResult.remaining + 1).toString(),
             "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
             "X-RateLimit-Reset": rateLimitResult.resetAt.toString(),
           },
@@ -94,7 +94,7 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
     } else {
       // Get user's recently used tags - these are just strings, no real IDs
       const { data: profile } = await profileService.getProfile(supabase, user.id);
-      const recentTagNames = (profile?.recently_used_tags as string[]) || [];
+      const recentTagNames = ((profile as any)?.recently_used_tags as string[]) || [];
 
       suggestions = recentTagNames.map((name) => ({
         source: "recent" as const,

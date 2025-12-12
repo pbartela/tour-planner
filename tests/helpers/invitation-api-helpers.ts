@@ -266,7 +266,7 @@ export async function getInvitationsForTour(tourId: string): Promise<TestInvitat
     status: string;
   }>("SELECT id, tour_id, email, token, status FROM public.invitations WHERE tour_id = $1", [tourId]);
 
-  return rows.map((row) => ({
+  return rows.map((row: { id: string; tour_id: string; email: string; token: string; status: string }) => ({
     id: row.id,
     tourId: row.tour_id,
     email: row.email,

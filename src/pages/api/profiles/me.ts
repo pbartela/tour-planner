@@ -245,7 +245,7 @@ export const DELETE: APIRoute = async ({ request, locals, cookies }) => {
 
   try {
     const adminClient = createSupabaseAdminClient();
-    const { error } = await profileService.deleteAccount(supabase, adminClient, user.id, {
+    const { error } = await profileService.deleteAccount(supabase, adminClient as any, user.id, {
       ipAddress: getClientIp(request),
       userAgent: getUserAgent(request),
     });
