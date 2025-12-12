@@ -15,10 +15,36 @@ import { sendEmailThroughInbucket } from "./email-dev.middleware";
 let resendClient: Resend | null = null;
 
 /**
+ * Checks if the application is running in test/CI mode where emails should route to Mailpit
+ * @returns True if in test/CI mode, false otherwise
+ */
+function isTestMode(): boolean {
+  return process.env.TEST_MODE === "true" || process.env.CI === "true";
+}
+
+/**
+ * Checks if emails should be routed to local Mailpit/Inbucket instead of Resend
+ * @returns True if using local email server, false otherwise
+ */
+function useLocalEmailServer(): boolean {
+  return isDevelopment() || isTestMode();
+}
+
+/**
  * Validates that required email environment variables are present
- * @throws Error if RESEND_API_KEY or RESEND_FROM_EMAIL are missing
+ * In development or test mode, Resend credentials are optional (uses Mailpit/Inbucket)
+ * @throws Error if RESEND_API_KEY or RESEND_FROM_EMAIL are missing in production
  */
 function validateEmailConfig(): void {
+  // In development or test mode, email routing goes through Mailpit/Inbucket SMTP
+  // So Resend credentials are not required
+  if (useLocalEmailServer()) {
+    const mode = isDevelopment() ? "DEV" : "TEST";
+    console.log(`📧 [${mode}] Email validation skipped - using Mailpit/Inbucket`);
+    return;
+  }
+
+  // In production, require Resend credentials
   if (!ENV.RESEND_API_KEY) {
     throw new Error("RESEND_API_KEY is not configured. Please set it in your .env file to enable email functionality.");
   }
@@ -86,9 +112,9 @@ export async function sendInvitationEmail(options: SendInvitationEmailOptions): 
   try {
     // Validate email configuration before attempting to send
     validateEmailConfig();
-    // After validation, we know this value exists
-    const fromEmail = ENV.RESEND_FROM_EMAIL;
-    if (!fromEmail) throw new Error("RESEND_FROM_EMAIL validation failed");
+
+    // In development mode, use a default from email if not provided
+    const fromEmail = ENV.RESEND_FROM_EMAIL || "Tour Planner <noreply@localhost>";
 
     const { to, inviterName, tourTitle, invitationUrl, expiresAt } = options;
 
@@ -97,9 +123,10 @@ export async function sendInvitationEmail(options: SendInvitationEmailOptions): 
 
     const subject = `You're invited to join "${tourTitle}"!`;
 
-    // In development, send through local Inbucket SMTP
-    if (isDevelopment()) {
-      console.log("📧 [DEV] Routing email to Inbucket:", {
+    // In development or test mode, send through local Inbucket/Mailpit SMTP
+    if (useLocalEmailServer()) {
+      const mode = isDevelopment() ? "DEV" : "TEST";
+      console.log(`📧 [${mode}] Routing email to Inbucket/Mailpit:`, {
         to,
         from: fromEmail,
         subject,
@@ -154,9 +181,9 @@ export async function sendAuthEmail(options: SendAuthEmailOptions): Promise<Send
   try {
     // Validate email configuration before attempting to send
     validateEmailConfig();
-    // After validation, we know this value exists
-    const fromEmail = ENV.RESEND_FROM_EMAIL;
-    if (!fromEmail) throw new Error("RESEND_FROM_EMAIL validation failed");
+
+    // In development mode, use a default from email if not provided
+    const fromEmail = ENV.RESEND_FROM_EMAIL || "Tour Planner <noreply@localhost>";
 
     const { to, loginUrl } = options;
 
@@ -165,9 +192,10 @@ export async function sendAuthEmail(options: SendAuthEmailOptions): Promise<Send
 
     const subject = "Sign in to Tour Planner";
 
-    // In development, send through local Inbucket SMTP
-    if (isDevelopment()) {
-      console.log("📧 [DEV] Routing authentication email to Inbucket:", {
+    // In development or test mode, send through local Inbucket/Mailpit SMTP
+    if (useLocalEmailServer()) {
+      const mode = isDevelopment() ? "DEV" : "TEST";
+      console.log(`📧 [${mode}] Routing authentication email to Inbucket/Mailpit:`, {
         to,
         from: fromEmail,
         subject,
@@ -219,13 +247,14 @@ export async function sendEmail(to: string, subject: string, html: string): Prom
   try {
     // Validate email configuration before attempting to send
     validateEmailConfig();
-    // After validation, we know this value exists
-    const fromEmail = ENV.RESEND_FROM_EMAIL;
-    if (!fromEmail) throw new Error("RESEND_FROM_EMAIL validation failed");
 
-    // In development, send through local Inbucket SMTP
-    if (isDevelopment()) {
-      console.log("📧 [DEV] Routing email to Inbucket:", {
+    // In development mode, use a default from email if not provided
+    const fromEmail = ENV.RESEND_FROM_EMAIL || "Tour Planner <noreply@localhost>";
+
+    // In development or test mode, send through local Inbucket/Mailpit SMTP
+    if (useLocalEmailServer()) {
+      const mode = isDevelopment() ? "DEV" : "TEST";
+      console.log(`📧 [${mode}] Routing email to Inbucket/Mailpit:`, {
         to,
         from: fromEmail,
         subject,

@@ -65,6 +65,20 @@ jobs:
   playwright:
     name: Playwright E2E Tests
     runs-on: ubuntu-latest
+
+    # Add Mailpit service for email testing
+    services:
+      mailpit:
+        image: axllent/mailpit:latest
+        ports:
+          - 1025:1025  # SMTP port
+          - 8025:8025  # Web UI port
+        options: >-
+          --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:8025/api/v1/info || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     strategy:
       fail-fast: false
       matrix:
@@ -85,11 +99,14 @@ jobs:
       - name: Check for Supabase secrets
         id: check-secrets
         run: |
-          if [ -n "${{ secrets.PUBLIC_SUPABASE_URL }}" ] && [ -n "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" ]; then
+          if [ -n "${{ secrets.PUBLIC_SUPABASE_URL }}" ] && \
+             [ -n "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" ]; then
             echo "has_secrets=true" >> $GITHUB_OUTPUT
           else
             echo "has_secrets=false" >> $GITHUB_OUTPUT
-            echo "Skipping E2E tests - Supabase secrets not configured"
+            echo "Skipping E2E tests - Required secrets not configured"
+            echo "Required: PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY"
+            echo "Note: RESEND_API_KEY is optional - tests use Mailpit service for email testing"
           fi
 
       - name: Install Playwright Browsers
@@ -105,7 +122,19 @@ jobs:
           PUBLIC_DEFAULT_LOCALE=en-US
           SUPABASE_URL=${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # Email configuration - uses Mailpit service for testing
+          RESEND_FROM_EMAIL=E2E Tests <e2e@test.com>
+          SMTP_HOST=localhost
+          SMTP_PORT=1025
+          TEST_MODE=true
           EOF
+
+      - name: Wait for Mailpit to be ready
+        if: steps.check-secrets.outputs.has_secrets == 'true'
+        run: |
+          echo "Waiting for Mailpit service..."
+          timeout 30 bash -c 'until curl -s http://localhost:8025/api/v1/info > /dev/null; do sleep 1; done'
+          echo "✅ Mailpit is ready!"
 
       - name: Run Playwright tests
         if: steps.check-secrets.outputs.has_secrets == 'true'
@@ -176,6 +205,20 @@ jobs:
     if: |
       github.event_name == 'push' &&
       (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+
+    # Add Mailpit service for email testing
+    services:
+      mailpit:
+        image: axllent/mailpit:latest
+        ports:
+          - 1025:1025  # SMTP port
+          - 8025:8025  # Web UI port
+        options: >-
+          --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:8025/api/v1/info || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
@@ -211,7 +254,19 @@ jobs:
           PUBLIC_DEFAULT_LOCALE=en-US
           SUPABASE_URL=${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # Email configuration - uses Mailpit service for testing
+          RESEND_FROM_EMAIL=Smoke Tests <smoke@test.com>
+          SMTP_HOST=localhost
+          SMTP_PORT=1025
+          TEST_MODE=true
           EOF
+
+      - name: Wait for Mailpit to be ready
+        if: steps.check-secrets.outputs.has_secrets == 'true'
+        run: |
+          echo "Waiting for Mailpit service..."
+          timeout 30 bash -c 'until curl -s http://localhost:8025/api/v1/info > /dev/null; do sleep 1; done'
+          echo "✅ Mailpit is ready!"
 
       - name: Run smoke tests
         if: steps.check-secrets.outputs.has_secrets == 'true'

@@ -201,7 +201,8 @@ COMMENT ON COLUMN public.cron_job_logs.profiles_deleted IS 'Number of orphaned p
 -- ============================================================================
 
 INSERT INTO public.profiles (id, email, display_name)
-VALUES ('00000000-0000-0000-0000-000000000000', 'anonymized@example.com', 'Anonymized User');
+VALUES ('00000000-0000-0000-0000-000000000000', 'anonymized@example.com', 'Anonymized User')
+ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================================
 -- INDEXES
@@ -1077,7 +1078,8 @@ CREATE POLICY "Service role only" ON public.auth_otp
 
 -- Create the avatars bucket
 INSERT INTO storage.buckets (id, name, public)
-VALUES ('avatars', 'avatars', TRUE);
+VALUES ('avatars', 'avatars', TRUE)
+ON CONFLICT (id) DO NOTHING;
 
 -- Policy: Users can upload their own avatar (INSERT)
 CREATE POLICY "Users can upload their own avatar"

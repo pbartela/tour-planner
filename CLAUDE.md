@@ -105,6 +105,12 @@ This project does **not** have a production database. Therefore:
 - When making schema changes, edit the original migration file and run `npx supabase db reset`
 - This approach keeps migration history clean and simple for local-only development
 
+**For Remote Databases (Dev/Staging):**
+- To reset a remote database: `npx supabase db reset --db-url "<connection-string>"`
+- Or link first: `npx supabase link --project-ref <ref>` then `npx supabase db reset --linked`
+- See [docs/DATABASE_RESET_REMOTE.md](./docs/DATABASE_RESET_REMOTE.md) for complete guide
+- **Always test migrations locally before pushing to remote**
+
 **Orphaned Profile Cleanup**
 
 The database includes automated cleanup for orphaned profiles (profiles without corresponding `auth.users` entries):
@@ -494,8 +500,10 @@ export async function sendMyEmail(to: string, userName: string) {
 
 **Environment Variables:**
 
-- `RESEND_API_KEY` - Resend API key (get from https://resend.com/api-keys)
-- `RESEND_FROM_EMAIL` - Sender email (e.g., "Tour Planner <noreply@example.com>")
+- `RESEND_API_KEY` - Resend API key (get from https://resend.com/api-keys) - **Optional in development**
+- `RESEND_FROM_EMAIL` - Sender email (e.g., "Tour Planner <noreply@example.com>") - **Optional in development**
+
+**Note:** In development mode, Resend credentials are optional. Emails automatically route to Mailpit instead. This allows E2E testing without external email service dependencies. See [E2E Testing with Mailpit](./docs/E2E_TESTING_WITH_MAILPIT.md) for details.
 
 ### Validation
 
@@ -513,17 +521,28 @@ Required environment variables (see `.env.example`):
 **Public (client-accessible):**
 
 - `PUBLIC_SUPABASE_URL` - Supabase project URL
-- `PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
+- `PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous/publishable key
+  - For local: JWT anon key (starts with `eyJ...`)
+  - For hosted: Publishable key (`sb_publishable_...`) or JWT anon key (`eyJ...`)
 - `PUBLIC_DEFAULT_LOCALE` - Default locale (e.g., `en-US`)
 
 **Server-only (secret):**
 
 - `SUPABASE_URL` - Same as public URL
-- `SUPABASE_SERVICE_ROLE_KEY` - Service role key for admin operations
+- `SUPABASE_SERVICE_ROLE_KEY` - Service role/secret key for admin operations
+  - For local: JWT service_role key (starts with `eyJ...`)
+  - For hosted: Secret key (`sb_secret_...`) or JWT service_role key (`eyJ...`)
+  - **Recommended:** Use new secret key format for easier rotation and better security
 - `SUPABASE_AUTH_URL` - Optional override for Supabase Auth URL (defaults to SUPABASE_URL/auth/v1)
 - `RESEND_API_KEY` - Resend API key for email functionality (required)
 - `RESEND_FROM_EMAIL` - Sender email address (e.g., "Tour Planner <noreply@example.com>")
 - `OPENROUTER_API_KEY` - Optional AI API key for future features
+
+**Supabase API Key Notes:**
+- Supabase offers two key formats: new keys (`sb_publishable_...`, `sb_secret_...`) and legacy JWT keys (`eyJ...`)
+- New keys offer easier rotation, better security, and are only available on Supabase Platform (not self-hosted)
+- Both formats work interchangeably for CI/CD and production use
+- See [Supabase API Keys documentation](https://supabase.com/docs/guides/api/api-keys) for details
 
 **Testing (optional):**
 

@@ -10,9 +10,10 @@ import { secureError } from "./logger.service";
 
 // Local Inbucket/Mailpit SMTP configuration
 // Matches the configuration in supabase/config.toml (smtp_port = 54325)
+// Can be overridden via environment variables for CI/test environments
 const INBUCKET_CONFIG = {
-  host: "localhost",
-  port: 54325, // Inbucket/Mailpit SMTP port (configured in supabase/config.toml)
+  host: process.env.SMTP_HOST || "localhost",
+  port: parseInt(process.env.SMTP_PORT || "54325", 10),
   secure: false, // No TLS for local development
   auth: undefined, // Inbucket/Mailpit doesn't require auth
 };
