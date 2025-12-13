@@ -85,6 +85,8 @@ describe("email.service", () => {
     describe("production mode", () => {
       beforeEach(() => {
         vi.mocked(isDevelopment).mockReturnValue(false);
+        // Override CI environment to prevent test mode routing
+        process.env.CI = "false";
       });
 
       it("should send email successfully via Resend", async () => {
@@ -198,7 +200,7 @@ describe("email.service", () => {
         const result = await sendInvitationEmail(mockOptions);
 
         // Verify console log was called
-        expect(consoleLogSpy).toHaveBeenCalledWith("📧 [DEV] Routing email to Inbucket:", {
+        expect(consoleLogSpy).toHaveBeenCalledWith("📧 [DEV] Routing email to Inbucket/Mailpit:", {
           to: mockOptions.to,
           from: "noreply@example.com",
           subject: `You're invited to join "${mockOptions.tourTitle}"!`,
@@ -251,6 +253,8 @@ describe("email.service", () => {
     describe("production mode", () => {
       beforeEach(() => {
         vi.mocked(isDevelopment).mockReturnValue(false);
+        // Override CI environment to prevent test mode routing
+        process.env.CI = "false";
       });
 
       it("should send authentication email successfully via Resend", async () => {
@@ -323,7 +327,7 @@ describe("email.service", () => {
       it("should route authentication email to Inbucket", async () => {
         const result = await sendAuthEmail(mockOptions);
 
-        expect(consoleLogSpy).toHaveBeenCalledWith("📧 [DEV] Routing authentication email to Inbucket:", {
+        expect(consoleLogSpy).toHaveBeenCalledWith("📧 [DEV] Routing authentication email to Inbucket/Mailpit:", {
           to: mockOptions.to,
           from: "noreply@example.com",
           subject: "Sign in to Tour Planner",
@@ -354,6 +358,8 @@ describe("email.service", () => {
     describe("production mode", () => {
       beforeEach(() => {
         vi.mocked(isDevelopment).mockReturnValue(false);
+        // Override CI environment to prevent test mode routing
+        process.env.CI = "false";
       });
 
       it("should send generic email successfully via Resend", async () => {
@@ -421,7 +427,7 @@ describe("email.service", () => {
       it("should route generic email to Inbucket", async () => {
         const result = await sendEmail(mockTo, mockSubject, mockHtml);
 
-        expect(consoleLogSpy).toHaveBeenCalledWith("📧 [DEV] Routing email to Inbucket:", {
+        expect(consoleLogSpy).toHaveBeenCalledWith("📧 [DEV] Routing email to Inbucket/Mailpit:", {
           to: mockTo,
           from: "noreply@example.com",
           subject: mockSubject,

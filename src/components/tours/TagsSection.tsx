@@ -22,8 +22,8 @@ export const TagsSection = ({ tourId }: TagsSectionProps) => {
   const handleAddTag = async (tagName: string) => {
     try {
       await addTagMutation.mutateAsync(tagName);
-    } catch (error) {
-      console.error("Failed to add tag:", error);
+    } catch {
+      // Error is handled by mutation's error state
     }
   };
 
@@ -31,8 +31,8 @@ export const TagsSection = ({ tourId }: TagsSectionProps) => {
     setRemovingTagId(tagId);
     try {
       await removeTagMutation.mutateAsync(tagId);
-    } catch (error) {
-      console.error("Failed to remove tag:", error);
+    } catch {
+      // Error is handled by mutation's error state
     } finally {
       setRemovingTagId(null);
     }

@@ -1,4 +1,5 @@
 .env.test
+.env.test.remote
 .env.production
 .env.example
 .env.docker

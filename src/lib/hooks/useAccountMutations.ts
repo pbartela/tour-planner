@@ -78,12 +78,8 @@ export const useDeleteAccountMutation = () => {
         // Clear all React Query caches
         queryClient.clear();
 
-        // Sign out the user
-        const { error } = await supabaseBrowserClient.auth.signOut();
-
-        if (error) {
-          console.error("Sign out error:", error);
-        }
+        // Sign out the user (ignore errors since we're redirecting anyway)
+        await supabaseBrowserClient.auth.signOut();
 
         // Redirect immediately after signOut completes
         window.location.replace("/");

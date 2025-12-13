@@ -26,7 +26,7 @@ function isTestMode(): boolean {
  * Checks if emails should be routed to local Mailpit/Inbucket instead of Resend
  * @returns True if using local email server, false otherwise
  */
-function useLocalEmailServer(): boolean {
+function shouldUseLocalEmailServer(): boolean {
   return isDevelopment() || isTestMode();
 }
 
@@ -38,7 +38,7 @@ function useLocalEmailServer(): boolean {
 function validateEmailConfig(): void {
   // In development or test mode, email routing goes through Mailpit/Inbucket SMTP
   // So Resend credentials are not required
-  if (useLocalEmailServer()) {
+  if (shouldUseLocalEmailServer()) {
     const mode = isDevelopment() ? "DEV" : "TEST";
     console.log(`📧 [${mode}] Email validation skipped - using Mailpit/Inbucket`);
     return;
@@ -124,7 +124,7 @@ export async function sendInvitationEmail(options: SendInvitationEmailOptions): 
     const subject = `You're invited to join "${tourTitle}"!`;
 
     // In development or test mode, send through local Inbucket/Mailpit SMTP
-    if (useLocalEmailServer()) {
+    if (shouldUseLocalEmailServer()) {
       const mode = isDevelopment() ? "DEV" : "TEST";
       console.log(`📧 [${mode}] Routing email to Inbucket/Mailpit:`, {
         to,
@@ -193,7 +193,7 @@ export async function sendAuthEmail(options: SendAuthEmailOptions): Promise<Send
     const subject = "Sign in to Tour Planner";
 
     // In development or test mode, send through local Inbucket/Mailpit SMTP
-    if (useLocalEmailServer()) {
+    if (shouldUseLocalEmailServer()) {
       const mode = isDevelopment() ? "DEV" : "TEST";
       console.log(`📧 [${mode}] Routing authentication email to Inbucket/Mailpit:`, {
         to,
@@ -252,7 +252,7 @@ export async function sendEmail(to: string, subject: string, html: string): Prom
     const fromEmail = ENV.RESEND_FROM_EMAIL || "Tour Planner <noreply@localhost>";
 
     // In development or test mode, send through local Inbucket/Mailpit SMTP
-    if (useLocalEmailServer()) {
+    if (shouldUseLocalEmailServer()) {
       const mode = isDevelopment() ? "DEV" : "TEST";
       console.log(`📧 [${mode}] Routing email to Inbucket/Mailpit:`, {
         to,

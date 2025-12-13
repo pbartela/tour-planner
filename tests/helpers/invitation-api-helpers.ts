@@ -97,7 +97,7 @@ export async function createTestUser(email: string): Promise<TestUser> {
 
   return {
     id: userData.user.id,
-    email: userData.user.email!,
+    email: userData.user.email ?? "",
     accessToken: signInData.session.access_token,
     refreshToken: signInData.session.refresh_token,
   };
@@ -201,8 +201,8 @@ export async function cleanupTestUser(userId: string): Promise<void> {
   try {
     // Delete user from auth.users (will cascade to profiles and related data)
     await supabase.auth.admin.deleteUser(userId);
-  } catch (error) {
-    console.warn(`Failed to cleanup test user ${userId}:`, error);
+  } catch {
+    // Silently ignore cleanup errors in tests
   }
 }
 
@@ -213,8 +213,8 @@ export async function cleanupTestTour(tourId: string): Promise<void> {
   try {
     // Delete tour (will cascade to invitations, participants, etc.)
     await pgPool.query("DELETE FROM public.tours WHERE id = $1", [tourId]);
-  } catch (error) {
-    console.warn(`Failed to cleanup test tour ${tourId}:`, error);
+  } catch {
+    // Silently ignore cleanup errors in tests
   }
 }
 
@@ -224,8 +224,8 @@ export async function cleanupTestTour(tourId: string): Promise<void> {
 export async function cleanupTestInvitation(invitationId: string): Promise<void> {
   try {
     await pgPool.query("DELETE FROM public.invitations WHERE id = $1", [invitationId]);
-  } catch (error) {
-    console.warn(`Failed to cleanup test invitation ${invitationId}:`, error);
+  } catch {
+    // Silently ignore cleanup errors in tests
   }
 }
 

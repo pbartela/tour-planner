@@ -245,10 +245,16 @@ export const DELETE: APIRoute = async ({ request, locals, cookies }) => {
 
   try {
     const adminClient = createSupabaseAdminClient();
-    const { error } = await profileService.deleteAccount(supabase, adminClient, user.id, {
-      ipAddress: getClientIp(request),
-      userAgent: getUserAgent(request),
-    });
+    // Type assertion needed due to complex Supabase generic type inference
+    const { error } = await profileService.deleteAccount(
+      supabase,
+      adminClient as Parameters<typeof profileService.deleteAccount>[1],
+      user.id,
+      {
+        ipAddress: getClientIp(request),
+        userAgent: getUserAgent(request),
+      }
+    );
 
     if (error) {
       // Check if it's a validation error using type guard (not hardcoded string matching)
