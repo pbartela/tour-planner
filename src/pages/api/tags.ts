@@ -40,6 +40,7 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
     const rateLimitResult = checkRateLimit(clientId, RATE_LIMIT_CONFIGS.API);
 
     if (!rateLimitResult.allowed) {
+      const retryAfterSeconds = Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000);
       return new Response(
         JSON.stringify({
           error: {
@@ -50,8 +51,8 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
         {
           status: 429,
           headers: {
-            "Retry-After": rateLimitResult.retryAfter?.toString() || "60",
-            "X-RateLimit-Limit": rateLimitResult.limit.toString(),
+            "Retry-After": retryAfterSeconds.toString(),
+            "X-RateLimit-Limit": RATE_LIMIT_CONFIGS.API.maxRequests.toString(),
             "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
             "X-RateLimit-Reset": rateLimitResult.resetAt.toString(),
           },
@@ -94,7 +95,8 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
     } else {
       // Get user's recently used tags - these are just strings, no real IDs
       const { data: profile } = await profileService.getProfile(supabase, user.id);
-      const recentTagNames = (profile?.recently_used_tags as string[]) || [];
+      // Type assertion needed - recently_used_tags exists in DB but may not be in generated types
+      const recentTagNames = ((profile as { recently_used_tags?: string[] })?.recently_used_tags as string[]) || [];
 
       suggestions = recentTagNames.map((name) => ({
         source: "recent" as const,

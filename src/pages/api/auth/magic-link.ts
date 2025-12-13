@@ -5,6 +5,7 @@ import { checkRateLimit, getClientIdentifier, RATE_LIMIT_CONFIGS } from "@/lib/s
 import { secureError } from "@/lib/server/logger.service";
 import { sendAuthEmail } from "@/lib/server/email.service";
 import { randomBytes } from "node:crypto";
+import type { TablesInsert } from "@/db/database.types";
 
 export const POST: APIRoute = async ({ request }) => {
   // Rate limiting: 3 requests per 15 minutes per client
@@ -52,12 +53,13 @@ export const POST: APIRoute = async ({ request }) => {
     otpExpiresAt.setHours(otpExpiresAt.getHours() + 1);
 
     // Store OTP in database
-    const { error: otpError } = await supabaseAdmin.from("auth_otp").insert({
+    const otpRecord: TablesInsert<"auth_otp"> = {
       email: email,
       otp_token: otpToken,
       redirect_to: redirectTo || null,
       expires_at: otpExpiresAt.toISOString(),
-    });
+    };
+    const { error: otpError } = await supabaseAdmin.from("auth_otp").insert(otpRecord);
 
     if (otpError) {
       secureError("Failed to store auth OTP", otpError);

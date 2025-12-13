@@ -8,6 +8,7 @@ import type {
   AcceptInvitationResponse,
   PaginatedInvitationsDto,
 } from "@/types";
+import type { TablesInsert } from "@/db/database.types";
 import { ensureTourNotArchived } from "@/lib/utils/tour-status.util";
 import { randomBytes } from "crypto";
 import { isPastDate } from "@/lib/utils/date-formatters";
@@ -375,12 +376,13 @@ class InvitationService {
           const adminClient = createSupabaseAdminClient();
 
           // Store OTP in database
-          const { error: otpError } = await adminClient.from("invitation_otp").insert({
+          const otpRecord: TablesInsert<"invitation_otp"> = {
             email: email,
             otp_token: otpToken,
-            invitation_token: invitation.token,
+            invitation_token: invitation.token as string,
             expires_at: otpExpiresAt.toISOString(),
-          });
+          };
+          const { error: otpError } = await adminClient.from("invitation_otp").insert(otpRecord);
 
           if (otpError) {
             secureError("Error creating OTP token", otpError);
@@ -664,12 +666,13 @@ class InvitationService {
       const adminClient = createSupabaseAdminClient();
 
       // Store OTP in database
-      const { error: otpError } = await adminClient.from("invitation_otp").insert({
+      const otpRecord: TablesInsert<"invitation_otp"> = {
         email: invitation.email,
         otp_token: otpToken,
-        invitation_token: updatedInvitation.token,
+        invitation_token: updatedInvitation.token as string,
         expires_at: otpExpiresAt.toISOString(),
-      });
+      };
+      const { error: otpError } = await adminClient.from("invitation_otp").insert(otpRecord);
 
       if (otpError) {
         secureError("Error creating OTP token for resend", otpError);

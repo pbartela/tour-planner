@@ -123,7 +123,10 @@ jobs:
           path: test-results-${{ matrix.project }}/
           retention-days: 7
           if-no-files-found: ignore
-
+      - name: Debug Container Logs
+        if: failure()
+        run: |
+          run: docker logs tour-planner-supabase-db
       - name: Cleanup
         if: always()
         run: docker compose down -v

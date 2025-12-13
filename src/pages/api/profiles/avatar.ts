@@ -71,7 +71,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
           await supabase.storage.from("avatars").remove([filePath]);
         }
       } catch (error) {
-        logger.warn("Failed to delete old avatar", error instanceof Error ? error : undefined);
+        logger.warn("Failed to delete old avatar", error instanceof Error ? { error: error.message } : undefined);
         // Continue even if deletion fails
       }
     }
@@ -155,7 +155,10 @@ export const DELETE: APIRoute = async ({ locals }) => {
         await supabase.storage.from("avatars").remove([filePath]);
       }
     } catch (error) {
-      logger.warn("Failed to delete avatar from storage", error instanceof Error ? error : undefined);
+      logger.warn(
+        "Failed to delete avatar from storage",
+        error instanceof Error ? { error: error.message } : undefined
+      );
       // Continue even if deletion fails
     }
 

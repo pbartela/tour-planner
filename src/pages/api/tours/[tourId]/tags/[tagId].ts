@@ -38,6 +38,7 @@ export const DELETE: APIRoute = async ({ params, locals, request }) => {
     const rateLimitResult = checkRateLimit(clientId, RATE_LIMIT_CONFIGS.API);
 
     if (!rateLimitResult.allowed) {
+      const retryAfterSeconds = Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000);
       return new Response(
         JSON.stringify({
           error: {
@@ -48,8 +49,8 @@ export const DELETE: APIRoute = async ({ params, locals, request }) => {
         {
           status: 429,
           headers: {
-            "Retry-After": rateLimitResult.retryAfter?.toString() || "60",
-            "X-RateLimit-Limit": rateLimitResult.limit.toString(),
+            "Retry-After": retryAfterSeconds.toString(),
+            "X-RateLimit-Limit": RATE_LIMIT_CONFIGS.API.maxRequests.toString(),
             "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
             "X-RateLimit-Reset": rateLimitResult.resetAt.toString(),
           },
