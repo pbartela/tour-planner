@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { get, handleApiResponse } from "@/lib/client/api-client";
-import type { InvitationDto } from "@/types";
+import type { InvitationDto, PaginatedInvitationsDto } from "@/types";
 import { queryClient } from "@/lib/queryClient";
 
 interface UseTourInvitationsOptions {
@@ -12,7 +12,8 @@ interface UseTourInvitationsOptions {
  */
 const fetchTourInvitations = async (tourId: string): Promise<InvitationDto[]> => {
   const response = await get(`/api/tours/${tourId}/invitations`);
-  return handleApiResponse<InvitationDto[]>(response);
+  const paginatedResult = await handleApiResponse<PaginatedInvitationsDto>(response);
+  return paginatedResult.data;
 };
 
 /**

@@ -35,3 +35,4 @@ storybook-static
 /playwright/.cache/
 /coverage/
 .chromatic.config.json
+.env.test.remote
