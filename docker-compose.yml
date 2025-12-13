@@ -60,7 +60,7 @@ services:
 
   # GoTrue - Authentication service
   supabase-auth:
-    image: supabase/gotrue:v2.156.0
+    image: supabase/gotrue:v2.155.0
     container_name: tour-planner-supabase-auth
     depends_on:
       supabase-db:
