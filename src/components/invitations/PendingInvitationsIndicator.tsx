@@ -92,7 +92,7 @@ export function PendingInvitationsIndicator(): React.JSX.Element {
               <p>{t("invitations.noPending")}</p>
             </div>
           ) : (
-            <ul className="menu p-0">
+            <ul className="list-none p-0 m-0">
               {invitations?.map((invitation) => (
                 <InvitationItem
                   key={invitation.id}

@@ -114,6 +114,7 @@ class InvitationService {
     try {
       const now = new Date().toISOString();
 
+      // Fetch invitations with profile info (tours join removed to avoid RLS recursion)
       const { data: invitations, error } = await supabase
         .from("invitations")
         .select(
@@ -126,9 +127,6 @@ class InvitationService {
           token,
           expires_at,
           created_at,
-          tours!tour_id (
-            title
-          ),
           profiles!inviter_id (
             display_name
           )
@@ -144,15 +142,31 @@ class InvitationService {
         throw new Error("Failed to fetch pending invitations from the database.");
       }
 
+      if (!invitations || invitations.length === 0) {
+        return [];
+      }
+
+      // Fetch tour titles using security definer function to bypass RLS
+      const tourIds = [...new Set(invitations.map((inv) => inv.tour_id))];
+      const tourTitles = new Map<string, string>();
+
+      for (const tourId of tourIds) {
+        const { data: title } = await supabase.rpc("get_tour_title_for_invitation", {
+          p_tour_id: tourId,
+        });
+        if (title) {
+          tourTitles.set(tourId, title);
+        }
+      }
+
       // Transform to InvitationDto
-      return (invitations || []).map((inv): InvitationDto => {
-        const tours = Array.isArray(inv.tours) ? inv.tours : inv.tours ? [inv.tours] : null;
+      return invitations.map((inv): InvitationDto => {
         const profiles = Array.isArray(inv.profiles) ? inv.profiles : inv.profiles ? [inv.profiles] : null;
-        const { tours: _tours, profiles: _profiles, ...invitationData } = inv;
+        const { profiles: _profiles, ...invitationData } = inv;
         return {
           ...invitationData,
           token: inv.token || undefined,
-          tour_title: tours && tours.length > 0 ? (tours[0] as { title: string }).title : undefined,
+          tour_title: tourTitles.get(inv.tour_id) || undefined,
           inviter_display_name:
             profiles && profiles.length > 0
               ? (profiles[0] as { display_name: string | null }).display_name || undefined
