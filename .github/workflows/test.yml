@@ -61,7 +61,7 @@ jobs:
           name: codecov-umbrella
         continue-on-error: true
 
-  # Playwright E2E Tests (using Docker Compose - no secrets required)
+  # Playwright E2E Tests (using remote Supabase)
   playwright:
     name: Playwright E2E Tests
     runs-on: ubuntu-latest
@@ -71,34 +71,82 @@ jobs:
       matrix:
         # Run tests on multiple browsers
         project: [chromium, firefox]
+
+    # Add Mailpit service for email testing
+    services:
+      mailpit:
+        image: axllent/mailpit:latest
+        ports:
+          - 1025:1025 # SMTP port
+          - 8025:8025 # Web UI port
+        options: >-
+          --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:8025/api/v1/info || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
 
-      - name: Start services with Docker Compose (without playwright)
-        run: |
-          docker compose up -d --build supabase-db supabase-rest supabase-auth supabase-inbucket app
-          echo "Waiting for services to be healthy..."
-          timeout 120 bash -c 'until docker compose ps app | grep -q "healthy"; do sleep 2; done'
-          echo "✅ All services are ready!"
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Wait for app to be ready
+      - name: Check for Supabase secrets
+        id: check-secrets
         run: |
-          echo "Waiting for app server..."
-          timeout 60 bash -c 'until docker compose exec -T app wget --no-verbose --tries=1 --spider http://localhost:3000 2>/dev/null; do sleep 2; done'
-          echo "✅ App server is ready!"
+          if [ -n "${{ secrets.PUBLIC_SUPABASE_URL }}" ] && \
+             [ -n "${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}" ] && \
+             [ -n "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" ]; then
+            echo "has_secrets=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_secrets=false" >> $GITHUB_OUTPUT
+            echo "::warning::Skipping Playwright E2E tests - Supabase secrets not configured"
+            echo "Required secrets: PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY"
+          fi
+
+      - name: Install Playwright browsers
+        if: steps.check-secrets.outputs.has_secrets == 'true'
+        run: npx playwright install --with-deps ${{ matrix.project }}
+
+      - name: Create .env file
+        if: steps.check-secrets.outputs.has_secrets == 'true'
+        run: |
+          cat > .env << EOF
+          PUBLIC_SUPABASE_URL=${{ secrets.PUBLIC_SUPABASE_URL }}
+          PUBLIC_SUPABASE_ANON_KEY=${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
+          PUBLIC_DEFAULT_LOCALE=en-US
+          SUPABASE_URL=${{ secrets.PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # Email configuration - uses Mailpit service for testing
+          RESEND_FROM_EMAIL=E2E Tests <e2e@test.com>
+          SMTP_HOST=localhost
+          SMTP_PORT=1025
+          EOF
+
+      - name: Wait for Mailpit to be ready
+        if: steps.check-secrets.outputs.has_secrets == 'true'
+        run: |
+          echo "Waiting for Mailpit service..."
+          timeout 30 bash -c 'until curl -s http://localhost:8025/api/v1/info > /dev/null; do sleep 1; done'
+          echo "✅ Mailpit is ready!"
 
       - name: Run Playwright tests
-        run: |
-          docker compose run --rm -e CI=true playwright npx playwright test --project=${{ matrix.project }}
+        if: steps.check-secrets.outputs.has_secrets == 'true'
+        run: npx playwright test --project=${{ matrix.project }}
+        env:
+          CI: true
         continue-on-error: true
 
       - name: Copy test results
-        if: always()
+        if: always() && steps.check-secrets.outputs.has_secrets == 'true'
         run: |
-          # Results are in host volumes, just rename for artifact upload
+          # Rename for artifact upload
           if [ -d "playwright-report" ]; then
             mv playwright-report playwright-report-${{ matrix.project }} || true
           fi
@@ -107,7 +155,7 @@ jobs:
           fi
 
       - name: Upload test results
-        if: always()
+        if: always() && steps.check-secrets.outputs.has_secrets == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report-${{ matrix.project }}
@@ -116,20 +164,13 @@ jobs:
           if-no-files-found: ignore
 
       - name: Upload test videos
-        if: failure()
+        if: failure() && steps.check-secrets.outputs.has_secrets == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: playwright-videos-${{ matrix.project }}
           path: test-results-${{ matrix.project }}/
           retention-days: 7
           if-no-files-found: ignore
-      - name: Debug Container Logs
-        if: failure()
-        run: |
-          run: docker logs tour-planner-supabase-db
-      - name: Cleanup
-        if: always()
-        run: docker compose down -v
 
   # Chromatic Visual Regression Tests (optional)
   chromatic:
