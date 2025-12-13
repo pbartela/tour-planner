@@ -85,6 +85,8 @@ describe("email.service", () => {
     describe("production mode", () => {
       beforeEach(() => {
         vi.mocked(isDevelopment).mockReturnValue(false);
+        // Override CI environment to prevent test mode routing
+        process.env.CI = "false";
       });
 
       it("should send email successfully via Resend", async () => {
@@ -251,6 +253,8 @@ describe("email.service", () => {
     describe("production mode", () => {
       beforeEach(() => {
         vi.mocked(isDevelopment).mockReturnValue(false);
+        // Override CI environment to prevent test mode routing
+        process.env.CI = "false";
       });
 
       it("should send authentication email successfully via Resend", async () => {
@@ -354,6 +358,8 @@ describe("email.service", () => {
     describe("production mode", () => {
       beforeEach(() => {
         vi.mocked(isDevelopment).mockReturnValue(false);
+        // Override CI environment to prevent test mode routing
+        process.env.CI = "false";
       });
 
       it("should send generic email successfully via Resend", async () => {
