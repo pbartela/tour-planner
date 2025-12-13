@@ -12,6 +12,7 @@ A comprehensive web application for simplifying the process of planning group tr
 - [Tech Stack](#tech-stack)
 - [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
+- [Screenshots](#screenshots)
 - [Installation & Configuration](#installation--configuration)
 - [Database Setup](#database-setup)
 - [Running the Application](#running-the-application)
@@ -21,6 +22,8 @@ A comprehensive web application for simplifying the process of planning group tr
 - [For Evaluators](#for-evaluators)
 - [Troubleshooting](#troubleshooting)
 - [Additional Documentation](#additional-documentation)
+- [Contributing](#contributing)
+- [Changelog](#changelog)
 - [License](#license)
 
 ## Project Description
@@ -115,6 +118,8 @@ Before you begin, ensure you have the following installed on your machine:
 
 - **Node.js 22.14.0** - It's recommended to use [nvm](https://github.com/nvm-sh/nvm) for version management:
   ```bash
+  nvm use  # Uses .nvmrc automatically
+  # Or manually:
   nvm install 22.14.0
   nvm use 22.14.0
   ```
@@ -152,6 +157,14 @@ For evaluators who want to get the application running quickly:
 6. **Open** `http://localhost:3000` in your browser
 
 > ⚠️ **Note**: The `.env` file is git-ignored and must be created manually. See the [Installation & Configuration](#installation--configuration) section for details.
+
+> 📧 **Important - Email Access**: All emails (magic links, invitations) are captured by **Mailpit** at `http://localhost:54324`. No external email service is configured by default. You must check Mailpit to receive authentication emails.
+
+## Screenshots
+
+| Tour List | Create Tour |
+|-----------|-------------|
+| ![Tour List](designs/main_page_-_trips_collection/screen.png) | ![Create Tour](designs/add_new_trip/screen.png) |
 
 ## Installation & Configuration
 
@@ -249,7 +262,7 @@ Started supabase local development setup.
      GraphQL URL: http://localhost:54321/graphql/v1
           DB URL: postgresql://postgres:postgres@localhost:54322/postgres
       Studio URL: http://localhost:54323
-    Inbucket URL: http://localhost:54324
+      Mailpit URL: http://localhost:54324  <-- Check here for emails!
       JWT secret: super-secret-jwt-token-with-at-least-32-characters-long
         anon key: eyJhbGci...
 service_role key: eyJhbGci...
@@ -288,7 +301,9 @@ When Supabase is running locally, the following services are available:
 | API | `http://localhost:54321` | PostgREST API endpoint |
 | Database | `localhost:54322` | PostgreSQL database |
 | Studio | `http://localhost:54323` | Supabase Studio (database GUI) |
-| Inbucket | `http://localhost:54324` | Email testing server (view magic links) |
+| Mailpit | `http://localhost:54324` | Email testing server (view magic links, invitations) |
+
+> 📧 **Email Testing with Mailpit**: All emails sent by the application (magic links, tour invitations) are captured by Mailpit. Open `http://localhost:54324` to view and interact with these emails. This is the **only way** to receive authentication emails in local development unless you configure an external SMTP provider.
 
 ### Stopping Supabase
 
@@ -373,14 +388,15 @@ This section provides a walkthrough of the main features for testing and evaluat
 
 ### 1. Authentication (Magic Link)
 
+> 📧 **Important**: In local development, all emails are sent to **Mailpit** at `http://localhost:54324`. You **must** check Mailpit to receive magic links - no emails are sent externally unless you configure SMTP.
+
 1. **Navigate to the login page** (`/login` or `/register`)
 2. **Enter your email address** in the form
 3. **Click "Continue with Email"**
-4. **Check your email** (or Inbucket at `http://localhost:54324` for local development)
-5. **Click the magic link** in the email
-6. **You'll be automatically logged in** and redirected to the dashboard
-
-> **Note**: For local development, magic links are sent to Inbucket (email testing server) instead of actual email. Access Inbucket at `http://localhost:54324` to view emails.
+4. **Open Mailpit** at `http://localhost:54324`
+5. **Find the email** with subject "Magic Link - Sign In"
+6. **Click the magic link** in the email
+7. **You'll be automatically logged in** and redirected to the dashboard
 
 ### 2. Creating a Tour
 
@@ -402,8 +418,8 @@ This section provides a walkthrough of the main features for testing and evaluat
 2. **Click "Invite Participants"** button
 3. **Enter email addresses** (comma-separated or one per line)
 4. **Click "Send Invitations"**
-5. **Invitations are sent via email** with magic links
-6. **Participants can accept** the invitation by clicking the link
+5. **Invitations are sent via email** - check Mailpit at `http://localhost:54324`
+6. **Participants can accept** the invitation by clicking the link in the email
 
 ### 4. Voting System
 
@@ -675,11 +691,12 @@ This section provides a checklist for evaluating the project.
 
 ### Functionality Testing
 
-- [ ] **Authentication**: Magic link login/registration works
+- [ ] **Mailpit Access**: Can open Mailpit at `http://localhost:54324`
+- [ ] **Authentication**: Magic link login/registration works (check Mailpit for email)
 - [ ] **Tour Creation**: Can create a new tour with all required fields
 - [ ] **Tour Editing**: Can edit tour details (as owner)
 - [ ] **Tour Deletion**: Can delete tour with confirmation (as owner)
-- [ ] **Invitations**: Can invite participants via email
+- [ ] **Invitations**: Can invite participants via email (check Mailpit)
 - [ ] **Voting**: Can vote/unvote on tours
 - [ ] **Voting Lock**: Owner can lock/unlock voting
 - [ ] **Comments**: Can add, edit, and delete comments
@@ -787,10 +804,11 @@ This section provides a checklist for evaluating the project.
 **Problem**: Cannot receive or use magic links for authentication.
 
 **Solution**:
-1. For local development, check Inbucket at `http://localhost:54324`
-2. Ensure Supabase auth service is running
+1. **For local development, check Mailpit at `http://localhost:54324`** - this is where ALL emails are sent
+2. Ensure Supabase auth service is running (`npx supabase status`)
 3. Check that redirect URLs are configured in `supabase/config.toml`
 4. Verify email templates exist in `supabase/templates/`
+5. If Mailpit inbox is empty, try resending the magic link
 
 ### Getting Help
 
@@ -812,13 +830,22 @@ This project includes comprehensive documentation:
 - **[Docker Testing Guide](docs/DOCKER_TESTING.md)**: Docker-based testing setup
 - **[Product Requirements](.ai/prd.md)**: Complete product requirements document
 - **[Implementation Roadmap](.ai/implementation-roadmap.md)**: Feature implementation status
+- **[Privacy Policy](docs/PRIVACY.md)**: Privacy documentation
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines, code standards, and how to submit changes.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
 
 ## License
 
-This project is licensed under the MIT License. See the `LICENSE` file for more details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
 
 ---
 
 **Project Status**: ✅ Complete - All planned features implemented and tested.
 
-**Last Updated**: 2025-01-XX
+**Last Updated**: 2025-01-04
